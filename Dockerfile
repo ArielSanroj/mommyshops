@@ -1,10 +1,10 @@
-# Use Python 3.11 slim image - Updated for Railway deployment
+# Use Python 3.11 slim image - Railway deployment
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies - Fixed for Debian Trixie
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
