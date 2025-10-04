@@ -1,15 +1,26 @@
-# Use Python 3.11 slim image - Railway deployment
-FROM python:3.11-slim
+# Use Ubuntu base with Python 3.11 - Better package compatibility
+FROM ubuntu:22.04
+
+# Install Python 3.11 and pip
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-pip \
+    python3.11-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symbolic links for python and pip
+RUN ln -s /usr/bin/python3.11 /usr/bin/python && \
+    ln -s /usr/bin/python3.11 /usr/bin/python3
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies - Fixed for Debian Trixie
+# Install system dependencies - Ubuntu 22.04 compatible
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
     tesseract-ocr-eng \
-    libgl1 \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
