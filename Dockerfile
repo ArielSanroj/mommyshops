@@ -1,16 +1,22 @@
 # Use Ubuntu base with Python 3.11 - Better package compatibility
 FROM ubuntu:22.04
 
-# Install Python 3.11 and pip
+# Install dependencies for adding PPA and required packages
 RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y \
     python3.11 \
-    python3.11-pip \
     python3.11-venv \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create symbolic links for python and pip
 RUN ln -s /usr/bin/python3.11 /usr/bin/python && \
-    ln -s /usr/bin/python3.11 /usr/bin/python3
+    ln -s /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -s /usr/local/bin/pip3.11 /usr/bin/pip
 
 # Set working directory
 WORKDIR /app
