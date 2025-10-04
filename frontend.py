@@ -206,9 +206,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Descripción mejorada
-st.markdown('<div class="stContainer">', unsafe_allow_html=True)
 st.markdown("### 🔍 ¿Cómo funciona?")
-st.markdown("Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes. Selecciona la necesidad de tu piel para obtener recomendaciones personalizadas.")
+st.markdown("Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes.")
 st.markdown("### 🆕 Nuevas capacidades:")
 st.markdown("""
 - 📸 **Reconocimiento de productos**: Ahora puedes subir fotos del producto completo, no solo la etiqueta
@@ -216,31 +215,29 @@ st.markdown("""
 - 🔍 **Búsqueda inteligente**: Busca ingredientes en bases de datos especializadas
 - 🤖 **IA de respaldo**: Usa inteligencia artificial cuando no encuentra ingredientes
 """)
-st.markdown('</div>', unsafe_allow_html=True)
 
-# Sección "Cómo Funciona" se moverá después de los resultados
+# Checkbox para elegir tipo de análisis
+analysis_type = st.checkbox("📱 URL Analysis", value=False)
+if not analysis_type:
+    st.checkbox("📸 Image Analysis", value=True)
 
-# Formulario para URL y selección de necesidad
-st.markdown('<div class="stContainer">', unsafe_allow_html=True)
-st.markdown("### 📱 Analizar desde URL")
-
-with st.form(key="url_form"):
-    url = st.text_input("URL del producto", placeholder="https://www.isdin.com/...")
-    user_need = st.selectbox("Necesidad de la piel", ["sensible skin", "general safety"])
-    submit_url = st.form_submit_button("🔍 Analizar URL")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Formulario para imagen y selección de necesidad
-st.markdown('<div class="stContainer">', unsafe_allow_html=True)
-st.markdown("### 📸 Analizar desde Imagen")
-
-with st.form(key="image_form"):
-    image_file = st.file_uploader("Sube la imagen del producto o etiqueta (máx. 5MB)", type=["jpg", "jpeg", "png"], help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes")
-    user_need_image = st.selectbox("Necesidad de la piel (imagen)", ["sensible skin", "general safety"])
-    submit_image = st.form_submit_button("🔍 Analizar Imagen")
-
-st.markdown('</div>', unsafe_allow_html=True)
+# Formulario único basado en la selección
+if analysis_type:
+    # Análisis por URL
+    with st.form(key="analysis_form"):
+        url = st.text_input("URL del producto", placeholder="https://www.isdin.com/...")
+        submit_button = st.form_submit_button("🔍 Analizar")
+        
+        if submit_button and url:
+            user_need = "general safety"  # Valor por defecto
+else:
+    # Análisis por imagen
+    with st.form(key="analysis_form"):
+        image_file = st.file_uploader("Sube la imagen del producto o etiqueta (máx. 5MB)", type=["jpg", "jpeg", "png"], help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes")
+        submit_button = st.form_submit_button("🔍 Analizar")
+        
+        if submit_button and image_file:
+            user_need = "general safety"  # Valor por defecto
 
 
 # Función para mostrar resultados
@@ -419,80 +416,82 @@ def display_results(result):
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# Procesar solicitud de URL
-if submit_url and url:
-    with st.spinner("🔄 Analizando URL..."):
+# Procesar solicitud basada en el tipo de análisis
+if 'submit_button' in locals() and submit_button:
+    if analysis_type and 'url' in locals() and url:
+        # Análisis por URL
+        with st.spinner("🔄 Analizando URL..."):
+            st.session_state.error = None
+            if not validators.url(url):
+                st.session_state.error = "Por favor, ingresa una URL válida (por ejemplo, https://www.isdin.com/...)"
+            else:
+                try:
+                    response = requests.post(
+                        "http://127.0.0.1:8001/analyze-url",
+                        json={"url": url, "user_need": user_need}
+                    )
+                    response.raise_for_status()
+                    st.session_state.result = response.json()
+                    st.success("✅ Análisis de URL completado con éxito")
+                except requests.exceptions.RequestException as e:
+                    st.session_state.error = f"Error al analizar la URL: {str(e)}"
+    
+    elif not analysis_type and 'image_file' in locals() and image_file:
+        # Análisis por imagen
         st.session_state.error = None
-        if not validators.url(url):
-            st.session_state.error = "Por favor, ingresa una URL válida (por ejemplo, https://www.isdin.com/...)"
-        else:
-            try:
+        try:
+            # Validar tamaño de la imagen
+            image_data = image_file.read()
+            if len(image_data) > 5 * 1024 * 1024:
+                st.session_state.error = "La imagen es demasiado grande (máximo 5MB)"
+            else:
+                # Mostrar vista previa de la imagen
+                image = Image.open(io.BytesIO(image_data))
+                st.image(image, caption="Imagen subida", width='stretch')
+
+                # Progress bar for image analysis
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                # Step 1: Uploading image
+                status_text.text("📤 Subiendo imagen...")
+                progress_bar.progress(20)
+                
+                # Enviar imagen al backend
+                form_data = {"user_need": user_need}
+                files = {"file": (image_file.name, image_data, image_file.type)}
+                
+                # Step 2: Processing image
+                status_text.text("🔄 Procesando imagen (OCR)...")
+                progress_bar.progress(40)
+                
                 response = requests.post(
-                    "http://127.0.0.1:8001/analyze-url",
-                    json={"url": url, "user_need": user_need}
+                    "http://127.0.0.1:8001/analyze-image",
+                    data=form_data,
+                    files=files,
+                    timeout=60  # 60 second timeout for optimized processing
                 )
+                
+                # Step 3: Analyzing ingredients
+                status_text.text("🧪 Analizando ingredientes...")
+                progress_bar.progress(80)
+                
                 response.raise_for_status()
                 st.session_state.result = response.json()
-                st.success("✅ Análisis de URL completado con éxito")
-            except requests.exceptions.RequestException as e:
-                st.session_state.error = f"Error al analizar la URL: {str(e)}"
-
-# Procesar solicitud de imagen
-if submit_image and image_file:
-    st.session_state.error = None
-    try:
-        # Validar tamaño de la imagen
-        image_data = image_file.read()
-        if len(image_data) > 5 * 1024 * 1024:
-            st.session_state.error = "La imagen es demasiado grande (máximo 5MB)"
-        else:
-            # Mostrar vista previa de la imagen
-            image = Image.open(io.BytesIO(image_data))
-            st.image(image, caption="Imagen subida", width='stretch')
-
-            # Progress bar for image analysis
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            # Step 1: Uploading image
-            status_text.text("📤 Subiendo imagen...")
-            progress_bar.progress(20)
-            
-            # Enviar imagen al backend
-            form_data = {"user_need": user_need_image}
-            files = {"file": (image_file.name, image_data, image_file.type)}
-            
-            # Step 2: Processing image
-            status_text.text("🔄 Procesando imagen (OCR)...")
-            progress_bar.progress(40)
-            
-            response = requests.post(
-                "http://127.0.0.1:8001/analyze-image",
-                data=form_data,
-                files=files,
-                timeout=60  # 60 second timeout for optimized processing
-            )
-            
-            # Step 3: Analyzing ingredients
-            status_text.text("🧪 Analizando ingredientes...")
-            progress_bar.progress(80)
-            
-            response.raise_for_status()
-            st.session_state.result = response.json()
-            
-            # Step 4: Complete
-            progress_bar.progress(100)
-            status_text.text("✅ Análisis completado")
-            st.success("✅ Análisis de imagen completado con éxito")
-            
-            # Clear progress indicators
-            progress_bar.empty()
-            status_text.empty()
-            
-    except requests.exceptions.Timeout:
-        st.session_state.error = "⏰ El análisis tardó demasiado tiempo. Intenta con una imagen más pequeña o clara."
-    except requests.exceptions.RequestException as e:
-        st.session_state.error = f"Error al analizar la imagen: {str(e)}"
+                
+                # Step 4: Complete
+                progress_bar.progress(100)
+                status_text.text("✅ Análisis completado")
+                st.success("✅ Análisis de imagen completado con éxito")
+                
+                # Clear progress indicators
+                progress_bar.empty()
+                status_text.empty()
+                
+        except requests.exceptions.Timeout:
+            st.session_state.error = "⏰ El análisis tardó demasiado tiempo. Intenta con una imagen más pequeña o clara."
+        except requests.exceptions.RequestException as e:
+            st.session_state.error = f"Error al analizar la imagen: {str(e)}"
 
 # Mostrar resultados o errores
 if st.session_state.error:
