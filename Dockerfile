@@ -1,37 +1,22 @@
-# Use Ubuntu base with Python 3.11 - Better package compatibility
-FROM ubuntu:22.04
-
-# Install dependencies for adding PPA and required packages
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    curl \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y \
-    python3.11 \
-    python3.11-venv \
-    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create symbolic links for python and pip
-RUN ln -s /usr/bin/python3.11 /usr/bin/python && \
-    ln -s /usr/bin/python3.11 /usr/bin/python3 && \
-    ln -s /usr/local/bin/pip3.11 /usr/bin/pip
+# Use Python 3.11 slim base image for better performance
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies - Ubuntu 22.04 compatible
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
     tesseract-ocr-eng \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    libxrender-dev \
+    libxrender1 \
     libgomp1 \
+    libglib2.0-dev \
+    libgthread-2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
