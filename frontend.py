@@ -428,12 +428,12 @@ if 'submit_url' in locals() and submit_url and 'url' in locals() and url:
             st.session_state.error = "Por favor, ingresa una URL válida (por ejemplo, https://www.isdin.com/...)"
         else:
             try:
-                    # Use Railway URL in production, localhost in development
-                    api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
-                    response = requests.post(
-                        f"{api_url}/analyze-url",
-                        json={"url": url, "user_need": user_need}
-                    )
+                # Use Railway URL in production, localhost in development
+                api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
+                response = requests.post(
+                    f"{api_url}/analyze-url",
+                    json={"url": url, "user_need": user_need}
+                )
                 response.raise_for_status()
                 st.session_state.result = response.json()
                 st.success("✅ Análisis de URL completado con éxito")
