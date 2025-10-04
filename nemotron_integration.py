@@ -17,7 +17,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # NVIDIA API configuration
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "***REMOVED***")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 NVIDIA_ENDPOINT = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions"
 
 class NemotronAnalyzer:

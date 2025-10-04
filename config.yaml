@@ -4,7 +4,7 @@ agents:
   ingredient-enricher:
     name: Ingredient API Enricher with Nemotron
     model: nvidia/Nemotron-4-340B-Instruct  # Upgraded to Nemotron 4 for multimodal analysis
-    api_key: ***REMOVED***
+    api_key: ${NVIDIA_API_KEY}
     endpoint: https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions  # NVIDIA Inference API
     description: "Fetches and analyzes ingredient data from FDA, EWG, PubChem, IARC, INVIMA, and COSING, then enriches the database with benefits, risks, and eco-scores."
     system_prompt: |
