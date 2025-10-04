@@ -6,7 +6,148 @@ import io
 import validators  # Para validar URLs
 
 # Configuración de la página
-st.set_page_config(page_title="Mommyshops - Analiza tus Productos", page_icon="🌿", layout="wide")
+st.set_page_config(
+    page_title="Mommyshops - Analiza tus Productos", 
+    page_icon="🌿", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# CSS personalizado con los colores de tu página web
+st.markdown("""
+<style>
+    /* Colores principales de MommyShops */
+    :root {
+        --primary-green: #10B981;
+        --dark-green: #047857;
+        --light-green: #D1FAE5;
+        --background-gray: #F9FAFB;
+        --text-dark: #111827;
+        --accent-amber: #F59E0B;
+        --white: #FFFFFF;
+        --border-gray: #E5E7EB;
+    }
+    
+    /* Estilo general */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+    
+    /* Header personalizado */
+    .main-header {
+        background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .main-header h1 {
+        color: white !important;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .main-header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+    
+    /* Cards con estilo */
+    .stContainer {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-gray);
+    }
+    
+    /* Botones personalizados */
+    .stButton > button {
+        background: var(--primary-green);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    .stButton > button:hover {
+        background: var(--dark-green);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Formularios */
+    .stSelectbox > div > div {
+        border-radius: 8px;
+        border: 1px solid var(--border-gray);
+    }
+    
+    .stTextInput > div > div > input {
+        border-radius: 8px;
+        border: 1px solid var(--border-gray);
+    }
+    
+    /* File uploader */
+    .stFileUploader > div {
+        border-radius: 8px;
+        border: 2px dashed var(--primary-green);
+        background: var(--light-green);
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background: var(--background-gray);
+    }
+    
+    /* Métricas */
+    .metric-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-left: 4px solid var(--primary-green);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Badges de ingredientes */
+    .ingredient-badge {
+        display: inline-block;
+        background: var(--light-green);
+        color: var(--dark-green);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 0.25rem;
+    }
+    
+    .ingredient-badge.safe {
+        background: #D1FAE5;
+        color: #047857;
+    }
+    
+    .ingredient-badge.warning {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+    
+    .ingredient-badge.danger {
+        background: #FEE2E2;
+        color: #991B1B;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Inicializar session_state para persistir resultados
 if 'result' not in st.session_state:
@@ -14,30 +155,51 @@ if 'result' not in st.session_state:
 if 'error' not in st.session_state:
     st.session_state.error = None
 
-# Título y descripción
-st.title("🌿 Mommyshops - Analiza Productos Seguros y Eco-Friendly")
+# Header principal con estilo personalizado
 st.markdown("""
-Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes.
-Selecciona la necesidad de tu piel para obtener recomendaciones personalizadas.
+<div class="main-header">
+    <h1>🌿 MommyShops</h1>
+    <p>Analiza Productos Seguros y Eco-Friendly para tu Familia</p>
+</div>
+""", unsafe_allow_html=True)
 
-**🆕 Nuevas capacidades:**
-- 📸 **Reconocimiento de productos**: Ahora puedes subir fotos del producto completo, no solo la etiqueta
-- 🏷️ **Identificación de marcas**: Detecta automáticamente la marca y nombre del producto
-- 🔍 **Búsqueda inteligente**: Busca ingredientes en bases de datos especializadas
-- 🤖 **IA de respaldo**: Usa inteligencia artificial cuando no encuentra ingredientes
-""")
+# Descripción mejorada
+st.markdown("""
+<div class="stContainer">
+    <h3>🔍 ¿Cómo funciona?</h3>
+    <p>Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes. Selecciona la necesidad de tu piel para obtener recomendaciones personalizadas.</p>
+    
+    <h4>🆕 Nuevas capacidades:</h4>
+    <ul>
+        <li>📸 <strong>Reconocimiento de productos</strong>: Ahora puedes subir fotos del producto completo, no solo la etiqueta</li>
+        <li>🏷️ <strong>Identificación de marcas</strong>: Detecta automáticamente la marca y nombre del producto</li>
+        <li>🔍 <strong>Búsqueda inteligente</strong>: Busca ingredientes en bases de datos especializadas</li>
+        <li>🤖 <strong>IA de respaldo</strong>: Usa inteligencia artificial cuando no encuentra ingredientes</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
 # Sección "Cómo Funciona" se moverá después de los resultados
 
 # Formulario para URL y selección de necesidad
-st.header("📱 Analizar desde URL")
+st.markdown("""
+<div class="stContainer">
+    <h3>📱 Analizar desde URL</h3>
+</div>
+""", unsafe_allow_html=True)
+
 with st.form(key="url_form"):
     url = st.text_input("URL del producto", placeholder="https://www.isdin.com/...")
     user_need = st.selectbox("Necesidad de la piel", ["sensible skin", "general safety"])
     submit_url = st.form_submit_button("🔍 Analizar URL")
 
 # Formulario para imagen y selección de necesidad
-st.header("📸 Analizar desde Imagen")
+st.markdown("""
+<div class="stContainer">
+    <h3>📸 Analizar desde Imagen</h3>
+</div>
+""", unsafe_allow_html=True)
+
 with st.form(key="image_form"):
     image_file = st.file_uploader("Sube la imagen del producto o etiqueta (máx. 5MB)", type=["jpg", "jpeg", "png"], help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes")
     user_need_image = st.selectbox("Necesidad de la piel (imagen)", ["sensible skin", "general safety"])
@@ -46,24 +208,81 @@ with st.form(key="image_form"):
 
 # Función para mostrar resultados
 def display_results(result):
-    st.header("📊 Resultados del Análisis")
+    st.markdown("""
+    <div class="stContainer">
+        <h3>📊 Resultados del Análisis</h3>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Mostrar información del producto si está disponible
     if 'product_name' in result and result['product_name']:
         st.subheader("🏷️ Información del Producto")
         st.info(f"**Producto:** {result['product_name']}")
     
-    col1, col2 = st.columns([1, 3])
+    # Métricas principales con estilo mejorado
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        st.metric("Puntaje Eco Promedio", f"{result['avg_eco_score']}/100")
+        st.markdown(f"""
+        <div class="metric-card">
+            <h4>🌱 Puntaje Eco</h4>
+            <h2 style="color: var(--primary-green); margin: 0;">{result['avg_eco_score']}/100</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with col2:
-        suitability_color = {"Sí": "green", "Evaluar": "orange"}
-        st.write(
-            f"**Adecuación para tu piel**: <span style='color:{suitability_color.get(result['suitability'], 'gray')}'>{result['suitability']}</span>",
-            unsafe_allow_html=True)
+        suitability_color = {"Sí": "var(--primary-green)", "Evaluar": "var(--accent-amber)", "No": "var(--danger-red)"}
+        st.markdown(f"""
+        <div class="metric-card">
+            <h4>👤 Adecuado para tu piel</h4>
+            <h2 style="color: {suitability_color.get(result['suitability'], 'var(--text-dark)')}; margin: 0;">{result['suitability']}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <h4>🔬 Ingredientes</h4>
+            <h2 style="color: var(--primary-green); margin: 0;">{len(result['ingredients_details'])}</h2>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Tabla de ingredientes con colores para risk_level
-    st.subheader("📋 Detalles de Ingredientes")
+    # Ingredientes con badges de colores
+    st.markdown("""
+    <div class="stContainer">
+        <h3>📋 Ingredientes Detectados</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Mostrar ingredientes como badges
+    ingredients_html = "<div style='margin: 1rem 0;'>"
+    for ing in result["ingredients_details"]:
+        risk_level = ing.get("risk_level", "desconocido")
+        eco_score = ing.get("eco_score", 50)
+        
+        # Determinar clase CSS basada en el nivel de riesgo
+        if risk_level == "seguro":
+            badge_class = "ingredient-badge safe"
+        elif risk_level in ["riesgo bajo", "riesgo medio"]:
+            badge_class = "ingredient-badge warning"
+        else:
+            badge_class = "ingredient-badge danger"
+        
+        ingredients_html += f"""
+        <span class="{badge_class}">
+            {ing.get("name", "Unknown")} - {eco_score}/100
+        </span>
+        """
+    ingredients_html += "</div>"
+    
+    st.markdown(ingredients_html, unsafe_allow_html=True)
+    
+    # Tabla detallada
+    st.markdown("""
+    <div class="stContainer">
+        <h4>📊 Análisis Detallado</h4>
+    </div>
+    """, unsafe_allow_html=True)
     
     
     rows = []
