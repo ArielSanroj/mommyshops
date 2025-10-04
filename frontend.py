@@ -206,55 +206,47 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Descripción mejorada
+st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+st.markdown("### 🔍 ¿Cómo funciona?")
+st.markdown("Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes. Selecciona la necesidad de tu piel para obtener recomendaciones personalizadas.")
+st.markdown("### 🆕 Nuevas capacidades:")
 st.markdown("""
-<div class="stContainer">
-    <h3>🔍 ¿Cómo funciona?</h3>
-    <p>Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes. Selecciona la necesidad de tu piel para obtener recomendaciones personalizadas.</p>
-    
-    <h4>🆕 Nuevas capacidades:</h4>
-    <ul>
-        <li>📸 <strong>Reconocimiento de productos</strong>: Ahora puedes subir fotos del producto completo, no solo la etiqueta</li>
-        <li>🏷️ <strong>Identificación de marcas</strong>: Detecta automáticamente la marca y nombre del producto</li>
-        <li>🔍 <strong>Búsqueda inteligente</strong>: Busca ingredientes en bases de datos especializadas</li>
-        <li>🤖 <strong>IA de respaldo</strong>: Usa inteligencia artificial cuando no encuentra ingredientes</li>
-    </ul>
-</div>
-""", unsafe_allow_html=True)
+- 📸 **Reconocimiento de productos**: Ahora puedes subir fotos del producto completo, no solo la etiqueta
+- 🏷️ **Identificación de marcas**: Detecta automáticamente la marca y nombre del producto  
+- 🔍 **Búsqueda inteligente**: Busca ingredientes en bases de datos especializadas
+- 🤖 **IA de respaldo**: Usa inteligencia artificial cuando no encuentra ingredientes
+""")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Sección "Cómo Funciona" se moverá después de los resultados
 
 # Formulario para URL y selección de necesidad
-st.markdown("""
-<div class="stContainer">
-    <h3>📱 Analizar desde URL</h3>
-</div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+st.markdown("### 📱 Analizar desde URL")
 
 with st.form(key="url_form"):
     url = st.text_input("URL del producto", placeholder="https://www.isdin.com/...")
     user_need = st.selectbox("Necesidad de la piel", ["sensible skin", "general safety"])
     submit_url = st.form_submit_button("🔍 Analizar URL")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # Formulario para imagen y selección de necesidad
-st.markdown("""
-<div class="stContainer">
-    <h3>📸 Analizar desde Imagen</h3>
-</div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+st.markdown("### 📸 Analizar desde Imagen")
 
 with st.form(key="image_form"):
     image_file = st.file_uploader("Sube la imagen del producto o etiqueta (máx. 5MB)", type=["jpg", "jpeg", "png"], help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes")
     user_need_image = st.selectbox("Necesidad de la piel (imagen)", ["sensible skin", "general safety"])
     submit_image = st.form_submit_button("🔍 Analizar Imagen")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 # Función para mostrar resultados
 def display_results(result):
-    st.markdown("""
-    <div class="stContainer">
-        <h3>📊 Resultados del Análisis</h3>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+    st.markdown("### 📊 Resultados del Análisis")
     
     # Mostrar información del producto si está disponible
     if 'product_name' in result and result['product_name']:
@@ -290,11 +282,8 @@ def display_results(result):
         """, unsafe_allow_html=True)
 
     # Ingredientes con badges de colores
-    st.markdown("""
-    <div class="stContainer">
-        <h3>📋 Ingredientes Detectados</h3>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+    st.markdown("### 📋 Ingredientes Detectados")
     
     # Mostrar ingredientes como badges
     ingredients_html = "<div style='margin: 1rem 0;'>"
@@ -318,13 +307,11 @@ def display_results(result):
     ingredients_html += "</div>"
     
     st.markdown(ingredients_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Tabla detallada
-    st.markdown("""
-    <div class="stContainer">
-        <h4>📊 Análisis Detallado</h4>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+    st.markdown("#### 📊 Análisis Detallado")
     
     
     rows = []
@@ -397,6 +384,7 @@ def display_results(result):
 
     # Mostrar tabla con scroll si es larga
     st.dataframe(rows, width='stretch', hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Sección "Cómo Funciona" después de los resultados
     st.markdown("---")
@@ -427,6 +415,8 @@ def display_results(result):
         - **LLM Enriquecimiento**: NVIDIA Llama 3.1 para analizar datos faltantes y generar resúmenes empáticos.
         - **Actualización**: Datos actualizados continuamente (sin cutoff de conocimiento). **Disclaimer**: Consulta a un profesional para consejos médicos personalizados.
         """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # Procesar solicitud de URL
