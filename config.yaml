@@ -1,0 +1,80 @@
+# Nanobot configuration for MommyShops ingredient analysis
+# Orchestrates FDA, PubChem, EWG, IARC, INVIMA, COSING APIs with NVIDIA LLM
+agents:
+  ingredient-enricher:
+    name: Ingredient API Enricher with Nemotron
+    model: nvidia/Nemotron-4-340B-Instruct  # Upgraded to Nemotron 4 for multimodal analysis
+    api_key: ***REMOVED***
+    endpoint: https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions  # NVIDIA Inference API
+    description: "Fetches and analyzes ingredient data from FDA, EWG, PubChem, IARC, INVIMA, and COSING, then enriches the database with benefits, risks, and eco-scores."
+    system_prompt: |
+      You are an expert in cosmetics and nutrition safety for moms and babies. For a given task:
+      1. If asked to extract ingredients from HTML or OCR text, identify the section containing a list of chemical or cosmetic ingredients (e.g., after "Composition" or "Ingredients"). Return a comma-separated list of ingredients, excluding irrelevant text like navigation, descriptions, or company info.
+      2. For each ingredient:
+         - Call `fda_search` to check for food/cosmetic enforcement actions (risk_level, risks_detailed).
+         - Call `pubchem_query` to get chemical benefits and risks (benefits, risks_detailed).
+         - Call `ewg_score` for eco-friendliness and concerns (eco_score, risks_detailed).
+         - If risks are detected (e.g., risk_level != "seguro"), call `iarc_check` for carcinogenicity (risk_level, risks_detailed).
+         - For Colombian products, call `invima_scrape` to verify regulatory approval (risk_level).
+         - Call `cosing_lookup` for EU cosmetic functions and restrictions (benefits, risks_detailed).
+         - Merge results into a JSON object matching the Ingredient model:
+            - name: string (lowercase ingredient name)
+            - eco_score: float (0-100, prioritize EWG, default 50.0)
+            - risk_level: string ("seguro", "riesgo bajo", "riesgo medio", "riesgo alto", "cancerígeno", "desconocido")
+            - benefits: string (from PubChem or COSING function)
+            - risks_detailed: string (concatenate concerns from EWG, IARC, FDA, etc.)
+            - sources: string (comma-separated, e.g., "FDA,PubChem,EWG")
+         - Call `enrich_ingredient` to save to the database.
+      3. Generate a natural-language summary for moms, citing sources (e.g., "Parabens: Risky per EWG, avoid for sensitive skin").
+      Always prioritize IARC for risk_level, then FDA, INVIMA, EWG. Be empathetic, clear, and avoid medical claims. Include a disclaimer: "Consult a professional for medical advice."
+    mcpServers:
+      - mommyshops-mcp
+    tools:
+      - name: fda_search
+        method: fda_search
+        server: mommyshops-mcp
+        description: "Search FDA for ingredient enforcement actions."
+        params:
+          ingredient: string
+      - name: pubchem_query
+        method: pubchem_query
+        server: mommyshops-mcp
+        description: "Query PubChem for chemical benefits and risks."
+        params:
+          ingredient: string
+      - name: ewg_score
+        method: ewg_score
+        server: mommyshops-mcp
+        description: "Fetch eco-score and concerns from EWG Skin Deep."
+        params:
+          ingredient: string
+      - name: iarc_check
+        method: iarc_check
+        server: mommyshops-mcp
+        description: "Check IARC via PubMed using PubChem Power User Gateway search terms for carcinogenicity."
+        params:
+          ingredient: string
+      - name: invima_scrape
+        method: invima_scrape
+        server: mommyshops-mcp
+        description: "Scrape INVIMA for Colombian regulatory approval."
+        params:
+          ingredient: string
+      - name: cosing_lookup
+        method: cosing_lookup
+        server: mommyshops-mcp
+        description: "Lookup COSING for EU cosmetic functions/restrictions."
+        params:
+          ingredient: string
+      - name: enrich_ingredient
+        method: enrich_ingredient
+        server: mommyshops-mcp
+        description: "Save enriched ingredient data to the database."
+        params:
+          ingredient_data: object
+mcpServers:
+  mommyshops-mcp:
+    url: http://localhost:8000/mcp
+    auth:
+      type: bearer
+      token: ${MCP_ACCESS_TOKEN}  # Set in .env
