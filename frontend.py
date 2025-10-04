@@ -37,6 +37,17 @@ st.markdown("""
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 1200px;
+        background: var(--dark-pink);
+    }
+    
+    /* Fondo de la página */
+    .stApp {
+        background: var(--dark-pink);
+    }
+    
+    /* Fondo del contenido principal */
+    .main {
+        background: var(--dark-pink);
     }
     
     /* Header personalizado */
@@ -71,6 +82,27 @@ st.markdown("""
         margin: 1rem 0;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         border: 1px solid var(--border-gray);
+        color: var(--text-dark);
+    }
+    
+    /* Texto en contenedores */
+    .stContainer h1, .stContainer h2, .stContainer h3, .stContainer h4, .stContainer h5, .stContainer h6 {
+        color: var(--text-dark) !important;
+    }
+    
+    .stContainer p, .stContainer li, .stContainer span, .stContainer strong {
+        color: var(--text-dark) !important;
+    }
+    
+    /* Asegurar que las listas se vean correctamente */
+    .stContainer ul {
+        color: var(--text-dark) !important;
+        margin-left: 1rem;
+    }
+    
+    .stContainer li {
+        color: var(--text-dark) !important;
+        margin-bottom: 0.5rem;
     }
     
     /* Botones personalizados */
@@ -111,7 +143,13 @@ st.markdown("""
     
     /* Sidebar */
     .css-1d391kg {
-        background: var(--background-gray);
+        background: var(--dark-pink);
+    }
+    
+    /* Elementos del sidebar */
+    .css-1d391kg .stSelectbox, .css-1d391kg .stTextInput {
+        background: var(--white);
+        color: var(--text-dark);
     }
     
     /* Métricas */
