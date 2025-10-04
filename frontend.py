@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 from PIL import Image
 import io
+import os
 import validators  # Para validar URLs
 
 # Configuración de la página
@@ -427,10 +428,12 @@ if 'submit_url' in locals() and submit_url and 'url' in locals() and url:
             st.session_state.error = "Por favor, ingresa una URL válida (por ejemplo, https://www.isdin.com/...)"
         else:
             try:
-                response = requests.post(
-                    "http://127.0.0.1:8001/analyze-url",
-                    json={"url": url, "user_need": user_need}
-                )
+                    # Use Railway URL in production, localhost in development
+                    api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
+                    response = requests.post(
+                        f"{api_url}/analyze-url",
+                        json={"url": url, "user_need": user_need}
+                    )
                 response.raise_for_status()
                 st.session_state.result = response.json()
                 st.success("✅ Análisis de URL completado con éxito")
@@ -466,8 +469,10 @@ if 'submit_image' in locals() and submit_image and 'image_file' in locals() and 
             status_text.text("🔄 Procesando imagen (OCR)...")
             progress_bar.progress(40)
             
+            # Use Railway URL in production, localhost in development
+            api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
             response = requests.post(
-                "http://127.0.0.1:8001/analyze-image",
+                f"{api_url}/analyze-image",
                 data=form_data,
                 files=files,
                 timeout=60  # 60 second timeout for optimized processing
