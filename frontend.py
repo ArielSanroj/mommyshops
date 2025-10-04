@@ -18,14 +18,18 @@ st.markdown("""
 <style>
     /* Colores principales de MommyShops */
     :root {
-        --primary-green: #10B981;
-        --dark-green: #047857;
-        --light-green: #D1FAE5;
+        --primary-pink: #b3368f;
+        --primary-yellow: #fcc63c;
+        --dark-pink: #8b2a6f;
+        --light-pink: #f8e8f4;
+        --light-yellow: #fef7d6;
         --background-gray: #F9FAFB;
         --text-dark: #111827;
-        --accent-amber: #F59E0B;
         --white: #FFFFFF;
         --border-gray: #E5E7EB;
+        --success-green: #10B981;
+        --warning-orange: #F59E0B;
+        --danger-red: #EF4444;
     }
     
     /* Estilo general */
@@ -37,7 +41,7 @@ st.markdown("""
     
     /* Header personalizado */
     .main-header {
-        background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+        background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-yellow) 100%);
         padding: 2rem;
         border-radius: 12px;
         margin-bottom: 2rem;
@@ -71,7 +75,7 @@ st.markdown("""
     
     /* Botones personalizados */
     .stButton > button {
-        background: var(--primary-green);
+        background: var(--primary-pink);
         color: white;
         border: none;
         border-radius: 8px;
@@ -82,7 +86,7 @@ st.markdown("""
     }
     
     .stButton > button:hover {
-        background: var(--dark-green);
+        background: var(--dark-pink);
         transform: translateY(-1px);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
@@ -101,8 +105,8 @@ st.markdown("""
     /* File uploader */
     .stFileUploader > div {
         border-radius: 8px;
-        border: 2px dashed var(--primary-green);
-        background: var(--light-green);
+        border: 2px dashed var(--primary-pink);
+        background: var(--light-pink);
     }
     
     /* Sidebar */
@@ -116,15 +120,15 @@ st.markdown("""
         border-radius: 8px;
         padding: 1rem;
         margin: 0.5rem 0;
-        border-left: 4px solid var(--primary-green);
+        border-left: 4px solid var(--primary-pink);
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     }
     
     /* Badges de ingredientes */
     .ingredient-badge {
         display: inline-block;
-        background: var(--light-green);
-        color: var(--dark-green);
+        background: var(--light-pink);
+        color: var(--dark-pink);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.875rem;
@@ -133,8 +137,8 @@ st.markdown("""
     }
     
     .ingredient-badge.safe {
-        background: #D1FAE5;
-        color: #047857;
+        background: var(--light-yellow);
+        color: #92400E;
     }
     
     .ingredient-badge.warning {
@@ -226,12 +230,12 @@ def display_results(result):
         st.markdown(f"""
         <div class="metric-card">
             <h4>🌱 Puntaje Eco</h4>
-            <h2 style="color: var(--primary-green); margin: 0;">{result['avg_eco_score']}/100</h2>
+            <h2 style="color: var(--primary-pink); margin: 0;">{result['avg_eco_score']}/100</h2>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
-        suitability_color = {"Sí": "var(--primary-green)", "Evaluar": "var(--accent-amber)", "No": "var(--danger-red)"}
+        suitability_color = {"Sí": "var(--success-green)", "Evaluar": "var(--warning-orange)", "No": "var(--danger-red)"}
         st.markdown(f"""
         <div class="metric-card">
             <h4>👤 Adecuado para tu piel</h4>
@@ -243,7 +247,7 @@ def display_results(result):
         st.markdown(f"""
         <div class="metric-card">
             <h4>🔬 Ingredientes</h4>
-            <h2 style="color: var(--primary-green); margin: 0;">{len(result['ingredients_details'])}</h2>
+            <h2 style="color: var(--primary-yellow); margin: 0;">{len(result['ingredients_details'])}</h2>
         </div>
         """, unsafe_allow_html=True)
 
