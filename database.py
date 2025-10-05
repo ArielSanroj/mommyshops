@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from fastapi import HTTPException
 import os
 import json
 import httpx
@@ -9,10 +10,40 @@ from typing import Dict, Optional
 
 load_dotenv()
 
+# Get DATABASE_URL with fallback for Railway deployment
 DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+# If DATABASE_URL is not set, try to construct it from individual components
+if not DATABASE_URL:
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "mommyshops")
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASSWORD", "")
+    
+    if db_password:
+        DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    else:
+        DATABASE_URL = f"postgresql://{db_user}@{db_host}:{db_port}/{db_name}"
+
+# Validate DATABASE_URL
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required. Please set it in Railway dashboard.")
+
+print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")  # Log first 50 chars for debugging
+
+try:
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
+    print("✅ Database connection configured successfully")
+except Exception as e:
+    print(f"❌ Database connection failed: {e}")
+    print("⚠️  App will start but database features will be disabled")
+    # Create a dummy engine to prevent crashes
+    engine = None
+    SessionLocal = None
+    Base = None
 
 # Modelo de Ingredientes
 class Ingredient(Base):
@@ -27,6 +58,9 @@ class Ingredient(Base):
 
 def get_db():
     """Get database session with proper error handling."""
+    if SessionLocal is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
     db = SessionLocal()
     try:
         yield db
