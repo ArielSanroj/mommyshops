@@ -743,5 +743,266 @@ def get_all_ingredients() -> Dict:
     """Get all ingredients from local database."""
     return LOCAL_INGREDIENT_DATABASE
 
+async def populate_comprehensive_database():
+    """Populate database with comprehensive ingredient data from multiple sources"""
+    import asyncio
+    from ewg_scraper import EWGScraper
+    
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    
+    # Comprehensive ingredient list
+    comprehensive_ingredients = [
+        # Water and solvents
+        "water", "aqua", "glycerin", "glycerol", "propylene glycol", "butylene glycol",
+        "pentylene glycol", "hexylene glycol", "caprylyl glycol", "ethylhexylglycerin",
+        
+        # Humectants and moisturizers
+        "hyaluronic acid", "sodium hyaluronate", "squalane", "squalene", "ceramides",
+        "ceramide np", "ceramide ap", "ceramide eop", "ceramide eos", "ceramide ns",
+        "cholesterol", "phytosphingosine", "sphingosine", "urea", "lactic acid",
+        "sodium lactate", "panthenol", "pro-vitamin b5", "allantoin", "betaine",
+        
+        # Oils and butters
+        "jojoba oil", "argan oil", "coconut oil", "olive oil", "sunflower oil",
+        "safflower oil", "grapeseed oil", "rosehip oil", "evening primrose oil",
+        "borage oil", "flaxseed oil", "hemp seed oil", "avocado oil", "sweet almond oil",
+        "apricot kernel oil", "macadamia oil", "shea butter", "cocoa butter",
+        "mango butter", "kokum butter", "illipe butter", "murumuru butter",
+        
+        # Vitamins and antioxidants
+        "retinol", "retinyl palmitate", "retinyl acetate", "retinyl propionate",
+        "vitamin c", "ascorbic acid", "ascorbyl palmitate", "ascorbyl glucoside",
+        "magnesium ascorbyl phosphate", "sodium ascorbyl phosphate", "ascorbyl tetraisopalmitate",
+        "vitamin e", "tocopherol", "tocopheryl acetate", "tocopheryl linoleate",
+        "vitamin a", "vitamin b3", "niacinamide", "nicotinamide", "vitamin b5",
+        "pantothenic acid", "panthenol", "vitamin d", "vitamin k", "biotin",
+        "folic acid", "coenzyme q10", "ubiquinone", "ferulic acid", "resveratrol",
+        "polyphenols", "flavonoids", "carotenoids", "lycopene", "beta-carotene",
+        
+        # Acids and exfoliants
+        "salicylic acid", "glycolic acid", "lactic acid", "malic acid", "tartaric acid",
+        "citric acid", "mandelic acid", "azelaic acid", "kojic acid", "phytic acid",
+        "alpha hydroxy acid", "beta hydroxy acid", "polyhydroxy acid", "lactobionic acid",
+        
+        # Peptides and proteins
+        "peptides", "copper peptides", "palmitoyl pentapeptide-4", "palmitoyl tripeptide-1",
+        "palmitoyl tetrapeptide-7", "palmitoyl hexapeptide-12", "acetyl hexapeptide-8",
+        "collagen", "elastin", "keratin", "silk protein", "wheat protein", "soy protein",
+        "rice protein", "oat protein", "quinoa protein", "hemp protein",
+        
+        # Preservatives
+        "parabens", "methylparaben", "ethylparaben", "propylparaben", "butylparaben",
+        "isobutylparaben", "phenoxyethanol", "benzyl alcohol", "dehydroacetic acid",
+        "sodium dehydroacetate", "potassium sorbate", "sodium benzoate", "sorbic acid",
+        "caprylyl glycol", "ethylhexylglycerin", "chlorphenesin", "imidazolidinyl urea",
+        "diazolidinyl urea", "quaternium-15", "formaldehyde", "formalin",
+        
+        # Surfactants and cleansers
+        "sodium lauryl sulfate", "sodium laureth sulfate", "ammonium lauryl sulfate",
+        "cocamidopropyl betaine", "cocamidopropyl hydroxysultaine", "coco-glucoside",
+        "decyl glucoside", "lauryl glucoside", "sodium cocoamphoacetate",
+        "sodium lauroamphoacetate", "cocamidopropyl dimethylamine", "cocamidopropyl dimethylamine oxide",
+        "sorbitan oleate", "polysorbate 20", "polysorbate 80", "polysorbate 60",
+        "lecithin", "soy lecithin", "sunflower lecithin", "phospholipids",
+        
+        # Emulsifiers and stabilizers
+        "cetearyl alcohol", "cetyl alcohol", "stearyl alcohol", "behenyl alcohol",
+        "glyceryl stearate", "glyceryl distearate", "glyceryl monostearate",
+        "peg-100 stearate", "peg-40 stearate", "peg-20 stearate", "stearic acid",
+        "palmitic acid", "myristic acid", "lauric acid", "oleic acid", "linoleic acid",
+        "arachidonic acid", "eicosapentaenoic acid", "docosahexaenoic acid",
+        
+        # Silicones
+        "dimethicone", "cyclomethicone", "cyclopentasiloxane", "cyclohexasiloxane",
+        "phenyl trimethicone", "dimethiconol", "amodimethicone", "beeswax",
+        "candelilla wax", "carnauba wax", "rice bran wax", "sunflower wax",
+        
+        # Colorants and pigments
+        "titanium dioxide", "zinc oxide", "iron oxides", "ultramarines", "chromium oxide",
+        "mica", "bismuth oxychloride", "pearl powder", "aluminum powder",
+        "bronze powder", "copper powder", "gold powder", "silver powder",
+        
+        # Sunscreens
+        "avobenzone", "octinoxate", "oxybenzone", "homosalate", "octisalate",
+        "octocrylene", "padimate o", "ensulizole", "sulisobenzone", "dioxybenzone",
+        "meradimate", "trolamine salicylate", "cinoxate", "aminobenzoic acid",
+        "ethylhexyl methoxycinnamate", "ethylhexyl salicylate", "ethylhexyl triazone",
+        "diethylamino hydroxybenzoyl hexyl benzoate", "bis-ethylhexyloxyphenol methoxyphenyl triazine",
+        "methylene bis-benzotriazolyl tetramethylbutylphenol", "tris-biphenyl triazine",
+        
+        # Fragrances and essential oils
+        "parfum", "fragrance", "essential oils", "lavender oil", "rose oil",
+        "jasmine oil", "ylang ylang oil", "neroli oil", "bergamot oil",
+        "lemon oil", "orange oil", "grapefruit oil", "peppermint oil",
+        "eucalyptus oil", "tea tree oil", "chamomile oil", "geranium oil",
+        "patchouli oil", "sandalwood oil", "cedarwood oil", "frankincense oil",
+        "myrrh oil", "vanilla extract", "vanilla absolute", "vanilla oleoresin",
+        
+        # Plant extracts
+        "aloe vera", "aloe barbadensis leaf extract", "chamomile extract",
+        "calendula extract", "green tea extract", "white tea extract",
+        "black tea extract", "coffee extract", "cocoa extract", "cacao extract",
+        "ginkgo biloba extract", "ginseng extract", "echinacea extract",
+        "elderberry extract", "elderflower extract", "rosehip extract",
+        "sea buckthorn extract", "pomegranate extract", "grape extract",
+        "grape seed extract", "pine bark extract", "pycnogenol",
+        "centella asiatica extract", "gotu kola extract", "licorice extract",
+        "licorice root extract", "turmeric extract", "curcumin", "ginger extract",
+        "ginger root extract", "horsetail extract", "nettle extract",
+        "dandelion extract", "burdock extract", "milk thistle extract",
+        "artichoke extract", "cucumber extract", "tomato extract",
+        "carrot extract", "spinach extract", "kale extract", "spirulina extract",
+        "chlorella extract", "kelp extract", "seaweed extract", "marine collagen",
+        "marine elastin", "pearl extract", "caviar extract", "snail secretion filtrate",
+        
+        # Minerals and clays
+        "kaolin", "bentonite", "fuller's earth", "rhassoul clay", "french green clay",
+        "pink clay", "white clay", "yellow clay", "red clay", "black clay",
+        "dead sea salt", "himalayan salt", "sea salt", "epsom salt",
+        "magnesium chloride", "calcium carbonate", "zinc oxide", "titanium dioxide",
+        "iron oxide", "chromium oxide", "ultramarine blue", "ultramarine violet",
+        
+        # Enzymes and probiotics
+        "papain", "bromelain", "protease", "amylase", "lipase", "lactase",
+        "probiotics", "lactobacillus", "bifidobacterium", "saccharomyces",
+        "fermented ingredients", "kombucha", "kefir", "yogurt extract",
+        
+        # Preservatives and stabilizers
+        "edta", "disodium edta", "trisodium edta", "tetrasodium edta",
+        "bht", "bha", "tocopherol", "ascorbic acid", "citric acid",
+        "sodium citrate", "potassium citrate", "calcium citrate",
+        "magnesium citrate", "zinc citrate", "copper citrate",
+        
+        # Thickeners and gelling agents
+        "xanthan gum", "guar gum", "locust bean gum", "carrageenan",
+        "agar", "pectin", "algin", "sodium alginate", "calcium alginate",
+        "carbomer", "acrylates copolymer", "acrylates/c10-30 alkyl acrylate crosspolymer",
+        "polyacrylamide", "polyquaternium-7", "polyquaternium-10",
+        "polyquaternium-11", "polyquaternium-22", "polyquaternium-39",
+        "polyquaternium-47", "polyquaternium-67", "polyquaternium-68",
+        "polyquaternium-69", "polyquaternium-70", "polyquaternium-71",
+        "polyquaternium-72", "polyquaternium-73", "polyquaternium-74",
+        "polyquaternium-75", "polyquaternium-76", "polyquaternium-77",
+        "polyquaternium-78", "polyquaternium-79", "polyquaternium-80",
+        "polyquaternium-81", "polyquaternium-82", "polyquaternium-83",
+        "polyquaternium-84", "polyquaternium-85", "polyquaternium-86",
+        "polyquaternium-87", "polyquaternium-88", "polyquaternium-89",
+        "polyquaternium-90", "polyquaternium-91", "polyquaternium-92",
+        "polyquaternium-93", "polyquaternium-94", "polyquaternium-95",
+        "polyquaternium-96", "polyquaternium-97", "polyquaternium-98",
+        "polyquaternium-99", "polyquaternium-100"
+    ]
+    
+    logger.info(f"Starting comprehensive database population with {len(comprehensive_ingredients)} ingredients")
+    
+    # Process ingredients in batches
+    db = SessionLocal()
+    try:
+        existing_ingredients = {ing.name.lower() for ing in db.query(Ingredient).all()}
+        logger.info(f"Found {len(existing_ingredients)} existing ingredients in database")
+        
+        processed = 0
+        added = 0
+        updated = 0
+        
+        for i in range(0, len(comprehensive_ingredients), 100):  # Process in batches of 100
+            batch = comprehensive_ingredients[i:i + 100]
+            logger.info(f"Processing batch {i//100 + 1}/{(len(comprehensive_ingredients) + 100 - 1)//100}")
+            
+            # Process batch concurrently
+            tasks = []
+            for ingredient_name in batch:
+                if ingredient_name.lower() not in existing_ingredients:
+                    task = process_ingredient_comprehensive(ingredient_name, db)
+                    tasks.append(task)
+            
+            if tasks:
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.error(f"Error processing ingredient: {result}")
+                    else:
+                        if result:
+                            added += 1
+                        processed += 1
+            
+            # Commit batch
+            db.commit()
+            logger.info(f"Batch committed. Added: {added}, Processed: {processed}")
+            
+            # Rate limiting between batches
+            await asyncio.sleep(2)
+        
+        logger.info(f"Comprehensive database population complete! Added: {added}, Processed: {processed}")
+        
+    except Exception as e:
+        logger.error(f"Error populating database: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+async def process_ingredient_comprehensive(ingredient_name: str, db) -> bool:
+    """Process a single ingredient with comprehensive data"""
+    try:
+        # Use EWG scraper to get data
+        async with EWGScraper() as scraper:
+            result = await scraper.get_ingredient_data(ingredient_name)
+            
+            if result["success"]:
+                data = result["data"]
+                
+                # Check if ingredient already exists
+                existing = db.query(Ingredient).filter(
+                    Ingredient.name.ilike(ingredient_name)
+                ).first()
+                
+                if existing:
+                    # Update existing ingredient
+                    existing.eco_score = data.get("eco_score", existing.eco_score)
+                    existing.risk_level = data.get("risk_level", existing.risk_level)
+                    existing.benefits = data.get("benefits", existing.benefits)
+                    existing.risks_detailed = data.get("risks_detailed", existing.risks_detailed)
+                    existing.sources = data.get("sources", existing.sources)
+                    logger.info(f"Updated ingredient: {ingredient_name}")
+                    return True
+                else:
+                    # Add new ingredient with comprehensive data
+                    ingredient = Ingredient(
+                        name=ingredient_name,
+                        eco_score=data.get("eco_score", 50.0),
+                        risk_level=data.get("risk_level", "desconocido"),
+                        benefits=data.get("benefits", ""),
+                        risks_detailed=data.get("risks_detailed", ""),
+                        sources=data.get("sources", "EWG Skin Deep + Comprehensive Database")
+                    )
+                    db.add(ingredient)
+                    logger.info(f"Added ingredient: {ingredient_name}")
+                    return True
+            else:
+                # Add ingredient with default data if EWG fails
+                existing = db.query(Ingredient).filter(
+                    Ingredient.name.ilike(ingredient_name)
+                ).first()
+                
+                if not existing:
+                    ingredient = Ingredient(
+                        name=ingredient_name,
+                        eco_score=50.0,
+                        risk_level="desconocido",
+                        benefits="",
+                        risks_detailed="No specific data available",
+                        sources="Comprehensive Database"
+                    )
+                    db.add(ingredient)
+                    logger.info(f"Added ingredient with default data: {ingredient_name}")
+                    return True
+                return False
+                
+    except Exception as e:
+        logger.error(f"Error processing ingredient {ingredient_name}: {e}")
+        return False
+
 # Crear tablas
 Base.metadata.create_all(bind=engine)

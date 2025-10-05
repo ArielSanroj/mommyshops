@@ -20,6 +20,7 @@ import json
 from typing import Dict, List, Optional
 import numpy as np
 from scipy.ndimage import uniform_filter
+from contextlib import asynccontextmanager
 from database import Ingredient, get_db, get_ingredient_data, get_all_ingredients
 from api_utils_production import fetch_ingredient_data, health_check, get_cache_stats
 from llm_utils import enrich_ingredient_data, extract_ingredients_from_text_openai, extract_ingredients_regex
@@ -281,16 +282,10 @@ tesseract_path = os.getenv("TESSERACT_PATH", "/opt/homebrew/bin/tesseract")
 pytesseract.pytesseract.tesseract_cmd = tesseract_path
 logger.info(f"Using Tesseract at: {tesseract_path}")
 
-app = FastAPI(
-    title="MommyShops - Cosmetic Ingredient Analysis",
-    description="Professional cosmetic ingredient safety analysis with 10+ data sources",
-    version="2.0.0"
-)
-
-# Configure connection limits for better performance
-@app.on_event("startup")
-async def startup_event():
-    """Configure connection limits on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Configure connection limits on startup and cleanup on shutdown."""
+    # Startup
     try:
         # Set httpx connection limits
         import httpx
@@ -302,6 +297,18 @@ async def startup_event():
         logger.info("Connection limits configured successfully")
     except Exception as e:
         logger.error(f"Error configuring connection limits: {e}")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Application shutting down")
+
+app = FastAPI(
+    title="MommyShops - Cosmetic Ingredient Analysis",
+    description="Professional cosmetic ingredient safety analysis with 10+ data sources",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 # Pydantic models
 class AnalyzeUrlRequest(BaseModel):
