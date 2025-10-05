@@ -79,5 +79,23 @@
     "harmonized_limit": "",
     "regulatory_status": "Under review",
     "url": "https://www.iccr-cosmetics.org/topics-documents"
+  },
+  "formaldeh\u00eddo": {
+    "benefits": "Preservative",
+    "risks_detailed": "Under review",
+    "risk_level": "riesgo bajo",
+    "sources": "ICCR",
+    "harmonized_limit": "",
+    "regulatory_status": "Under review",
+    "url": "https://www.iccr-cosmetics.org/topics-documents"
+  },
+  "ftalatos": {
+    "benefits": "Preservative",
+    "risks_detailed": "Under review",
+    "risk_level": "riesgo bajo",
+    "sources": "ICCR",
+    "harmonized_limit": "",
+    "regulatory_status": "Under review",
+    "url": "https://www.iccr-cosmetics.org/topics-documents"
   }
 }
