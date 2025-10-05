@@ -17,20 +17,6 @@ RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies - Ubuntu 22.04 compatible
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-spa \
-    tesseract-ocr-eng \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libgomp1 \
-    libglib2.0-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy requirements first for better caching
 COPY requirements.txt .
 
