@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install libGL for OpenCV
+RUN apt-get update && apt-get install -y libgl1-mesa-glx
+
 # Create symbolic links for python and pip
 RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
     ln -sf /usr/bin/python3.11 /usr/bin/python3
@@ -34,4 +37,5 @@ ENV PORT=8001
 
 # Run the application
 CMD ["python", "main.py"]
+
 
