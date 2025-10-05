@@ -1,29 +1,41 @@
-# Use Python 3.11 slim base image for better performance
-FROM python:3.11-slim
+# Use Ubuntu base with Python 3.11 - Better package compatibility
+FROM ubuntu:22.04
+
+# Install Python 3.11 and required tools
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    python3.11 \
+    python3.11-venv \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symbolic links for python and pip
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python3
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies - Ubuntu 22.04 compatible
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
     tesseract-ocr-eng \
-    libgl1 \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
     libgomp1 \
     libglib2.0-dev \
-    libgthread-2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with --ignore-installed to bypass uninstall issues
+RUN pip install --no-cache-dir --ignore-installed -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
@@ -36,3 +48,4 @@ ENV PORT=8001
 
 # Run the application
 CMD ["python", "main.py"]
+
