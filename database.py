@@ -28,7 +28,22 @@ if not DATABASE_URL:
 
 # Validate DATABASE_URL
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required. Please set it in Railway dashboard.")
+    print("⚠️  DATABASE_URL not found. Using SQLite fallback for development.")
+    # Use SQLite as fallback for development
+    DATABASE_URL = "sqlite:///./dev_sqlite.db"
+else:
+    # Check if it's a PostgreSQL URL and if we can connect
+    if DATABASE_URL.startswith("postgresql://"):
+        try:
+            # Test the connection
+            test_engine = create_engine(DATABASE_URL)
+            with test_engine.connect() as conn:
+                pass
+            print("✅ PostgreSQL connection successful")
+        except Exception as e:
+            print(f"⚠️  PostgreSQL connection failed: {e}")
+            print("🔄 Falling back to SQLite for development")
+            DATABASE_URL = "sqlite:///./dev_sqlite.db"
 
 print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")  # Log first 50 chars for debugging
 

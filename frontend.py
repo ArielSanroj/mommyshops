@@ -198,6 +198,48 @@ if 'result' not in st.session_state:
 if 'error' not in st.session_state:
     st.session_state.error = None
 
+# Debug: Mostrar la URL de la API y verificar configuración
+def get_api_url():
+    """Get API URL from Streamlit secrets or environment variables."""
+    # Try Streamlit secrets first
+    try:
+        if hasattr(st, 'secrets'):
+            # Check if API_URL is directly in secrets
+            if 'API_URL' in st.secrets:
+                return st.secrets["API_URL"]
+            # Check if API_URL is in secrets.secrets (nested structure)
+            elif hasattr(st.secrets, 'secrets') and 'API_URL' in st.secrets.secrets:
+                return st.secrets.secrets["API_URL"]
+    except Exception as e:
+        st.sidebar.warning(f"Error reading secrets: {e}")
+    
+    # Fallback to environment variable
+    api_url = os.getenv("API_URL")
+    if api_url:
+        return api_url
+    
+    # Final fallback to localhost
+    return "http://127.0.0.1:8001"
+
+# Get and display API URL
+api_url = get_api_url()
+st.sidebar.info(f"🔗 Backend: {api_url}")
+
+# Debug information
+st.sidebar.write("---")
+st.sidebar.write("**Debug Info:**")
+st.sidebar.write(f"Has secrets: {hasattr(st, 'secrets')}")
+if hasattr(st, 'secrets'):
+    try:
+        st.sidebar.write(f"Secrets keys: {list(st.secrets.keys())}")
+        if hasattr(st.secrets, 'secrets'):
+            st.sidebar.write(f"Nested secrets keys: {list(st.secrets.secrets.keys())}")
+            if 'API_URL' in st.secrets.secrets:
+                st.sidebar.write(f"✅ Found API_URL in nested secrets: {st.secrets.secrets['API_URL']}")
+    except Exception as e:
+        st.sidebar.write(f"Cannot access secrets: {e}")
+st.sidebar.write(f"Env API_URL: {os.getenv('API_URL', 'Not set')}")
+
 # Header principal con estilo personalizado
 st.markdown("""
 <div class="main-header">
@@ -429,7 +471,7 @@ if 'submit_url' in locals() and submit_url and 'url' in locals() and url:
         else:
             try:
                 # Use Railway URL in production, localhost in development
-                api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
+                api_url = get_api_url()
                 response = requests.post(
                     f"{api_url}/analyze-url",
                     json={"url": url, "user_need": user_need}
@@ -470,7 +512,7 @@ if 'submit_image' in locals() and submit_image and 'image_file' in locals() and 
             progress_bar.progress(40)
             
             # Use Railway URL in production, localhost in development
-            api_url = os.getenv("API_URL", "http://127.0.0.1:8001")
+            api_url = get_api_url()
             response = requests.post(
                 f"{api_url}/analyze-image",
                 data=form_data,
