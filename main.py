@@ -677,12 +677,12 @@ async def extract_ingredients_enhanced_ocr(image_data: bytes) -> List[str]:
         return []
 
 async def extract_ingredients_from_image(image_data: bytes) -> list:
-    """Extracción ultra-rápida con retries para precisión."""
+    """Simplified OCR extraction optimized for Railway deployment."""
     import time
     start_time = time.time()
     
     try:
-        logger.info("Starting optimized image processing...")
+        logger.info("Starting simplified image processing for Railway...")
         
         # Check if Tesseract is available
         if not TESSERACT_AVAILABLE:
@@ -693,317 +693,117 @@ async def extract_ingredients_from_image(image_data: bytes) -> list:
         original_size = image.size
         logger.info(f"Original image size: {original_size}")
         
-        # Modo ultra-rápido para imágenes muy pequeñas
-        if max(original_size) < 200:
-            logger.info("Very small image detected, using ultra-fast mode")
-            return await extract_ingredients_ultra_fast(image)
+        # Simple preprocessing for Railway
+        try:
+            # Convert to grayscale
+            if image.mode != 'L':
+                image = image.convert('L')
+                logger.info("Converted to grayscale")
+            
+            # Resize if too small
+            if max(image.size) < 300:
+                scale_factor = 300 / max(image.size)
+                new_size = (int(image.size[0] * scale_factor), int(image.size[1] * scale_factor))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+                logger.info(f"Resized to: {image.size}")
+            
+            # Enhance contrast
+            from PIL import ImageEnhance
+            enhancer = ImageEnhance.Contrast(image)
+            image = enhancer.enhance(1.5)
+            logger.info("Enhanced contrast")
+            
+        except Exception as e:
+            logger.warning(f"Preprocessing failed, using original image: {e}")
         
-        preprocessing_start = time.time()
-        
-        # Aggressive preprocessing
-        image = await preprocess_image_for_ocr(image)
-        preprocessing_time = time.time() - preprocessing_start
-        logger.info(f"Preprocessed image size: {image.size} (took {preprocessing_time:.2f}s)")
-        
-        # Configuraciones OCR optimizadas con PSM 3 para labels densos horizontales
-        logger.info("Using PSM 3 optimized OCR configurations for dense horizontal labels")
+        # Simplified OCR configurations for Railway
+        logger.info("Using simplified OCR configurations")
         configs = [
-            # Configuración principal: PSM 3 para labels densos horizontales (mejor para cosmetic labels)
-            '--oem 3 --psm 3 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c tessedit_enable_bigram_correction=1 -c user_words_file=cosmetic_ingredients_lexicon.txt',
-            # Configuración secundaria: PSM 7 con DPI 300, lexicon INCI y bigram correction
-            '--oem 3 --psm 7 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c tessedit_enable_bigram_correction=1 -c user_words_file=cosmetic_ingredients_lexicon.txt',
-            # Configuración terciaria: PSM 6 para bloques de texto denso con DPI 300
-            '--oem 3 --psm 6 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c tessedit_enable_bigram_correction=1 -c user_words_file=cosmetic_ingredients_lexicon.txt',
-            # Configuración cuarta: PSM 4 para columnas de ingredientes con DPI 300
-            '--oem 3 --psm 4 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c tessedit_enable_bigram_correction=1 -c user_words_file=cosmetic_ingredients_lexicon.txt',
-            # Configuración de fallback: PSM 8 para palabras individuales con DPI 300
-            '--oem 3 --psm 8 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c tessedit_enable_bigram_correction=1 -c user_words_file=cosmetic_ingredients_lexicon.txt',
-            # Legacy engine para casos difíciles con DPI 300 y lexicon
-            '--oem 1 --psm 6 -c tessedit_create_pdf=0 --dpi 300 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()[]%+-/ áéíóúñÁÉÍÓÚÑ -c user_words_file=cosmetic_ingredients_lexicon.txt'
+            # Basic configuration
+            '--psm 6 --oem 3',
+            # Try different page segmentation modes
+            '--psm 3 --oem 3',
+            '--psm 4 --oem 3',
+            '--psm 8 --oem 3',
+            # Fallback
+            '--psm 6 --oem 1'
         ]
         
-        ocr_start = time.time()
+        # Simple OCR processing for Railway
+        logger.info("Starting OCR processing...")
         text = ""
-        best_score = 0
+        best_ingredients = []
+        
         for i, config in enumerate(configs):
             try:
                 logger.info(f"Trying OCR config {i+1}: {config}")
-                # Timeouts ultra-rápidos: máximo 10s por configuración
-                timeout = 10.0 if i == 0 else (8.0 if i == 1 else 5.0)
                 
+                # Simple timeout for Railway
                 ocr_result = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(
                         None, 
-                        lambda: pytesseract.image_to_string(image, lang='eng+spa', config=config)
+                        lambda: pytesseract.image_to_string(image, lang='eng', config=config)
                     ),
-                    timeout=timeout
+                    timeout=5.0
                 )
                 
-                # Calcular score optimizado para ingredientes cosméticos
-                # Patrón específico para ingredientes cosméticos
-                cosmetic_pattern = r'\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*(?:\s*/\s*[A-Z0-9-]+(?:\s+[A-Z][a-zA-Z]+)*)*(?:\s*\([^)]+\))?\b'
-                potential_ingredients = re.findall(cosmetic_pattern, ocr_result)
-                
-                # Lista de ingredientes cosméticos conocidos para scoring mejorado
-                known_cosmetic_ingredients = [
-                    'water', 'aqua', 'glycerin', 'glycerol', 'phenoxyethanol', 'ethylhexylglycerin',
-                    'cetearyl alcohol', 'glyceryl stearate', 'peg-100 stearate', 'stearic acid',
-                    'parfum', 'fragrance', 'isopropyl palmitate', 'triethanolamine',
-                    'acrylates', 'helianthus annuus', 'aloe barbadensis', 'avena sativa',
-                    'gossypium herbaceum', 'citric acid', 'dimethicone', 'cyclomethicone',
-                    'hyaluronic acid', 'niacinamide', 'retinol', 'vitamin c', 'ceramides'
-                ]
-                
-                # Filtrar y puntuar ingredientes con bonus mejorado
-                filtered_ingredients = []
-                cosmetic_score = 0
-                
-                for ing in potential_ingredients:
-                    ing_lower = ing.lower()
-                    # Filtrar palabras muy cortas y comunes
-                    if len(ing) > 3 and ing_lower not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'ingredients', 'contains', 'may', 'contain', 'product', 'formula']:
-                        filtered_ingredients.append(ing)
-                        
-                        # Bonus mejorado por ingredientes cosméticos conocidos
-                        bonus_applied = False
-                        for known_ing in known_cosmetic_ingredients:
-                            if known_ing in ing_lower:
-                                cosmetic_score += 25  # Bonus alto por ingredientes conocidos
-                                bonus_applied = True
-                                logger.info(f"Bonus applied for known ingredient: {known_ing} in {ing}")
-                                break
-                        
-                        if not bonus_applied:
-                            cosmetic_score += 5  # Bonus básico por ingrediente potencial
-                
-                # Score final: ingredientes cosméticos + longitud de texto + calidad
-                ingredient_score = cosmetic_score + len(filtered_ingredients) * 10 + len(ocr_result.strip()) * 0.1
-                
-                if ingredient_score > best_score:
+                logger.info(f"OCR result length: {len(ocr_result)}")
+                if len(ocr_result) > len(text):
                     text = ocr_result
-                    best_score = ingredient_score
-                    logger.info(f"Config {i+1} succeeded with score {ingredient_score} ({len(filtered_ingredients)} filtered ingredients)")
-                    
-                # Continuamos probando todos los configs para encontrar el mejor resultado
+                    logger.info(f"Better result found with config {i+1}")
+                
+                # Simple ingredient extraction
+                ingredients = extract_ingredients_simple(ocr_result)
+                if len(ingredients) > len(best_ingredients):
+                    best_ingredients = ingredients
+                    logger.info(f"Found {len(ingredients)} ingredients with config {i+1}")
+                
             except asyncio.TimeoutError:
-                logger.warning(f"Config {i+1} timed out")
+                logger.warning(f"OCR config {i+1} timed out")
+                continue
+            except Exception as e:
+                logger.warning(f"OCR config {i+1} failed: {e}")
                 continue
         
-        if not text.strip():
-            raise ValueError("All OCR configs failed")
+        # If no ingredients found, try basic text extraction
+        if not best_ingredients and text:
+            logger.info("Trying basic text extraction...")
+            best_ingredients = extract_ingredients_simple(text)
         
-        ocr_time = time.time() - ocr_start
-        logger.info(f"OCR completed in {ocr_time:.2f}s")
-        logger.info(f"Best OCR text: {text[:200]}...")  # Log preview
-        logger.info(f"Full OCR text length: {len(text)} characters")
-        logger.info(f"Best score achieved: {best_score}")
+        logger.info(f"Final ingredients found: {len(best_ingredients)}")
+        logger.info(f"Final text length: {len(text)}")
         
-        # Limpieza rápida del texto antes de extracción
-        text = re.sub(r'\s+', ' ', text)  # Normaliza espacios
-        text = re.sub(r'[^\w\s.,;:()%-/áéíóúñÁÉÍÓÚÑ]', '', text)  # Limpia ruido
-        
-        # Detectar si el texto está garbled (indicador de OCR corrupto)
-        is_garbled = any(char in text.lower() for char in ['ngredents', 'squap', 'celearyt', 'giyceryt', 'phexnyet', 'byinesig'])
-        
-        if is_garbled:
-            logger.info("Detected garbled OCR text, using corrupted text extraction...")
-            ingredients = extract_ingredients_from_corrupted_text(text)
-        else:
-            # Extracción con timeout, fallback a regex mejorada
-            try:
-                ingredients = await asyncio.wait_for(
-                    extract_ingredients_from_text_openai(text),
-                    timeout=10.0
-                )
-            except asyncio.TimeoutError:
-                logger.warning("LLM extraction timed out, using corrupted text extraction...")
-                ingredients = extract_ingredients_from_corrupted_text(text)
-            except Exception as e:
-                logger.warning(f"LLM extraction failed ({e}), using corrupted text extraction...")
-                ingredients = extract_ingredients_from_corrupted_text(text)
-            
-            # Si aún no encontramos ingredientes, usa la función para texto corrupto
-            if not ingredients:
-                logger.warning("Standard extraction failed, trying corrupted text extraction...")
-                ingredients = extract_ingredients_from_corrupted_text(text)
-        
-        # NVIDIA Multimodal Fallback: Lógica inteligente de complementación
-        # Analizar si Tesseract está detectando suficientes ingredientes para un producto cosmético típico
-        expected_min_ingredients = 6  # Umbral bajo para trigger NVIDIA multimodal
-        tesseract_ingredients_count = len(ingredients)
-        
-        # Detectar si necesitamos complementar basado en análisis inteligente:
-        # 1. Cantidad insuficiente (<8 ingredientes típicos)
-        # 2. Texto muy garbled (indicador de OCR pobre)
-        # 3. Solo ingredientes básicos detectados (water, glycerin, parfum)
-        # 4. Falta de ingredientes complejos (emulsificantes, conservantes, etc.)
-        basic_ingredients = {'water', 'aqua', 'glycerin', 'parfum', 'fragrance'}
-        complex_ingredients = {'stearate', 'palmitate', 'acrylates', 'phenoxyethanol', 'ethylhexyl', 'triethanolamine', 'helianthus', 'aloe', 'avena', 'gossypium'}
-        
-        detected_basic_count = sum(1 for ing in ingredients if any(basic in ing.lower() for basic in basic_ingredients))
-        detected_complex_count = sum(1 for ing in ingredients if any(complex in ing.lower() for complex in complex_ingredients))
-        
-        # Calcular score de calidad de detección
-        quality_score = (detected_complex_count * 2) + detected_basic_count  # Ingredientes complejos valen más
-        
-        needs_supplementation = (
-            tesseract_ingredients_count < expected_min_ingredients or
-            (tesseract_ingredients_count <= 5 and detected_basic_count >= 3) or  # Solo básicos detectados
-            (detected_complex_count < 3 and tesseract_ingredients_count < 10) or  # Pocos ingredientes complejos
-            is_garbled or  # Texto garbled indica OCR pobre
-            quality_score < 8  # Score de calidad bajo
-        )
-        
-        if needs_supplementation:
-            logger.warning(f"Tesseract insufficient - Analysis:")
-            logger.warning(f"  • Ingredients detected: {tesseract_ingredients_count}")
-            logger.warning(f"  • Basic ingredients: {detected_basic_count}")
-            logger.warning(f"  • Complex ingredients: {detected_complex_count}")
-            logger.warning(f"  • Quality score: {quality_score}")
-            logger.warning(f"  • Text garbled: {is_garbled}")
-            logger.warning(f"  • Attempting multimodal supplementation...")
-            
-            # Try NVIDIA first, then OpenAI as fallback
-            supplemented = False
-            
-            # 1. Try NVIDIA Nemotron
-            try:
-                from nemotron_integration import NemotronAnalyzer
-                nemotron = NemotronAnalyzer()
-                nemotron_ingredients = await nemotron.extract_ingredients_multimodal(image_data)
-                
-                if nemotron_ingredients:
-                    all_ingredients = list(set(ingredients + nemotron_ingredients))
-                    new_ingredients = len(all_ingredients) - tesseract_ingredients_count
-                    logger.info(f"NVIDIA multimodal supplemented: {new_ingredients} new ingredients, total: {len(all_ingredients)}")
-                    ingredients = all_ingredients
-                    supplemented = True
-                else:
-                    logger.warning("NVIDIA multimodal extraction failed, trying OpenAI...")
-            except Exception as e:
-                logger.warning(f"NVIDIA multimodal fallback failed: {e}, trying OpenAI...")
-            
-            # 2. Fallback to OpenAI if NVIDIA failed
-            if not supplemented:
-                try:
-                    from llm_utils import extract_ingredients_from_text_openai
-                    
-                    # Convert image to base64 for OpenAI
-                    import base64
-                    image_b64 = base64.b64encode(image_data).decode('utf-8')
-                    
-                    # Enhanced prompt for OpenAI multimodal
-                    enhanced_prompt = f"""
-                    Extract ALL cosmetic INCI ingredients from this product label image. 
-                    The image contains garbled OCR text that needs correction.
-                    
-                    Known ingredients to look for and correct:
-                    Water (Aqua), Cetearyl Alcohol, Glyceryl Stearate, PEG-100 Stearate, 
-                    Glycerin, Phenoxyethanol, Ethylhexylglycerin, Stearic Acid, 
-                    Parfum (Fragrance), Isopropyl Palmitate, Triethanolamine, 
-                    Acrylates/C10-30 Alkyl Acrylate Crosspolymer, Helianthus Annuus Seed Oil, 
-                    Aloe Barbadensis Leaf Extract, Avena Sativa Kernel Extract, 
-                    Gossypium Herbaceum Seed Oil, Citric Acid.
-                    
-                    Fix common OCR errors like:
-                    - 'glner' → 'glycerin'
-                    - 'celearyt' → 'cetearyl'
-                    - 'stearc' → 'stearic'
-                    - 'phenoxyeth' → 'phenoxyethanol'
-                    
-                    Return only a comma-separated list of corrected ingredients.
-                    """
-                    
-                    # Use OpenAI with image
-                    openai_ingredients = await extract_ingredients_from_text_openai(enhanced_prompt, image_data=image_data)
-                    
-                    if openai_ingredients:
-                        all_ingredients = list(set(ingredients + openai_ingredients))
-                        new_ingredients = len(all_ingredients) - tesseract_ingredients_count
-                        logger.info(f"OpenAI multimodal supplemented: {new_ingredients} new ingredients, total: {len(all_ingredients)}")
-                        ingredients = all_ingredients
-                        supplemented = True
-                    else:
-                        logger.warning("OpenAI multimodal extraction failed")
-                except Exception as e:
-                    logger.error(f"OpenAI multimodal fallback failed: {e}")
-            
-            if not supplemented:
-                logger.warning("All multimodal supplementation attempts failed")
-        else:
-            logger.info(f"Tesseract sufficient - Analysis:")
-            logger.info(f"  • Ingredients detected: {tesseract_ingredients_count}")
-            logger.info(f"  • Basic ingredients: {detected_basic_count}")
-            logger.info(f"  • Complex ingredients: {detected_complex_count}")
-            logger.info(f"  • Quality score: {quality_score}")
-            logger.info(f"  • No supplementation needed")
-        
-        # Si aún no encontramos ingredientes, intentar extracción más agresiva
-        if not ingredients:
-            logger.warning("All extraction methods failed, trying aggressive extraction...")
-            ingredients = extract_ingredients_aggressive(text)
-        
-        # Si aún no encontramos ingredientes, intentar corrección de texto corrupto
-        if not ingredients:
-            logger.warning("Aggressive extraction failed, trying corrupted text correction...")
-            ingredients = extract_ingredients_from_corrupted_cosmetic_text(text)
-        
-        # Post-procesamiento: Filtra duplicados y cortos
-        seen = set()
-        unique_ingredients = []
-        
-        # Diccionario de sinónimos para evitar duplicados
-        synonyms = {
-            'fragrance': 'parfum',
-            'perfume': 'parfum',
-            'aroma': 'parfum',
-            'aqua': 'water',
-            'glycerol': 'glycerin'
-        }
-        
-        for ing in ingredients:
-            clean_ing = re.sub(r'[^\w\s.-áéíóúñ]', '', ing.strip()).lower()
-            
-            # Normalizar sinónimos
-            normalized_ing = synonyms.get(clean_ing, clean_ing)
-            
-            if len(clean_ing) > 3 and normalized_ing not in seen:
-                unique_ingredients.append(ing.strip())  # Mantén original
-                seen.add(normalized_ing)
-        
-        total_time = time.time() - start_time
-        logger.info(f"Final ingredients: {unique_ingredients}")
-        logger.info(f"Total extraction time: {total_time:.2f}s")
-        return unique_ingredients
+        return best_ingredients
         
     except Exception as e:
-        total_time = time.time() - start_time
-        logger.error(f"Error extracting ingredients from image: {e} (took {total_time:.2f}s)")
+        logger.error(f"OCR extraction failed: {e}")
         return []
 
-async def extract_ingredients_ultra_fast(image: Image.Image) -> List[str]:
-    """Modo ultra-rápido que salta preprocesamiento completamente."""
-    import time
-    start_time = time.time()
+def extract_ingredients_simple(text: str) -> list:
+    """Simple ingredient extraction from text."""
+    if not text:
+        return []
     
-    try:
-        logger.info("Using ultra-fast extraction mode (no preprocessing)")
-        
-        # Solo conversión a grayscale, sin filtros
-        if image.mode != 'L':
-            image = image.convert('L')
-        
-        # Upscale mínimo solo si es extremadamente pequeño
-        if max(image.size) < 80:
-            image = image.resize((image.size[0] * 2, image.size[1] * 2), Image.Resampling.LANCZOS)
-            logger.info(f"Minimal upscale: {image.size}")
-        
-        # Una sola configuración OCR con whitelist mínimo
-        config = '--oem 3 --psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,;:()'
-        
-        ocr_start = time.time()
-        text = await asyncio.wait_for(
-            asyncio.get_event_loop().run_in_executor(
+    # Common cosmetic ingredients patterns
+    patterns = [
+        r'\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b',  # Capitalized words
+        r'\b[a-z]+(?:\s+[a-z]+)*\b',  # Lowercase words
+        r'\b[A-Z]+(?:\s+[A-Z]+)*\b',  # All caps words
+    ]
+    
+    ingredients = []
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            # Filter out common non-ingredient words
+            if (len(match) > 3 and 
+                match.lower() not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 
+                                    'ingredients', 'contains', 'may', 'contain', 'product', 
+                                    'formula', 'directions', 'usage', 'warning', 'caution']):
+                ingredients.append(match.strip())
+    
+    # Remove duplicates and return
+    return list(set(ingredients))[:10]  # Limit to 10 ingredients
                 None, 
                 lambda: pytesseract.image_to_string(image, lang='eng', config=config)
             ),
