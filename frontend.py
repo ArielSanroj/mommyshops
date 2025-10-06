@@ -1,23 +1,26 @@
-# Updated: Fixed eco_friendly KeyError - v2.1
+"""
+MommyShops - Clean and Optimized Frontend
+Streamlined Streamlit interface for cosmetic ingredient analysis
+"""
+
 import streamlit as st
 import requests
 from PIL import Image
 import io
 import os
-import validators  # Para validar URLs
+import validators
 
-# Configuración de la página
+# Page configuration
 st.set_page_config(
-    page_title="Mommyshops - Analiza tus Productos", 
+    page_title="MommyShops - Analiza tus Productos", 
     page_icon="🌿", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS personalizado con los colores de tu página web
+# Custom CSS
 st.markdown("""
 <style>
-    /* Colores principales de MommyShops */
     :root {
         --primary-pink: #b3368f;
         --primary-yellow: #fcc63c;
@@ -33,7 +36,6 @@ st.markdown("""
         --danger-red: #EF4444;
     }
     
-    /* Estilo general */
     .main .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
@@ -41,17 +43,14 @@ st.markdown("""
         background: var(--dark-pink);
     }
     
-    /* Fondo de la página */
     .stApp {
         background: var(--dark-pink);
     }
     
-    /* Fondo del contenido principal */
     .main {
         background: var(--dark-pink);
     }
     
-    /* Header personalizado */
     .main-header {
         background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-yellow) 100%);
         padding: 2rem;
@@ -75,7 +74,6 @@ st.markdown("""
         margin-bottom: 0;
     }
     
-    /* Cards con estilo */
     .stContainer {
         background: var(--white);
         border-radius: 12px;
@@ -86,7 +84,6 @@ st.markdown("""
         color: var(--text-dark);
     }
     
-    /* Texto en contenedores */
     .stContainer h1, .stContainer h2, .stContainer h3, .stContainer h4, .stContainer h5, .stContainer h6 {
         color: var(--text-dark) !important;
     }
@@ -95,7 +92,6 @@ st.markdown("""
         color: var(--text-dark) !important;
     }
     
-    /* Asegurar que las listas se vean correctamente */
     .stContainer ul {
         color: var(--text-dark) !important;
         margin-left: 1rem;
@@ -106,7 +102,6 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     
-    /* Botones personalizados */
     .stButton > button {
         background: var(--primary-pink);
         color: white;
@@ -124,36 +119,6 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
-    /* Formularios */
-    .stSelectbox > div > div {
-        border-radius: 8px;
-        border: 1px solid var(--border-gray);
-    }
-    
-    .stTextInput > div > div > input {
-        border-radius: 8px;
-        border: 1px solid var(--border-gray);
-    }
-    
-    /* File uploader */
-    .stFileUploader > div {
-        border-radius: 8px;
-        border: 2px dashed var(--primary-pink);
-        background: var(--light-pink);
-    }
-    
-    /* Sidebar */
-    .css-1d391kg {
-        background: var(--dark-pink);
-    }
-    
-    /* Elementos del sidebar */
-    .css-1d391kg .stSelectbox, .css-1d391kg .stTextInput {
-        background: var(--white);
-        color: var(--text-dark);
-    }
-    
-    /* Métricas */
     .metric-card {
         background: var(--white);
         border-radius: 8px;
@@ -163,7 +128,6 @@ st.markdown("""
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     }
     
-    /* Badges de ingredientes */
     .ingredient-badge {
         display: inline-block;
         background: var(--light-pink);
@@ -192,55 +156,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Inicializar session_state para persistir resultados
+# Initialize session state
 if 'result' not in st.session_state:
     st.session_state.result = None
 if 'error' not in st.session_state:
     st.session_state.error = None
 
-# Debug: Mostrar la URL de la API y verificar configuración
 def get_api_url():
     """Get API URL from Streamlit secrets or environment variables."""
-    # Try Streamlit secrets first
     try:
-        if hasattr(st, 'secrets'):
-            # Check if API_URL is directly in secrets
-            if 'API_URL' in st.secrets:
-                return st.secrets["API_URL"]
-            # Check if API_URL is in secrets.secrets (nested structure)
-            elif hasattr(st.secrets, 'secrets') and 'API_URL' in st.secrets.secrets:
-                return st.secrets.secrets["API_URL"]
+        if hasattr(st, 'secrets') and 'API_URL' in st.secrets:
+            return st.secrets["API_URL"]
+        elif hasattr(st, 'secrets') and hasattr(st.secrets, 'secrets') and 'API_URL' in st.secrets.secrets:
+            return st.secrets.secrets["API_URL"]
     except Exception as e:
         st.sidebar.warning(f"Error reading secrets: {e}")
     
-    # Fallback to environment variable
     api_url = os.getenv("API_URL")
     if api_url:
         return api_url
     
-    # Final fallback to localhost
     return "http://127.0.0.1:8001"
 
 # Get and display API URL
 api_url = get_api_url()
 st.sidebar.info(f"🔗 Backend: {api_url}")
 
-# Debug information
-st.sidebar.write("---")
-st.sidebar.write("**Debug Info:**")
-st.sidebar.write(f"Has secrets: {hasattr(st, 'secrets')}")
-if hasattr(st, 'secrets'):
-    try:
-        st.sidebar.write(f"Secrets keys: {list(st.secrets.keys())}")
-        if hasattr(st.secrets, 'secrets'):
-            st.sidebar.write(f"Nested secrets keys: {list(st.secrets.secrets.keys())}")
-            if 'API_URL' in st.secrets.secrets:
-                st.sidebar.write(f"✅ Found API_URL in nested secrets: {st.secrets.secrets['API_URL']}")
-    except Exception as e:
-        st.sidebar.write(f"Cannot access secrets: {e}")
-st.sidebar.write(f"Env API_URL: {os.getenv('API_URL', 'Not set')}")
-
-# Header principal con estilo personalizado
+# Header
 st.markdown("""
 <div class="main-header">
     <h1>🌿 MommyShops</h1>
@@ -248,55 +190,133 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Descripción mejorada
+# Description
 st.markdown("### 🔍 ¿Cómo funciona?")
-st.markdown("Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa la URL de la página del producto para analizar sus ingredientes.")
-st.markdown("### 🆕 Nuevas capacidades:")
-st.markdown("""
-- 📸 **Reconocimiento de productos**: Ahora puedes subir fotos del producto completo, no solo la etiqueta
-- 🏷️ **Identificación de marcas**: Detecta automáticamente la marca y nombre del producto  
-- 🔍 **Búsqueda inteligente**: Busca ingredientes en bases de datos especializadas
-- 🤖 **IA de respaldo**: Usa inteligencia artificial cuando no encuentra ingredientes
-""")
+st.markdown("Sube una imagen de la etiqueta de un producto (JPEG/PNG, máximo 5MB) o ingresa el texto de ingredientes para analizar su seguridad.")
 
-# Checkboxes para elegir tipo de análisis
+# Analysis options
 col1, col2 = st.columns(2)
 with col1:
     url_analysis = st.checkbox("📱 URL Analysis", value=False)
 with col2:
     image_analysis = st.checkbox("📸 Image Analysis", value=True)
 
-# Formulario basado en la selección
+# URL Analysis Form
 if url_analysis:
-    # Análisis por URL
     with st.form(key="url_form"):
         url = st.text_input("URL del producto", placeholder="https://www.isdin.com/...")
         submit_url = st.form_submit_button("🔍 Analizar URL")
         
         if submit_url and url:
-            user_need = "general safety"  # Valor por defecto
+            if not validators.url(url):
+                st.session_state.error = "Por favor, ingresa una URL válida"
+            else:
+                try:
+                    response = requests.post(
+                        f"{api_url}/analyze-url",
+                        json={"url": url, "user_need": "general safety"}
+                    )
+                    response.raise_for_status()
+                    st.session_state.result = response.json()
+                    st.success("✅ Análisis de URL completado")
+                except requests.exceptions.RequestException as e:
+                    st.session_state.error = f"Error al analizar la URL: {str(e)}"
 
+# Image Analysis Form
 if image_analysis:
-    # Análisis por imagen
     with st.form(key="image_form"):
-        image_file = st.file_uploader("Sube la imagen del producto o etiqueta (máx. 5MB)", type=["jpg", "jpeg", "png"], help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes")
+        image_file = st.file_uploader(
+            "Sube la imagen del producto o etiqueta (máx. 5MB)", 
+            type=["jpg", "jpeg", "png"], 
+            help="Puedes subir una foto del producto completo o solo de la etiqueta con ingredientes"
+        )
         submit_image = st.form_submit_button("🔍 Analizar Imagen")
         
         if submit_image and image_file:
-            user_need = "general safety"  # Valor por defecto
+            try:
+                # Validate file size
+                image_data = image_file.read()
+                if len(image_data) > 5 * 1024 * 1024:
+                    st.session_state.error = "La imagen es demasiado grande (máximo 5MB)"
+                else:
+                    # Show image preview
+                    image = Image.open(io.BytesIO(image_data))
+                    st.image(image, caption="Imagen subida", width='stretch')
 
+                    # Progress bar
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    # Upload image
+                    status_text.text("📤 Subiendo imagen...")
+                    progress_bar.progress(20)
+                    
+                    # Process image
+                    form_data = {"user_need": "general safety"}
+                    files = {"file": (image_file.name, image_data, image_file.type)}
+                    
+                    status_text.text("🔄 Procesando imagen (OCR)...")
+                    progress_bar.progress(40)
+                    
+                    response = requests.post(
+                        f"{api_url}/analyze-image",
+                        data=form_data,
+                        files=files,
+                        timeout=60
+                    )
+                    
+                    status_text.text("🧪 Analizando ingredientes...")
+                    progress_bar.progress(80)
+                    
+                    response.raise_for_status()
+                    st.session_state.result = response.json()
+                    
+                    progress_bar.progress(100)
+                    status_text.text("✅ Análisis completado")
+                    st.success("✅ Análisis de imagen completado con éxito")
+                    
+                    # Clear progress indicators
+                    progress_bar.empty()
+                    status_text.empty()
+                    
+            except requests.exceptions.Timeout:
+                st.session_state.error = "⏰ El análisis tardó demasiado tiempo. Intenta con una imagen más pequeña o clara."
+            except requests.exceptions.RequestException as e:
+                st.session_state.error = f"Error al analizar la imagen: {str(e)}"
 
-# Función para mostrar resultados
+# Text Analysis Form
+st.markdown("### 📝 O Análisis por Texto")
+with st.form(key="text_form"):
+    text_input = st.text_area(
+        "Ingresa los ingredientes del producto", 
+        placeholder="Aqua, Glycerin, Phenoxyethanol, Parfum...",
+        height=100
+    )
+    submit_text = st.form_submit_button("🔍 Analizar Texto")
+    
+    if submit_text and text_input:
+        try:
+            response = requests.post(
+                f"{api_url}/analyze-text",
+                json={"text": text_input, "user_need": "general safety"}
+            )
+            response.raise_for_status()
+            st.session_state.result = response.json()
+            st.success("✅ Análisis de texto completado")
+        except requests.exceptions.RequestException as e:
+            st.session_state.error = f"Error al analizar el texto: {str(e)}"
+
+# Display results
 def display_results(result):
     st.markdown('<div class="stContainer">', unsafe_allow_html=True)
     st.markdown("### 📊 Resultados del Análisis")
     
-    # Mostrar información del producto si está disponible
+    # Product info
     if 'product_name' in result and result['product_name']:
         st.subheader("🏷️ Información del Producto")
         st.info(f"**Producto:** {result['product_name']}")
     
-    # Métricas principales con estilo mejorado
+    # Metrics
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -324,17 +344,15 @@ def display_results(result):
         </div>
         """, unsafe_allow_html=True)
 
-    # Ingredientes con badges de colores
+    # Ingredients with badges
     st.markdown('<div class="stContainer">', unsafe_allow_html=True)
     st.markdown("### 📋 Ingredientes Detectados")
     
-    # Mostrar ingredientes como badges
     ingredients_html = "<div style='margin: 1rem 0;'>"
     for ing in result["ingredients_details"]:
         risk_level = ing.get("risk_level", "desconocido")
         eco_score = ing.get("eco_score", 50)
         
-        # Determinar clase CSS basada en el nivel de riesgo
         if risk_level == "seguro":
             badge_class = "ingredient-badge safe"
         elif risk_level in ["riesgo bajo", "riesgo medio"]:
@@ -352,201 +370,43 @@ def display_results(result):
     st.markdown(ingredients_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Tabla detallada
+    # Detailed table
     st.markdown('<div class="stContainer">', unsafe_allow_html=True)
     st.markdown("#### 📊 Análisis Detallado")
     
-    
     rows = []
     for ing in result["ingredients_details"]:
-        risk_color = {
-            "seguro": "green",
-            "riesgo bajo": "blue",
-            "riesgo medio": "orange",
-            "riesgo alto": "red",
-            "cancerígeno": "darkred",
-            "desconocido": "gray"
-        }.get(ing["risk_level"], "gray")
-        
-        # Determine eco-friendly status based on eco_score (robust error handling)
         eco_score = ing.get("eco_score", 50)
         eco_friendly = eco_score >= 70
         eco_icon = "✅" if eco_friendly else "❌"
         
-        # Ensure all required fields exist with defaults
-        ingredient_name = ing.get("name", "Unknown")
-        benefits = ing.get("benefits", "No disponible")
-        risks = ing.get("risks_detailed", "No disponible")
-        sources = ing.get("sources", "Unknown")
-        
-        # Clean sources - remove "Local Database" and keep only organization names
-        clean_sources = sources.replace("Local Database + ", "").replace("Local Database", "").replace(" + ", ", ")
-        if clean_sources.startswith(", "):
-            clean_sources = clean_sources[2:]
-        if clean_sources == "":
-            clean_sources = "Enhanced Analysis"
-        
-        # Generate explanations
-        eco_explanation = ""
-        if eco_friendly:
-            eco_explanation = "✅ Ingrediente natural/biodegradable con bajo impacto ambiental"
-        else:
-            if eco_score < 40:
-                eco_explanation = "❌ Derivado del petróleo, no biodegradable, tóxico para corales"
-            elif eco_score < 60:
-                eco_explanation = "⚠️ Puede ser irritante o disruptor endocrino"
-            else:
-                eco_explanation = "⚠️ Impacto ambiental moderado"
-        
-        risk_explanation = ""
-        risk_level = ing.get("risk_level", "desconocido")
-        if risk_level == "seguro":
-            risk_explanation = "✅ Sin efectos adversos conocidos, ingrediente natural"
-        elif risk_level == "riesgo bajo":
-            risk_explanation = "🔵 Puede causar irritación leve en piel sensible"
-        elif risk_level == "riesgo medio":
-            risk_explanation = "🟠 Irritante potencial, disruptor endocrino, o tóxico en altas dosis"
-        elif risk_level == "riesgo alto":
-            risk_explanation = "🔴 Alto riesgo de irritación, alergias, o toxicidad"
-        elif risk_level == "cancerígeno":
-            risk_explanation = "🚫 Clasificado como carcinógeno por IARC"
-        else:
-            risk_explanation = "❓ Datos insuficientes, recomendamos precaución"
-        
         rows.append({
-            "Ingrediente": ingredient_name,
+            "Ingrediente": ing.get("name", "Unknown"),
             "Eco-Score": f"{eco_score}/100",
             "Eco-Friendly": f"{eco_icon} {'Sí' if eco_friendly else 'No'}",
-            "¿Por qué no es eco-friendly?": eco_explanation,
-            "Beneficios": benefits,
-            "Riesgos": risks,
-            "Nivel de Riesgo": risk_level,
-            "¿Por qué este nivel de riesgo?": risk_explanation,
-            "Fuentes": clean_sources
+            "Nivel de Riesgo": ing.get("risk_level", "desconocido"),
+            "Beneficios": ing.get("benefits", "No disponible"),
+            "Riesgos": ing.get("risks_detailed", "No disponible"),
+            "Fuentes": ing.get("sources", "Unknown")
         })
 
-    # Mostrar tabla con scroll si es larga
     st.dataframe(rows, width='stretch', hide_index=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Sección "Cómo Funciona" después de los resultados
-    st.markdown("---")
-    with st.expander("🔍 ¿Cómo funciona el análisis?"):
-        st.markdown("""
-        ### Eco-Friendly (🌿)
-        Un ingrediente es **eco-friendly** si su `eco_score` es > 70/100. Este puntaje se calcula priorizando:
-        - **Biodegradabilidad**: ¿Se descompone naturalmente sin dañar el medio ambiente?
-        - **Toxicidad**: Impacto en la vida marina, suelo, y ecosistemas (basado en EWG Skin Deep).
-        - **Sostenibilidad**: Origen natural, producción ética, y bajo uso de recursos.
-
-        **Fuentes**: EWG (Environmental Working Group) para scores eco, combinado con COSING (EU) para restricciones.
-
-        ### Nivel de Riesgo (⚠️)
-        Clasificamos el riesgo en niveles basados en evidencia científica:
-        - **Seguro**: Bajo riesgo para la mayoría de usuarios (sin irritación ni disruptores endocrinos).
-        - **Riesgo Bajo**: Posible irritación leve, pero seguro en dosis bajas.
-        - **Riesgo Medio**: Irritante potencial, disruptores endocrinos, o tóxico en altas dosis.
-        - **Riesgo Alto**: Alto riesgo de irritación, alergias, o toxicidad.
-        - **Cancerígeno**: Clasificado como carcinógeno por IARC (Agencia Internacional para la Investigación del Cáncer).
-        - **Desconocido**: Datos insuficientes; recomendamos precaución.
-
-        **Priorización**: IARC > FDA > INVIMA (Colombia) > EWG. Si "sensible skin", evaluamos estrictamente.
-
-        ### Base de Datos Contrastada (📊)
-        Nuestro análisis se basa en fuentes verificadas y contrastadas:
-        - **APIs Externas**: FDA (EE.UU.), PubChem (química), EWG (eco-scores), IARC (cáncer), INVIMA (Colombia), COSING (UE).
-        - **LLM Enriquecimiento**: NVIDIA Llama 3.1 para analizar datos faltantes y generar resúmenes empáticos.
-        - **Actualización**: Datos actualizados continuamente (sin cutoff de conocimiento). **Disclaimer**: Consulta a un profesional para consejos médicos personalizados.
-        """)
+    # Recommendations
+    st.markdown('<div class="stContainer">', unsafe_allow_html=True)
+    st.markdown("#### 💡 Recomendaciones")
+    st.markdown(result.get("recommendations", "No hay recomendaciones disponibles"))
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-# Procesar solicitud de URL
-if 'submit_url' in locals() and submit_url and 'url' in locals() and url:
-    with st.spinner("🔄 Analizando URL..."):
-        st.session_state.error = None
-        if not validators.url(url):
-            st.session_state.error = "Por favor, ingresa una URL válida (por ejemplo, https://www.isdin.com/...)"
-        else:
-            try:
-                # Use Railway URL in production, localhost in development
-                api_url = get_api_url()
-                response = requests.post(
-                    f"{api_url}/analyze-url",
-                    json={"url": url, "user_need": user_need}
-                )
-                response.raise_for_status()
-                st.session_state.result = response.json()
-                st.success("✅ Análisis de URL completado con éxito")
-            except requests.exceptions.RequestException as e:
-                st.session_state.error = f"Error al analizar la URL: {str(e)}"
-
-# Procesar solicitud de imagen
-if 'submit_image' in locals() and submit_image and 'image_file' in locals() and image_file:
-    st.session_state.error = None
-    try:
-        # Validar tamaño de la imagen
-        image_data = image_file.read()
-        if len(image_data) > 5 * 1024 * 1024:
-            st.session_state.error = "La imagen es demasiado grande (máximo 5MB)"
-        else:
-            # Mostrar vista previa de la imagen
-            image = Image.open(io.BytesIO(image_data))
-            st.image(image, caption="Imagen subida", width='stretch')
-
-            # Progress bar for image analysis
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            # Step 1: Uploading image
-            status_text.text("📤 Subiendo imagen...")
-            progress_bar.progress(20)
-            
-            # Enviar imagen al backend
-            form_data = {"user_need": user_need}
-            files = {"file": (image_file.name, image_data, image_file.type)}
-            
-            # Step 2: Processing image
-            status_text.text("🔄 Procesando imagen (OCR)...")
-            progress_bar.progress(40)
-            
-            # Use Railway URL in production, localhost in development
-            api_url = get_api_url()
-            response = requests.post(
-                f"{api_url}/analyze-image",
-                data=form_data,
-                files=files,
-                timeout=60  # 60 second timeout for optimized processing
-            )
-            
-            # Step 3: Analyzing ingredients
-            status_text.text("🧪 Analizando ingredientes...")
-            progress_bar.progress(80)
-            
-            response.raise_for_status()
-            st.session_state.result = response.json()
-            
-            # Step 4: Complete
-            progress_bar.progress(100)
-            status_text.text("✅ Análisis completado")
-            st.success("✅ Análisis de imagen completado con éxito")
-            
-            # Clear progress indicators
-            progress_bar.empty()
-            status_text.empty()
-            
-    except requests.exceptions.Timeout:
-        st.session_state.error = "⏰ El análisis tardó demasiado tiempo. Intenta con una imagen más pequeña o clara."
-    except requests.exceptions.RequestException as e:
-        st.session_state.error = f"Error al analizar la imagen: {str(e)}"
-
-# Mostrar resultados o errores
+# Show results or errors
 if st.session_state.error:
     st.error(st.session_state.error)
 if st.session_state.result:
     display_results(st.session_state.result)
 
-# Pie de página
+# Footer
 st.markdown("---")
 st.markdown("Desarrollado por Mommyshops | Consulta a un profesional para consejos médicos.")
