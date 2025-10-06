@@ -1712,142 +1712,87 @@ async def analyze_image(
             logger.error(f"Invalid file type: {file.content_type}")
             raise HTTPException(status_code=400, detail="File must be an image")
         
-        # Read image data
+        # Read image data with size limit
         try:
             image_data = await file.read()
             logger.info(f"Image data size: {len(image_data)} bytes")
             
             if len(image_data) == 0:
                 raise HTTPException(status_code=400, detail="Empty image file")
+            
+            # Limit image size to prevent memory issues on Railway
+            max_size = 5 * 1024 * 1024  # 5MB
+            if len(image_data) > max_size:
+                raise HTTPException(status_code=400, detail="Image too large. Maximum size is 5MB.")
                 
         except Exception as e:
             logger.error(f"Error reading image data: {e}")
             raise HTTPException(status_code=400, detail=f"Error reading image: {str(e)}")
         
-        # Extract ingredients from image using enhanced product recognition
+        # Simplified ingredient extraction to prevent crashes
         extraction_start = time.time()
-        logger.info("Starting enhanced product recognition and ingredient extraction...")
+        logger.info("Starting simplified ingredient extraction...")
         
         try:
-            # Import the enhanced product recognition system
-            from product_recognition import product_recognizer
+            # Use the basic OCR method first to avoid complex dependencies
+            ingredients = await extract_ingredients_from_image(image_data)
+            logger.info(f"Basic OCR extracted {len(ingredients)} ingredients")
             
-            # Use enhanced product recognition
-            product_info = await product_recognizer.analyze_product_image(image_data)
-            
-            extraction_time = time.time() - extraction_start
-            logger.info(f"Enhanced extraction completed in {extraction_time:.2f}s")
-            logger.info(f"Product info: Brand={product_info.brand}, Name={product_info.product_name}, Type={product_info.product_type}")
-            logger.info(f"Extracted {len(product_info.ingredients or [])} ingredients from source: {product_info.source}")
-            logger.info(f"Extracted ingredients: {product_info.ingredients}")
-            
-            ingredients = product_info.ingredients or []
+            # Try enhanced recognition only if basic OCR fails
+            if len(ingredients) < 3:
+                logger.info("Trying enhanced product recognition...")
+                try:
+                    from product_recognition import product_recognizer
+                    product_info = await product_recognizer.analyze_product_image(image_data)
+                    enhanced_ingredients = product_info.ingredients or []
+                    if enhanced_ingredients:
+                        ingredients = enhanced_ingredients
+                        logger.info(f"Enhanced extraction found {len(ingredients)} ingredients")
+                except Exception as e:
+                    logger.warning(f"Enhanced recognition failed: {e}")
+                    # Continue with basic OCR results
             
         except Exception as e:
             extraction_time = time.time() - extraction_start
-            logger.error(f"Error in enhanced extraction: {e} (took {extraction_time:.2f}s)", exc_info=True)
-            
-            # Fallback to original OCR method
-            logger.info("Falling back to original OCR method...")
-            try:
-                ingredients = await extract_ingredients_from_image(image_data)
-                logger.info(f"Fallback OCR extracted {len(ingredients)} ingredients")
-            except Exception as fallback_error:
-                logger.error(f"Fallback OCR also failed: {fallback_error}")
-                raise HTTPException(status_code=500, detail=f"Error extracting ingredients: {str(e)}")
+            logger.error(f"Error in extraction: {e} (took {extraction_time:.2f}s)", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Error extracting ingredients: {str(e)}")
         
         if not ingredients:
             logger.warning("No ingredients detected from image")
             raise HTTPException(status_code=400, detail="No ingredients detected. Try improving image quality or lighting.")
         
-        # Enhanced Ingredient Detection: Si detectamos pocos ingredientes, usar análisis mejorado
-        expected_min_ingredients = 10  # Umbral para activar análisis mejorado
-        if len(ingredients) < expected_min_ingredients:
-            logger.info(f"Only {len(ingredients)} ingredients detected, activating enhanced analysis...")
-            
-            # 1. Try NVIDIA multimodal enhancement first (currently disabled due to API issues)
-            logger.info("NVIDIA multimodal enhancement temporarily disabled due to API availability issues")
-            # TODO: Re-enable when NVIDIA API is working
-            # try:
-            #     from nemotron_integration import NemotronAnalyzer
-            #     nemotron = NemotronAnalyzer()
-            #     nemotron_ingredients = await nemotron.extract_ingredients_multimodal(image_data)
-            #     ...
-            # except Exception as e:
-            #     logger.warning(f"NVIDIA multimodal enhancement failed: {e}")
-            
-            # 2. Enhanced OCR fallback with multiple techniques
-            if len(ingredients) < expected_min_ingredients:
-                logger.info("Activating enhanced OCR fallback...")
-                try:
-                    enhanced_ingredients = await extract_ingredients_enhanced_ocr(image_data)
-                    if enhanced_ingredients:
-                        all_ingredients = list(set(ingredients + enhanced_ingredients))
-                        new_ingredients = [ing for ing in enhanced_ingredients if ing not in ingredients]
-                        
-                        if new_ingredients:
-                            logger.info(f"✅ Enhanced OCR added {len(new_ingredients)} new ingredients: {new_ingredients}")
-                            ingredients = all_ingredients
-                except Exception as e:
-                    logger.warning(f"Enhanced OCR fallback failed: {e}")
+        # Limit ingredients to prevent timeout on Railway
+        if len(ingredients) > 5:
+            logger.info(f"Limiting to first 5 ingredients for Railway (found {len(ingredients)})")
+            ingredients = ingredients[:5]
         
-        # Modo rápido: solo primeros 8 ingredientes con análisis local (aumentado para incluir más ingredientes)
-        if len(ingredients) > 8:
-            logger.info(f"Fast mode: limiting analysis to first 8 ingredients (found {len(ingredients)})")
-            ingredients = ingredients[:8]
-        
-        # Usar análisis rápido local-only con timeout global
-        logger.info("Starting fast local-only analysis...")
+        # Simplified analysis for Railway deployment
+        logger.info("Starting simplified analysis...")
         try:
+            # Use a simple timeout to prevent Railway crashes
             result = await asyncio.wait_for(
                 analyze_ingredients_fast_local(ingredients, user_need, db),
-                timeout=15.0  # Timeout global de 15 segundos
+                timeout=10.0  # Reduced timeout for Railway
             )
-            # Set product name with enhanced information
-            try:
-                from product_recognition import product_recognizer
-                product_info = await product_recognizer.analyze_product_image(image_data)
-                
-                if product_info.brand and product_info.product_name:
-                    result.product_name = f"{product_info.brand} - {product_info.product_name}"
-                elif product_info.brand:
-                    result.product_name = f"{product_info.brand} Product"
-                else:
-                    result.product_name = f"Product from Image: {file.filename}"
-                    
-                # Add source information to recommendations
-                if product_info.source != "unknown":
-                    result.recommendations += f"\n\n📊 Analysis Source: {product_info.source.replace('_', ' ').title()}"
-                    
-            except Exception as e:
-                logger.warning(f"Could not enhance product name: {e}")
-                result.product_name = f"Product from Image: {file.filename}"
-        except asyncio.TimeoutError:
-            logger.warning("Analysis timeout, returning partial results")
-            # Fallback con resultados parciales
-            # Set product name with enhanced information for timeout case
-            product_name = f"Product from Image: {file.filename}"
-            try:
-                from product_recognition import product_recognizer
-                product_info = await product_recognizer.analyze_product_image(image_data)
-                
-                if product_info.brand and product_info.product_name:
-                    product_name = f"{product_info.brand} - {product_info.product_name}"
-                elif product_info.brand:
-                    product_name = f"{product_info.brand} Product"
-            except Exception as e:
-                logger.warning(f"Could not enhance product name in timeout case: {e}")
+            result.product_name = f"Product from Image: {file.filename}"
             
-            result = ProductAnalysisResponse(
-                product_name=product_name,
-                ingredients_details=[{
-                    "name": ingredients[0] if ingredients else "unknown",
+        except asyncio.TimeoutError:
+            logger.warning("Analysis timeout, returning basic results")
+            # Create basic response with limited data
+            ingredients_details = []
+            for ingredient in ingredients:
+                ingredients_details.append({
+                    "name": ingredient,
                     "eco_score": 50.0,
                     "risk_level": "desconocido",
-                    "benefits": "Análisis parcial por timeout",
-                    "risks_detailed": "Datos limitados por tiempo",
+                    "benefits": "Análisis básico",
+                    "risks_detailed": "Datos limitados",
                     "sources": "Fast Analysis (Timeout)"
-                }],
+                })
+            
+            result = ProductAnalysisResponse(
+                product_name=f"Product from Image: {file.filename}",
+                ingredients_details=ingredients_details,
                 avg_eco_score=50.0,
                 suitability="Evaluar",
                 recommendations="Análisis parcial completado. Para análisis completo, use modo normal."
