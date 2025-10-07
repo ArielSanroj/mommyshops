@@ -841,21 +841,11 @@ async def fetch_ingredient_data(ingredient: str, client: httpx.AsyncClient) -> D
     """Aggregate data from all APIs for an ingredient with production-grade error handling."""
     from database import get_ingredient_data
     
-    # First, check local database
     local_data = get_ingredient_data(ingredient)
     if local_data:
-        logger.info(f"Found {ingredient} in local database")
-        return {
-            "name": ingredient,
-            "eco_score": local_data["eco_score"],
-            "risk_level": local_data["risk_level"],
-            "benefits": local_data["benefits"],
-            "risks_detailed": local_data["risks_detailed"],
-            "sources": local_data["sources"]
-        }
-    
-    # If not in local database, try external APIs
-    logger.info(f"Fetching {ingredient} from external APIs...")
+        logger.info(f"Found {ingredient} in local database; enriching with external APIs")
+    else:
+        logger.info(f"Fetching {ingredient} from external APIs...")
     
     # Run API calls in parallel with retry logic
     tasks = [
@@ -927,7 +917,7 @@ async def fetch_ingredient_data(ingredient: str, client: httpx.AsyncClient) -> D
     # Proporcionar datos por defecto más útiles basados en el tipo de ingrediente
     default_data = get_default_ingredient_data(ingredient)
     
-    return {
+    api_result = {
         "name": ingredient,
         "eco_score": ewg_data.data.get("eco_score", default_data["eco_score"]),
         "risk_level": risk_level if risk_level != "desconocido" else default_data["risk_level"],
@@ -955,6 +945,26 @@ async def fetch_ingredient_data(ingredient: str, client: httpx.AsyncClient) -> D
         ),
         "sources": sources or default_data["sources"]
     }
+
+    if local_data:
+        combined = {
+            "name": ingredient,
+            "eco_score": default_data["eco_score"],
+            "risk_level": default_data["risk_level"],
+            "benefits": default_data["benefits"],
+            "risks_detailed": default_data["risks_detailed"],
+            "sources": default_data["sources"]
+        }
+        combined.update({k: v for k, v in local_data.items() if v is not None})
+        combined.update({k: v for k, v in api_result.items() if v is not None})
+
+        source_candidates = [combined.get("sources"), local_data.get("sources"), api_result.get("sources")]
+        sources_clean = [src.strip() for src in source_candidates if src]
+        if sources_clean:
+            combined["sources"] = ",".join(dict.fromkeys(sources_clean))
+        return combined
+
+    return api_result
 
 async def health_check() -> Dict[str, Any]:
     """Health check for all APIs."""
