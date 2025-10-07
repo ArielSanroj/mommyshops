@@ -4,11 +4,22 @@ from sqlalchemy.orm import sessionmaker, Session
 from fastapi import HTTPException
 import os
 import json
+import asyncio
+import logging
+from pathlib import Path
 import httpx
 from dotenv import load_dotenv
-from typing import Dict, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent
+LEXICON_PATH = Path(os.getenv("INGREDIENT_LEXICON_PATH", BASE_DIR / "cosmetic_ingredients_lexicon.txt"))
+DEFAULT_SYNC_CONCURRENCY = max(1, int(os.getenv("INGREDIENT_SYNC_CONCURRENCY", "3")))
+DEFAULT_SYNC_TIMEOUT = float(os.getenv("INGREDIENT_SYNC_TIMEOUT", "30"))
+_LEXICON_CACHE: Optional[List[str]] = None
 
 # Get DATABASE_URL with fallback for Railway deployment
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -1060,5 +1071,246 @@ async def process_ingredient_comprehensive(ingredient_name: str, db) -> bool:
         logger.error(f"Error processing ingredient {ingredient_name}: {e}")
         return False
 
+def _load_ingredient_candidates(ingredient_names: Optional[Iterable[str]] = None, limit: Optional[int] = None) -> List[str]:
+    """Return a normalized list of ingredient names to sync."""
+    global _LEXICON_CACHE
+
+    if ingredient_names is None:
+        if _LEXICON_CACHE is None:
+            if not LEXICON_PATH.exists():
+                logger.warning("Ingredient lexicon not found at %s", LEXICON_PATH)
+                _LEXICON_CACHE = []
+            else:
+                entries: List[str] = []
+                with LEXICON_PATH.open("r", encoding="utf-8") as lexicon_file:
+                    for line in lexicon_file:
+                        candidate = line.strip()
+                        if not candidate or candidate.startswith("#"):
+                            continue
+                        entries.append(candidate)
+                _LEXICON_CACHE = list(dict.fromkeys(entries))
+        names = list(_LEXICON_CACHE)
+    else:
+        names = [str(name).strip() for name in ingredient_names if name and str(name).strip()]
+        names = list(dict.fromkeys(names))
+
+    if limit and limit > 0:
+        names = names[:limit]
+
+    return names
+
+
+async def sync_external_databases(
+    db: Session,
+    ingredient_names: Optional[Iterable[str]] = None,
+    limit: Optional[int] = None,
+    concurrency: int = DEFAULT_SYNC_CONCURRENCY,
+    update_local_cache: bool = True
+) -> Dict[str, int]:
+    """Fetch ingredient data from external APIs and persist it in the local database."""
+
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    names = _load_ingredient_candidates(ingredient_names, limit)
+    if not names:
+        logger.info("No ingredient names provided for synchronization")
+        return {"processed": 0, "updated": 0, "errors": 0}
+
+    logger.info("Starting external sync for %d ingredients", len(names))
+    summary = {"processed": len(names), "updated": 0, "errors": 0}
+    semaphore = asyncio.Semaphore(max(1, concurrency))
+
+    async with httpx.AsyncClient(timeout=DEFAULT_SYNC_TIMEOUT) as client:
+        async def fetch_single(ingredient: str) -> Tuple[str, Optional[Dict[str, Any]]]:
+            normalized = ingredient.strip()
+            if not normalized:
+                return ingredient, None
+            try:
+                async with semaphore:
+                    data = await fetch_ingredient_data(normalized, client)
+                return normalized, data
+            except Exception as exc:
+                logger.error("Failed to fetch %s: %s", normalized, exc)
+                return normalized, None
+
+        tasks = [fetch_single(name) for name in names]
+
+        for future in asyncio.as_completed(tasks):
+            ingredient_name, data = await future
+            if not ingredient_name:
+                continue
+            try:
+                if data:
+                    updated = _upsert_ingredient_record(db, ingredient_name, data, update_local_cache)
+                    if updated:
+                        summary["updated"] += 1
+                else:
+                    summary["errors"] += 1
+            except Exception as exc:
+                logger.error("Failed to upsert %s: %s", ingredient_name, exc)
+                summary["errors"] += 1
+
+    if update_local_cache and 'LOCAL_INGREDIENT_DATABASE' in globals():
+        try:
+            refresh_local_cache_from_db(db)
+        except Exception as exc:
+            logger.warning("Unable to refresh in-memory cache after sync: %s", exc)
+
+    logger.info(
+        "External sync completed. Processed=%d, Updated=%d, Errors=%d",
+        summary["processed"],
+        summary["updated"],
+        summary["errors"]
+    )
+    return summary
+
+
+def _upsert_ingredient_record(
+    db: Session,
+    ingredient_name: str,
+    data: Dict[str, Any],
+    update_local_cache: bool = True
+) -> bool:
+    """Insert or update an ingredient entry in the database and local cache."""
+
+    normalized_key = ingredient_name.strip().lower()
+    if not normalized_key:
+        return False
+
+    eco_score = float(data.get("eco_score", 50.0) or 50.0)
+    risk_level = data.get("risk_level") or "desconocido"
+    def _stringify(value: Any, default: str) -> str:
+        if value is None or value == "":
+            return default
+        if isinstance(value, (list, dict, tuple, set)):
+            try:
+                return json.dumps(value, ensure_ascii=False)
+            except Exception:
+                return str(value)
+        return str(value)
+
+    benefits = _stringify(data.get("benefits"), "No disponible")
+    risks_detailed = _stringify(data.get("risks_detailed"), "No disponible")
+    sources = _stringify(data.get("sources"), "External")
+
+    record = db.query(Ingredient).filter(Ingredient.name == ingredient_name).first()
+    if not record:
+        record = db.query(Ingredient).filter(Ingredient.name.ilike(ingredient_name)).first()
+    if not record:
+        record = Ingredient(
+            name=ingredient_name,
+            eco_score=eco_score,
+            risk_level=risk_level,
+            benefits=benefits,
+            risks_detailed=risks_detailed,
+            sources=sources
+        )
+        db.add(record)
+    else:
+        record.eco_score = eco_score
+        record.risk_level = risk_level
+        record.benefits = benefits
+        record.risks_detailed = risks_detailed
+        record.sources = sources
+
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Database commit failed for %s: %s", ingredient_name, exc)
+        raise
+
+    if update_local_cache and 'LOCAL_INGREDIENT_DATABASE' in globals():
+        LOCAL_INGREDIENT_DATABASE[normalized_key] = {
+            "eco_score": eco_score,
+            "risk_level": risk_level,
+            "benefits": benefits,
+            "risks_detailed": risks_detailed,
+            "sources": sources
+        }
+
+    return True
+
+
+def refresh_local_cache_from_db(db: Session) -> int:
+    """Populate the in-memory ingredient cache from the SQL database."""
+
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    if 'LOCAL_INGREDIENT_DATABASE' not in globals():
+        return 0
+
+    refreshed = 0
+    for record in db.query(Ingredient).all():
+        normalized = (record.name or "").strip().lower()
+        if not normalized:
+            continue
+        LOCAL_INGREDIENT_DATABASE[normalized] = {
+            "eco_score": float(record.eco_score or 50.0),
+            "risk_level": record.risk_level or "desconocido",
+            "benefits": record.benefits or "No disponible",
+            "risks_detailed": record.risks_detailed or "No disponible",
+            "sources": record.sources or "External"
+        }
+        refreshed += 1
+    return refreshed
+
+
+def sync_external_databases_command(
+    ingredient_names: Optional[Iterable[str]] = None,
+    limit: Optional[int] = None,
+    concurrency: int = DEFAULT_SYNC_CONCURRENCY,
+    update_local_cache: bool = True
+) -> Dict[str, int]:
+    """Convenience wrapper to run the async sync routine from synchronous contexts."""
+
+    if SessionLocal is None:
+        raise RuntimeError("Database session factory not configured")
+
+    session = SessionLocal()
+    try:
+        return asyncio.run(
+            sync_external_databases(
+                session,
+                ingredient_names=ingredient_names,
+                limit=limit,
+                concurrency=concurrency,
+                update_local_cache=update_local_cache
+            )
+        )
+    finally:
+        session.close()
+
+
 # Crear tablas
 Base.metadata.create_all(bind=engine)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Sync external cosmetic ingredient data into the local database")
+    parser.add_argument("ingredients", nargs="*", help="Specific ingredient names to sync")
+    parser.add_argument("--limit", type=int, default=None, help="Limit the number of ingredients to sync")
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=DEFAULT_SYNC_CONCURRENCY,
+        help="Number of concurrent API requests"
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Do not update the in-memory ingredient cache after syncing"
+    )
+
+    args = parser.parse_args()
+    summary = sync_external_databases_command(
+        ingredient_names=args.ingredients or None,
+        limit=args.limit,
+        concurrency=args.concurrency,
+        update_local_cache=not args.no_cache
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
