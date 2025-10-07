@@ -22,9 +22,9 @@ RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
     ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
     ln -sf /usr/local/bin/pip3.11 /usr/bin/pip
 
-# Install Tesseract for pytesseract
+# Install Tesseract for pytesseract with Spanish support
 RUN apt-get update && \
-    apt-get install -y tesseract-ocr tesseract-ocr-eng && \
+    apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
