@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 import httpx
 import pytesseract
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 import io
 import os
 import logging
@@ -22,6 +22,7 @@ from contextlib import asynccontextmanager
 from collections import defaultdict
 import shutil
 import re
+from difflib import SequenceMatcher
 from database import Ingredient, get_db, get_ingredient_data, get_all_ingredients
 from api_utils_production import fetch_ingredient_data, health_check, get_cache_stats
 from llm_utils import enrich_ingredient_data
@@ -70,6 +71,13 @@ try:
         logger.info("Ingredient lexicon loaded: %d entries", len(INGREDIENT_LEXICON))
 except FileNotFoundError:
     logger.warning("Ingredient lexicon file not found at %s", LEXICON_PATH)
+
+INGREDIENT_LEXICON_INDEX: Dict[str, List[tuple[str, str]]] = defaultdict(list)
+for normalized_entry, canonical_entry in INGREDIENT_LEXICON.items():
+    if not normalized_entry:
+        continue
+    first_char = normalized_entry[0]
+    INGREDIENT_LEXICON_INDEX[first_char].append((normalized_entry, canonical_entry))
 
 
 def configure_tesseract() -> bool:
@@ -262,9 +270,6 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
 
 def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
     """Clean and deduplicate ingredients, removing corrupted text."""
-    import re
-    from difflib import SequenceMatcher
-    
     cleaned = []
     seen = set()
     
@@ -297,8 +302,6 @@ def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
 
 def clean_ingredient_text(text: str) -> str:
     """Clean corrupted ingredient text."""
-    import re
-    
     # Remove common OCR artifacts
     text = re.sub(r'[^\w\s\-.,()\[\]/]', '', text)  # Keep only alphanumeric, spaces, and common punctuation
     text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
@@ -339,17 +342,65 @@ def is_corrupted_text(text: str) -> bool:
     # Check for repeated characters
     if len(set(text)) < len(text) * 0.5:  # Less than 50% unique characters
         return True
+
+    words = [word for word in re.split(r'\s+', text) if word]
+    if not words:
+        return True
+
+    if not any(len(re.sub(r'[^A-Za-z]', '', word)) >= 3 for word in words) and not is_likely_ci_code(text):
+        return True
+
+    alphabetic_chars = sum(1 for c in text if c.isalpha())
+    if alphabetic_chars < 3 and not is_likely_ci_code(text):
+        return True
         
     return False
+
+
+def is_likely_ci_code(text: str) -> bool:
+    candidate = re.sub(r'\s+', '', text.upper())
+    return bool(re.match(r'^CI\d{5}$', candidate))
+
+
+def resolve_canonical_ingredient(cleaned_candidate: str) -> Optional[str]:
+    normalized_candidate = _normalize_ingredient_key(cleaned_candidate)
+    if not normalized_candidate or normalized_candidate in STOPWORDS:
+        return None
+
+    canonical = INGREDIENT_LEXICON.get(normalized_candidate)
+    if canonical:
+        return canonical
+
+    compact_key = normalized_candidate.replace(" ", "")
+    canonical = INGREDIENT_LEXICON.get(compact_key)
+    if canonical:
+        return canonical
+
+    first_char = normalized_candidate[0]
+    candidates = INGREDIENT_LEXICON_INDEX.get(first_char, [])
+    best_ratio = 0.0
+    best_match = None
+
+    for candidate_key, candidate_value in candidates:
+        if abs(len(candidate_key) - len(normalized_candidate)) > 6:
+            continue
+        ratio = SequenceMatcher(None, normalized_candidate, candidate_key).ratio()
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_match = candidate_value
+        if ratio >= 0.95:
+            break
+
+    if best_ratio >= 0.88:
+        return best_match
+
+    return None
 
 def extract_ingredients_from_text(text: str) -> List[str]:
     """Extract ingredients from text using enhanced parsing with better cleaning."""
     if not text:
         return []
 
-    # Clean the text first
-    text = clean_ingredient_text(text)
-    
     # Split by common separators
     segments = re.split(r"[\n,;•·\-|()\[\]]+", text)
     seen = set()
@@ -369,18 +420,9 @@ def extract_ingredients_from_text(text: str) -> List[str]:
         if not cleaned_candidate or len(cleaned_candidate) < 2:
             continue
 
-        # Normalize for lookup
-        normalized_candidate = _normalize_ingredient_key(cleaned_candidate)
-        if not normalized_candidate or normalized_candidate in STOPWORDS:
-            continue
+        canonical = resolve_canonical_ingredient(cleaned_candidate)
+        normalized_candidate = _normalize_ingredient_key(canonical or cleaned_candidate)
 
-        # Try to find canonical form
-        canonical = INGREDIENT_LEXICON.get(normalized_candidate)
-        if not canonical and " " in normalized_candidate:
-            compact_key = normalized_candidate.replace(" ", "")
-            canonical = INGREDIENT_LEXICON.get(compact_key)
-
-        # Use canonical form if available, otherwise use cleaned candidate
         value = canonical or cleaned_candidate
         key = canonical.lower() if canonical else normalized_candidate
 
@@ -400,8 +442,9 @@ def extract_ingredients_from_text(text: str) -> List[str]:
         normalized_match = _normalize_ingredient_key(match)
         if len(normalized_match) <= 3 or normalized_match in STOPWORDS or normalized_match in seen:
             continue
+        canonical = resolve_canonical_ingredient(match)
         seen.add(normalized_match)
-        fallback_results.append(match.strip())
+        fallback_results.append(canonical or match.strip())
     return fallback_results
 
 async def analyze_ingredients(ingredients: List[str], user_need: str, db: Session) -> ProductAnalysisResponse:
@@ -428,7 +471,9 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
                 if normalized_name in ingredient_cache:
                     ingredient_data = ingredient_cache[normalized_name]
                 else:
-                    ingredient_data = get_ingredient_data(ingredient, db)
+                    # Use fetch_ingredient_data which checks local DB first, then external APIs
+                    async with httpx.AsyncClient() as client:
+                        ingredient_data = await fetch_ingredient_data(ingredient, client)
                     ingredient_cache[normalized_name] = ingredient_data
                 
                 if ingredient_data:

@@ -360,6 +360,13 @@ LOCAL_INGREDIENT_DATABASE = {
         "risks_detailed": "Generalmente seguro, puede causar irritación leve en piel sensible",
         "sources": "Local Database + FDA + CIR + EWG"
     },
+    "cetyl alcohol": {
+        "eco_score": 65.0,
+        "risk_level": "riesgo bajo",
+        "benefits": "Emulsificante, espesante, estabilizador de emulsiones",
+        "risks_detailed": "Generalmente seguro, puede causar irritación leve en piel sensible",
+        "sources": "Local Database + FDA + CIR + EWG"
+    },
     "glyceryl stearate": {
         "eco_score": 70.0,
         "risk_level": "riesgo bajo",
