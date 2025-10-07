@@ -19,6 +19,8 @@ import json
 from typing import Dict, List, Optional
 import numpy as np
 from contextlib import asynccontextmanager
+from collections import defaultdict
+import shutil
 import re
 from database import Ingredient, get_db, get_ingredient_data, get_all_ingredients
 from api_utils_production import fetch_ingredient_data, health_check, get_cache_stats
@@ -31,16 +33,77 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Check Tesseract availability
-TESSERACT_AVAILABLE = True
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", 5 * 1024 * 1024))
+MAX_ANALYZED_INGREDIENTS = int(os.getenv("MAX_ANALYZED_INGREDIENTS", 5))
+MAX_OCR_INGREDIENTS = int(os.getenv("MAX_OCR_INGREDIENTS", 10))
+ALLOWED_USER_NEEDS = {"general safety", "sensitive skin", "pregnancy"}
+DEFAULT_USER_NEED = "general safety"
+STOPWORDS = {
+    "the", "and", "for", "with", "from", "this", "that", "ingredients",
+    "contains", "may", "contain", "product", "formula", "directions",
+    "usage", "warning", "caution"
+}
+
+
+def _normalize_ingredient_key(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9\s-]", " ", value.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+LEXICON_PATH = os.getenv(
+    "INGREDIENT_LEXICON_PATH",
+    os.path.join(BASE_DIR, "cosmetic_ingredients_lexicon.txt")
+)
+INGREDIENT_LEXICON: Dict[str, str] = {}
 try:
-    tesseract_path = os.getenv("TESSERACT_PATH", "/opt/homebrew/bin/tesseract")
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
-    pytesseract.get_tesseract_version()
-    logger.info(f"✅ Tesseract OCR available at: {tesseract_path}")
-except Exception as e:
-    TESSERACT_AVAILABLE = False
-    logger.error(f"❌ Tesseract not available: {e}")
+    with open(LEXICON_PATH, "r", encoding="utf-8") as lexicon_file:
+        for line in lexicon_file:
+            entry = line.strip()
+            if not entry:
+                continue
+            normalized_entry = _normalize_ingredient_key(entry)
+            if normalized_entry:
+                INGREDIENT_LEXICON[normalized_entry] = entry
+    if INGREDIENT_LEXICON:
+        logger.info("Ingredient lexicon loaded: %d entries", len(INGREDIENT_LEXICON))
+except FileNotFoundError:
+    logger.warning("Ingredient lexicon file not found at %s", LEXICON_PATH)
+
+
+def configure_tesseract() -> bool:
+    configured_path = os.getenv("TESSERACT_PATH")
+    candidate_paths = [configured_path] if configured_path else []
+    candidate_paths.extend([
+        "/opt/homebrew/bin/tesseract",
+        "/usr/bin/tesseract",
+        "/usr/local/bin/tesseract",
+    ])
+
+    resolved_path = None
+    for path in candidate_paths:
+        if path and os.path.isfile(path):
+            resolved_path = path
+            break
+
+    if not resolved_path:
+        resolved_path = shutil.which("tesseract")
+        if not resolved_path:
+            logger.error("Tesseract executable not found in any known location")
+            return False
+
+    try:
+        pytesseract.pytesseract.tesseract_cmd = resolved_path
+        pytesseract.get_tesseract_version()
+        logger.info("Tesseract OCR available at: %s", resolved_path)
+        return True
+    except Exception as exc:
+        logger.error("Tesseract not available: %s", exc)
+        return False
+
+
+TESSERACT_AVAILABLE = configure_tesseract()
 
 # Lifespan context manager
 @asynccontextmanager
@@ -167,35 +230,56 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                 continue
         
         logger.info(f"Final ingredients found: {len(best_ingredients)}")
-        return best_ingredients[:10]  # Limit to 10 ingredients
+        return best_ingredients[:MAX_OCR_INGREDIENTS]
         
     except Exception as e:
         logger.error(f"Image processing failed: {e}")
         return []
 
 def extract_ingredients_from_text(text: str) -> List[str]:
-    """Extract ingredients from text using simple patterns."""
+    """Extract ingredients from text using lexicon-aware parsing."""
     if not text:
         return []
-    
-    # Common patterns for cosmetic ingredients
-    patterns = [
-        r'\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b',  # Capitalized words
-        r'\b[a-z]+(?:\s+[a-z]+)*\b',  # Lowercase words
-        r'\b[A-Z]+(?:\s+[A-Z]+)*\b',  # All caps words
-    ]
-    
-    ingredients = []
-    for pattern in patterns:
-        matches = re.findall(pattern, text)
-        for match in matches:
-            if (len(match) > 3 and 
-                match.lower() not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 
-                                    'ingredients', 'contains', 'may', 'contain', 'product', 
-                                    'formula', 'directions', 'usage', 'warning', 'caution']):
-                ingredients.append(match.strip())
-    
-    return list(set(ingredients))
+
+    segments = re.split(r"[\n,;•·\-|]+", text)
+    seen = set()
+    results: List[str] = []
+
+    for segment in segments:
+        candidate = segment.strip()
+        if not candidate:
+            continue
+
+        normalized_candidate = _normalize_ingredient_key(candidate)
+        if not normalized_candidate or normalized_candidate in STOPWORDS:
+            continue
+
+        canonical = INGREDIENT_LEXICON.get(normalized_candidate)
+        if not canonical and " " in normalized_candidate:
+            compact_key = normalized_candidate.replace(" ", "")
+            canonical = INGREDIENT_LEXICON.get(compact_key)
+
+        value = canonical or candidate.strip()
+        key = canonical.lower() if canonical else normalized_candidate
+
+        if len(key) <= 3 or key in STOPWORDS or key in seen:
+            continue
+
+        seen.add(key)
+        results.append(value)
+
+    if results:
+        return results
+
+    fallback_matches = re.findall(r"\b[A-Za-z][A-Za-z-]+(?:\s+[A-Za-z][A-Za-z-]+)*\b", text)
+    fallback_results = []
+    for match in fallback_matches:
+        normalized_match = _normalize_ingredient_key(match)
+        if len(normalized_match) <= 3 or normalized_match in STOPWORDS or normalized_match in seen:
+            continue
+        seen.add(normalized_match)
+        fallback_results.append(match.strip())
+    return fallback_results
 
 async def analyze_ingredients(ingredients: List[str], user_need: str, db: Session) -> ProductAnalysisResponse:
     """Analyze ingredients and return comprehensive results."""
@@ -203,13 +287,26 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
         logger.info(f"Analyzing {len(ingredients)} ingredients...")
         
         ingredients_details = []
+        ingredient_cache: Dict[str, Optional[dict]] = {}
         total_eco_score = 0
-        risk_counts = {"seguro": 0, "riesgo bajo": 0, "riesgo medio": 0, "riesgo alto": 0, "cancerígeno": 0, "desconocido": 0}
+        risk_counts = defaultdict(int, {
+            "seguro": 0,
+            "riesgo bajo": 0,
+            "riesgo medio": 0,
+            "riesgo alto": 0,
+            "cancerígeno": 0,
+            "desconocido": 0
+        })
         
         for ingredient in ingredients:
             try:
                 # Get ingredient data from database
-                ingredient_data = get_ingredient_data(ingredient, db)
+                normalized_name = ingredient.lower()
+                if normalized_name in ingredient_cache:
+                    ingredient_data = ingredient_cache[normalized_name]
+                else:
+                    ingredient_data = get_ingredient_data(ingredient, db)
+                    ingredient_cache[normalized_name] = ingredient_data
                 
                 if ingredient_data:
                     eco_score = ingredient_data.get('eco_score', 50.0)
@@ -283,33 +380,40 @@ def generate_recommendations(ingredients: List[IngredientAnalysisResponse], user
     
     # Eco score recommendations
     if avg_eco_score >= 80:
-        recommendations.append("🌱 Excelente puntaje eco-friendly. Producto muy sostenible.")
+        recommendations.append("Excelente puntaje eco-friendly; producto muy sostenible.")
     elif avg_eco_score >= 60:
-        recommendations.append("🌿 Buen puntaje eco-friendly. Producto moderadamente sostenible.")
+        recommendations.append("Buen puntaje eco-friendly; producto moderadamente sostenible.")
     else:
-        recommendations.append("⚠️ Puntaje eco-friendly bajo. Considera alternativas más sostenibles.")
+        recommendations.append("Puntaje eco-friendly bajo; considera alternativas más sostenibles.")
     
     # Risk-based recommendations
     if risk_counts['cancerígeno'] > 0:
-        recommendations.append("🚫 Contiene ingredientes cancerígenos. Evitar uso prolongado.")
+        recommendations.append("Contiene ingredientes cancerígenos; evitar uso prolongado.")
     elif risk_counts['riesgo alto'] > 0:
-        recommendations.append("🔴 Contiene ingredientes de alto riesgo. Usar con precaución.")
+        recommendations.append("Contiene ingredientes de alto riesgo; usar con precaución.")
     elif risk_counts['riesgo medio'] > 2:
-        recommendations.append("🟠 Múltiples ingredientes de riesgo medio. Monitorear reacciones.")
+        recommendations.append("Múltiples ingredientes de riesgo medio; monitorear reacciones.")
     
     # User need specific recommendations
     if user_need == "sensitive skin":
         if risk_counts['riesgo alto'] > 0 or risk_counts['riesgo medio'] > 1:
-            recommendations.append("👤 No recomendado para piel sensible. Busca alternativas más suaves.")
+            recommendations.append("No recomendado para piel sensible; busca alternativas más suaves.")
         else:
-            recommendations.append("👤 Aparentemente seguro para piel sensible, pero haz una prueba de parche.")
+            recommendations.append("Aparentemente seguro para piel sensible; realiza una prueba de parche.")
     elif user_need == "pregnancy":
         if risk_counts['riesgo alto'] > 0 or risk_counts['cancerígeno'] > 0:
-            recommendations.append("🤰 No recomendado durante el embarazo. Consulta con tu médico.")
+            recommendations.append("No recomendado durante el embarazo; consulta con tu médico.")
         else:
-            recommendations.append("🤰 Aparentemente seguro, pero consulta con tu médico antes de usar.")
+            recommendations.append("Aparentemente seguro durante el embarazo; consulta con tu médico antes de usar.")
     
     return "\n\n".join(recommendations) if recommendations else "Análisis completado. Revisa los ingredientes individuales."
+
+
+def normalize_user_need(user_need: Optional[str]) -> str:
+    if not user_need:
+        return DEFAULT_USER_NEED
+    normalized = user_need.strip().lower()
+    return normalized if normalized in ALLOWED_USER_NEEDS else DEFAULT_USER_NEED
 
 # API Endpoints
 @app.get("/")
@@ -338,8 +442,9 @@ async def analyze_image(
         
         # Limit file size for Railway
         max_size = 5 * 1024 * 1024  # 5MB
-        if len(image_data) > max_size:
-            raise HTTPException(status_code=400, detail="Image too large. Maximum size is 5MB.")
+        if len(image_data) > MAX_IMAGE_SIZE:
+            max_size_mb = round(MAX_IMAGE_SIZE / (1024 * 1024), 2)
+            raise HTTPException(status_code=400, detail=f"Image too large. Maximum size is {max_size_mb}MB.")
         
         # Extract ingredients
         ingredients = await extract_ingredients_from_image(image_data)
@@ -347,12 +452,17 @@ async def analyze_image(
             raise HTTPException(status_code=400, detail="No ingredients detected. Try improving image quality or lighting.")
         
         # Limit ingredients for Railway
-        if len(ingredients) > 5:
-            logger.info(f"Limiting to first 5 ingredients (found {len(ingredients)})")
-            ingredients = ingredients[:5]
+        if len(ingredients) > MAX_ANALYZED_INGREDIENTS:
+            logger.info(
+                "Limiting to first %d ingredients (found %d)",
+                MAX_ANALYZED_INGREDIENTS,
+                len(ingredients)
+            )
+            ingredients = ingredients[:MAX_ANALYZED_INGREDIENTS]
         
         # Analyze ingredients
-        result = await analyze_ingredients(ingredients, user_need, db)
+        normalized_need = normalize_user_need(user_need)
+        result = await analyze_ingredients(ingredients, normalized_need, db)
         result.product_name = f"Product from Image: {file.filename}"
         
         logger.info("Image analysis completed successfully")
@@ -376,11 +486,12 @@ async def analyze_text(request: AnalyzeTextRequest, db: Session = Depends(get_db
             raise HTTPException(status_code=400, detail="No ingredients found in text")
         
         # Limit ingredients
-        if len(ingredients) > 5:
-            ingredients = ingredients[:5]
+        if len(ingredients) > MAX_ANALYZED_INGREDIENTS:
+            ingredients = ingredients[:MAX_ANALYZED_INGREDIENTS]
         
         # Analyze ingredients
-        result = await analyze_ingredients(ingredients, request.user_need, db)
+        normalized_need = normalize_user_need(request.user_need)
+        result = await analyze_ingredients(ingredients, normalized_need, db)
         result.product_name = "Text Analysis"
         
         logger.info("Text analysis completed successfully")
@@ -406,6 +517,23 @@ async def health():
     except Exception as e:
         logger.error(f"Health check error: {e}")
         return {"status": "unhealthy", "error": str(e)}
+
+@app.get("/debug/tesseract")
+async def debug_tesseract():
+    """Debug Tesseract availability."""
+    try:
+        import pytesseract
+        version = pytesseract.get_tesseract_version()
+        return {
+            "tesseract_available": True,
+            "version": str(version),
+            "languages": pytesseract.get_languages()
+        }
+    except Exception as e:
+        return {
+            "tesseract_available": False,
+            "error": str(e)
+        }
 
 @app.get("/ingredients")
 async def get_all_ingredients(db: Session = Depends(get_db)):
