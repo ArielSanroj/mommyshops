@@ -472,18 +472,26 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
                     ingredient_data = ingredient_cache[normalized_name]
                 else:
                     # Use fetch_ingredient_data which checks local DB first, then external APIs
-                    async with httpx.AsyncClient() as client:
-                        ingredient_data = await fetch_ingredient_data(ingredient, client)
+                    logger.info(f"Fetching data for ingredient: {ingredient}")
+                    try:
+                        async with httpx.AsyncClient() as client:
+                            ingredient_data = await fetch_ingredient_data(ingredient, client)
+                        logger.info(f"Fetched data for {ingredient}: {ingredient_data}")
+                    except Exception as e:
+                        logger.error(f"Error fetching data for {ingredient}: {e}")
+                        ingredient_data = None
                     ingredient_cache[normalized_name] = ingredient_data
                 
-                if ingredient_data:
+                if ingredient_data and ingredient_data.get('eco_score') is not None:
                     eco_score = ingredient_data.get('eco_score', 50.0)
                     risk_level = ingredient_data.get('risk_level', 'desconocido')
                     benefits = ingredient_data.get('benefits', 'No disponible')
                     risks = ingredient_data.get('risks_detailed', 'No disponible')
                     sources = ingredient_data.get('sources', 'Database')
+                    logger.info(f"Using data for {ingredient}: eco_score={eco_score}, risk_level={risk_level}")
                 else:
                     # Default data for unknown ingredients
+                    logger.warning(f"No data found for ingredient: {ingredient}")
                     eco_score = 50.0
                     risk_level = 'desconocido'
                     benefits = 'Datos no disponibles'
