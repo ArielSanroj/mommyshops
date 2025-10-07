@@ -312,14 +312,13 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
         # Try OCR on multiple processed images with different configurations
         all_ingredients = []
         
-        # Simplified OCR configurations for better reliability
+        # Optimized OCR configurations for faster processing
         configs = [
             '--psm 6 --oem 3',  # Most reliable for ingredient lists
-            '--psm 3 --oem 3',  # Fallback
-            '--psm 4 --oem 3'   # Single column
+            '--psm 3 --oem 3'   # Fallback (removed third config for speed)
         ]
         
-        max_attempts = 6  # Limit total OCR attempts
+        max_attempts = 4  # Reduced total OCR attempts for faster processing
         attempt_count = 0
         
         for img_name, processed_img in processed_images:
@@ -327,7 +326,7 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                 logger.info(f"Reached max attempts ({max_attempts}), stopping OCR")
                 break
                 
-            logger.info(f"Processing {img_name} image...")
+            logger.info(f"Processing {img_name} image... (attempt {attempt_count + 1}/{max_attempts})")
             
             for i, config in enumerate(configs):
                 if attempt_count >= max_attempts:
@@ -342,7 +341,7 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                             None, 
                             lambda: pytesseract.image_to_string(processed_img, lang='eng', config=config)
                         ),
-                        timeout=5.0  # Reduced timeout
+                        timeout=10.0  # Increased timeout for better OCR processing
                     )
                     
                     if ocr_result.strip():
@@ -351,9 +350,9 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                         if ingredients:
                             all_ingredients.extend(ingredients)
                             logger.info(f"Found {len(ingredients)} ingredients from {img_name} config {i+1}")
-                            # If we found ingredients, we can stop early
-                            if len(all_ingredients) >= 3:
-                                logger.info("Found enough ingredients, stopping early")
+                            # If we found enough ingredients, we can stop early
+                            if len(all_ingredients) >= 5:  # Increased threshold for better results
+                                logger.info(f"Found {len(all_ingredients)} ingredients, stopping early")
                                 break
                 
                 except asyncio.TimeoutError:
@@ -802,22 +801,23 @@ async def analyze_image(
         
         # Extract ingredients with timeout and fallback
         logger.info("Starting ingredient extraction...")
+        logger.info("This may take up to 45 seconds for complex images...")
         ingredients = []
         
         try:
             ingredients = await asyncio.wait_for(
                 extract_ingredients_from_image(image_data),
-                timeout=15.0  # Reduced to 15 second timeout
+                timeout=45.0  # Increased to 45 second timeout for complex images
             )
         except asyncio.TimeoutError:
-            logger.error("Ingredient extraction timed out")
+            logger.error("Ingredient extraction timed out after 45 seconds")
             # Fallback: return a generic response instead of error
             return ProductAnalysisResponse(
                 product_name=f"Product from Image: {file.filename}",
                 ingredients_details=[],
                 avg_eco_score=50.0,
                 suitability="No se pudo analizar",
-                recommendations="No se pudieron extraer ingredientes de la imagen. Por favor, intenta con una imagen más clara o usa el análisis de texto."
+                recommendations="El procesamiento de la imagen tardó demasiado tiempo. Por favor, intenta con una imagen más clara, de menor tamaño, o usa el análisis de texto."
             )
         except Exception as e:
             logger.error(f"Error in ingredient extraction: {e}")

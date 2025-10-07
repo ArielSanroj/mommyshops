@@ -262,7 +262,7 @@ if image_analysis:
                         f"{api_url}/analyze-image",
                         data=form_data,
                         files=files,
-                        timeout=60
+                        timeout=90  # Increased timeout to match backend changes
                     )
                     
                     status_text.text("🧪 Analizando ingredientes...")

@@ -58,19 +58,19 @@ RATE_LIMITS = {
     "cosing": {"requests_per_minute": 20, "requests_per_hour": 500}
 }
 
-# Timeout configuration
+# Timeout configuration - Increased for better reliability
 TIMEOUTS = {
-    "default": 30.0,
-    "fda": 15.0,
-    "pubchem": 20.0,
-    "ewg": 15.0,
-    "invima": 25.0,
-    "iarc": 10.0,
-    "cir": 20.0,
-    "sccs": 20.0,
-    "iccr": 20.0,
-    "inci_beauty": 15.0,
-    "cosing": 20.0
+    "default": 45.0,  # Increased from 30.0
+    "fda": 20.0,      # Increased from 15.0
+    "pubchem": 25.0,  # Increased from 20.0
+    "ewg": 20.0,      # Increased from 15.0
+    "invima": 30.0,   # Increased from 25.0
+    "iarc": 15.0,     # Increased from 10.0
+    "cir": 25.0,      # Increased from 20.0
+    "sccs": 25.0,     # Increased from 20.0
+    "iccr": 25.0,     # Increased from 20.0
+    "inci_beauty": 20.0,  # Increased from 15.0
+    "cosing": 25.0    # Increased from 20.0
 }
 
 @dataclass
