@@ -160,9 +160,9 @@ class ProductAnalysisResponse(BaseModel):
 
 # Core functions
 async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
-    """Extract ingredients from image using OCR."""
+    """Extract ingredients from image using enhanced OCR with better preprocessing."""
     try:
-        logger.info("Starting image processing...")
+        logger.info("Starting enhanced image processing...")
         
         if not TESSERACT_AVAILABLE:
             logger.error("Tesseract not available")
@@ -172,97 +172,220 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
         image = Image.open(io.BytesIO(image_data))
         logger.info(f"Original image size: {image.size}")
         
-        # Simple preprocessing
+        # Enhanced preprocessing for better OCR
+        processed_images = []
+        
+        # 1. Original image
+        processed_images.append(("original", image.copy()))
+        
+        # 2. Grayscale with high contrast
         if image.mode != 'L':
-            image = image.convert('L')
-            logger.info("Converted to grayscale")
+            gray = image.convert('L')
+        else:
+            gray = image.copy()
         
-        # Resize if too small
-        if max(image.size) < 300:
-            scale_factor = 300 / max(image.size)
-            new_size = (int(image.size[0] * scale_factor), int(image.size[1] * scale_factor))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
-            logger.info(f"Resized to: {image.size}")
+        # Resize for better OCR (OCR works better on larger images)
+        if max(gray.size) < 600:
+            scale_factor = 600 / max(gray.size)
+            new_size = (int(gray.size[0] * scale_factor), int(gray.size[1] * scale_factor))
+            gray = gray.resize(new_size, Image.Resampling.LANCZOS)
+            logger.info(f"Resized to: {gray.size}")
         
-        # Enhance contrast
-        enhancer = ImageEnhance.Contrast(image)
-        image = enhancer.enhance(1.5)
-        logger.info("Enhanced contrast")
+        # High contrast
+        enhancer = ImageEnhance.Contrast(gray)
+        high_contrast = enhancer.enhance(2.0)
+        processed_images.append(("high_contrast", high_contrast))
         
-        # OCR configurations
+        # 3. Inverted colors (for dark text on light background)
+        inverted = ImageOps.invert(high_contrast)
+        processed_images.append(("inverted", inverted))
+        
+        # 4. Sharpened image
+        enhancer = ImageEnhance.Sharpness(high_contrast)
+        sharpened = enhancer.enhance(2.0)
+        processed_images.append(("sharpened", sharpened))
+        
+        # 5. Auto contrast
+        auto_contrast = ImageOps.autocontrast(high_contrast, cutoff=2)
+        processed_images.append(("auto_contrast", auto_contrast))
+        
+        # Try OCR on multiple processed images with different configurations
+        all_ingredients = []
+        
+        # OCR configurations optimized for ingredient lists
         configs = [
-            '--psm 6 --oem 3',
+            '--psm 6 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-()[]/',
             '--psm 3 --oem 3',
             '--psm 4 --oem 3',
             '--psm 8 --oem 3',
             '--psm 6 --oem 1'
         ]
         
-        best_ingredients = []
-        best_text = ""
+        for img_name, processed_img in processed_images:
+            logger.info(f"Processing {img_name} image...")
+            
+            for i, config in enumerate(configs):
+                try:
+                    logger.info(f"Trying {img_name} with config {i+1}: {config}")
+                    
+                    ocr_result = await asyncio.wait_for(
+                        asyncio.get_event_loop().run_in_executor(
+                            None, 
+                            lambda: pytesseract.image_to_string(processed_img, lang='eng', config=config)
+                        ),
+                        timeout=8.0
+                    )
+                    
+                    if ocr_result.strip():
+                        logger.info(f"OCR result from {img_name} config {i+1}: {len(ocr_result)} characters")
+                        ingredients = extract_ingredients_from_text(ocr_result)
+                        if ingredients:
+                            all_ingredients.extend(ingredients)
+                            logger.info(f"Found {len(ingredients)} ingredients from {img_name} config {i+1}")
+                
+                except asyncio.TimeoutError:
+                    logger.warning(f"OCR {img_name} config {i+1} timed out")
+                    continue
+                except Exception as e:
+                    logger.warning(f"OCR {img_name} config {i+1} failed: {e}")
+                    continue
         
-        for i, config in enumerate(configs):
-            try:
-                logger.info(f"Trying OCR config {i+1}: {config}")
-                
-                ocr_result = await asyncio.wait_for(
-                    asyncio.get_event_loop().run_in_executor(
-                        None, 
-                        lambda: pytesseract.image_to_string(image, lang='eng', config=config)
-                    ),
-                    timeout=5.0
-                )
-                
-                if len(ocr_result) > len(best_text):
-                    best_text = ocr_result
-                    logger.info(f"Better text found with config {i+1}")
-                
-                ingredients = extract_ingredients_from_text(ocr_result)
-                if len(ingredients) > len(best_ingredients):
-                    best_ingredients = ingredients
-                    logger.info(f"Found {len(ingredients)} ingredients with config {i+1}")
-                
-            except asyncio.TimeoutError:
-                logger.warning(f"OCR config {i+1} timed out")
-                continue
-            except Exception as e:
-                logger.warning(f"OCR config {i+1} failed: {e}")
-                continue
+        # Clean and deduplicate ingredients
+        cleaned_ingredients = clean_and_deduplicate_ingredients(all_ingredients)
+        logger.info(f"Final cleaned ingredients: {len(cleaned_ingredients)}")
         
-        logger.info(f"Final ingredients found: {len(best_ingredients)}")
-        return best_ingredients[:MAX_OCR_INGREDIENTS]
+        return cleaned_ingredients[:MAX_OCR_INGREDIENTS]
         
     except Exception as e:
         logger.error(f"Image processing failed: {e}")
         return []
 
+def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
+    """Clean and deduplicate ingredients, removing corrupted text."""
+    import re
+    from difflib import SequenceMatcher
+    
+    cleaned = []
+    seen = set()
+    
+    for ingredient in ingredients:
+        if not ingredient or len(ingredient.strip()) < 2:
+            continue
+            
+        # Clean the ingredient
+        cleaned_ingredient = clean_ingredient_text(ingredient.strip())
+        
+        if not cleaned_ingredient or len(cleaned_ingredient) < 2:
+            continue
+            
+        # Skip if it's mostly corrupted characters
+        if is_corrupted_text(cleaned_ingredient):
+            continue
+            
+        # Check for duplicates using fuzzy matching
+        is_duplicate = False
+        for existing in cleaned:
+            if SequenceMatcher(None, cleaned_ingredient.lower(), existing.lower()).ratio() > 0.8:
+                is_duplicate = True
+                break
+                
+        if not is_duplicate:
+            cleaned.append(cleaned_ingredient)
+            seen.add(cleaned_ingredient.lower())
+    
+    return cleaned
+
+def clean_ingredient_text(text: str) -> str:
+    """Clean corrupted ingredient text."""
+    import re
+    
+    # Remove common OCR artifacts
+    text = re.sub(r'[^\w\s\-.,()\[\]/]', '', text)  # Keep only alphanumeric, spaces, and common punctuation
+    text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
+    text = re.sub(r'^[^a-zA-Z]*', '', text)  # Remove leading non-letters
+    text = re.sub(r'[^a-zA-Z]*$', '', text)  # Remove trailing non-letters
+    
+    # Fix common OCR mistakes
+    corrections = {
+        r'\b0\b': 'O',  # Zero to O
+        r'\b1\b': 'I',  # One to I
+        r'\b5\b': 'S',  # Five to S
+        r'\b8\b': 'B',  # Eight to B
+        r'[|]': 'I',    # Pipe to I
+        r'[`\']': '',   # Remove quotes
+        r'[{}]': '',    # Remove braces
+    }
+    
+    for pattern, replacement in corrections.items():
+        text = re.sub(pattern, replacement, text)
+    
+    return text.strip()
+
+def is_corrupted_text(text: str) -> bool:
+    """Check if text is too corrupted to be useful."""
+    if len(text) < 3:
+        return True
+        
+    # Check for too many special characters
+    special_chars = sum(1 for c in text if not c.isalnum() and c not in ' -.,()[]/')
+    if special_chars > len(text) * 0.3:  # More than 30% special chars
+        return True
+        
+    # Check for too many numbers (ingredients rarely have many numbers)
+    numbers = sum(1 for c in text if c.isdigit())
+    if numbers > len(text) * 0.4:  # More than 40% numbers
+        return True
+        
+    # Check for repeated characters
+    if len(set(text)) < len(text) * 0.5:  # Less than 50% unique characters
+        return True
+        
+    return False
+
 def extract_ingredients_from_text(text: str) -> List[str]:
-    """Extract ingredients from text using lexicon-aware parsing."""
+    """Extract ingredients from text using enhanced parsing with better cleaning."""
     if not text:
         return []
 
-    segments = re.split(r"[\n,;•·\-|]+", text)
+    # Clean the text first
+    text = clean_ingredient_text(text)
+    
+    # Split by common separators
+    segments = re.split(r"[\n,;•·\-|()\[\]]+", text)
     seen = set()
     results: List[str] = []
 
     for segment in segments:
         candidate = segment.strip()
-        if not candidate:
+        if not candidate or len(candidate) < 2:
             continue
 
-        normalized_candidate = _normalize_ingredient_key(candidate)
+        # Skip if it's corrupted text
+        if is_corrupted_text(candidate):
+            continue
+
+        # Clean the candidate
+        cleaned_candidate = clean_ingredient_text(candidate)
+        if not cleaned_candidate or len(cleaned_candidate) < 2:
+            continue
+
+        # Normalize for lookup
+        normalized_candidate = _normalize_ingredient_key(cleaned_candidate)
         if not normalized_candidate or normalized_candidate in STOPWORDS:
             continue
 
+        # Try to find canonical form
         canonical = INGREDIENT_LEXICON.get(normalized_candidate)
         if not canonical and " " in normalized_candidate:
             compact_key = normalized_candidate.replace(" ", "")
             canonical = INGREDIENT_LEXICON.get(compact_key)
 
-        value = canonical or candidate.strip()
+        # Use canonical form if available, otherwise use cleaned candidate
+        value = canonical or cleaned_candidate
         key = canonical.lower() if canonical else normalized_candidate
 
-        if len(key) <= 3 or key in STOPWORDS or key in seen:
+        # Skip if too short, stopword, or duplicate
+        if len(key) <= 2 or key in STOPWORDS or key in seen:
             continue
 
         seen.add(key)
