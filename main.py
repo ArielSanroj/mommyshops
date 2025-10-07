@@ -16,7 +16,7 @@ import logging
 import asyncio
 from dotenv import load_dotenv
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import numpy as np
 from contextlib import asynccontextmanager
 from collections import defaultdict
@@ -44,6 +44,23 @@ STOPWORDS = {
     "the", "and", "for", "with", "from", "this", "that", "ingredients",
     "contains", "may", "contain", "product", "formula", "directions",
     "usage", "warning", "caution"
+}
+
+RISK_LEVEL_NORMALIZATION = {
+    "high hazard": "riesgo alto",
+    "high risk": "riesgo alto",
+    "hazardous": "riesgo alto",
+    "unsafe": "riesgo alto",
+    "moderate hazard": "riesgo medio",
+    "moderate risk": "riesgo medio",
+    "medium risk": "riesgo medio",
+    "low hazard": "riesgo bajo",
+    "low risk": "riesgo bajo",
+    "safe": "seguro",
+    "muy seguro": "seguro",
+    "unknown": "desconocido",
+    "not rated": "desconocido",
+    "no data": "desconocido"
 }
 
 
@@ -159,6 +176,85 @@ class IngredientAnalysisResponse(BaseModel):
     risks_detailed: str
     sources: str
 
+def _stringify_field(value: Any, default: str) -> str:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped if stripped else default
+    if isinstance(value, (list, tuple, set)):
+        cleaned = []
+        for item in value:
+            text = str(item).strip()
+            if text and text.lower() != "none":
+                cleaned.append(text)
+        if not cleaned:
+            return default
+        return " | ".join(dict.fromkeys(cleaned))
+    if isinstance(value, dict):
+        parts = []
+        for key, item in value.items():
+            key_str = str(key).strip()
+            item_str = str(item).strip()
+            if not item_str:
+                continue
+            if key_str:
+                parts.append(f"{key_str}: {item_str}")
+            else:
+                parts.append(item_str)
+        if not parts:
+            return default
+        return " | ".join(parts)
+    return str(value).strip() or default
+
+
+def _normalize_risk_level(value: Any) -> str:
+    if value is None:
+        return "desconocido"
+    if isinstance(value, (list, tuple, set)):
+        for item in value:
+            normalized = _normalize_risk_level(item)
+            if normalized != "desconocido":
+                return normalized
+        return "desconocido"
+    risk = str(value).strip().lower()
+    if not risk:
+        return "desconocido"
+    normalized = RISK_LEVEL_NORMALIZATION.get(risk)
+    if normalized:
+        return normalized
+    if "alto" in risk or "high" in risk:
+        return "riesgo alto"
+    if "medio" in risk or "moderate" in risk or "medium" in risk:
+        return "riesgo medio"
+    if "bajo" in risk or "low" in risk:
+        return "riesgo bajo"
+    if "seguro" in risk or "safe" in risk:
+        return "seguro"
+    if "cancer" in risk:
+        return "cancerígeno"
+    return "desconocido"
+
+
+def _sanitize_analysis_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    sanitized: Dict[str, Any] = {}
+
+    eco_value = data.get("eco_score") if isinstance(data, dict) else None
+    try:
+        eco_score = float(eco_value) if eco_value is not None else 50.0
+    except (TypeError, ValueError):
+        eco_score = 50.0
+    eco_score = max(0.0, min(100.0, eco_score))
+
+    sanitized["eco_score"] = eco_score
+    sanitized["risk_level"] = _normalize_risk_level(data.get("risk_level") if isinstance(data, dict) else None)
+    sanitized["benefits"] = _stringify_field(data.get("benefits") if isinstance(data, dict) else None, "No disponible")
+    sanitized["risks_detailed"] = _stringify_field(data.get("risks_detailed") if isinstance(data, dict) else None, "Datos insuficientes para evaluación")
+    sanitized["sources"] = _stringify_field(data.get("sources") if isinstance(data, dict) else None, "Análisis básico")
+
+    return sanitized
+
+
 class ProductAnalysisResponse(BaseModel):
     product_name: str
     ingredients_details: List[IngredientAnalysisResponse]
@@ -259,8 +355,15 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                     continue
         
         # Clean and deduplicate ingredients
-        cleaned_ingredients = clean_and_deduplicate_ingredients(all_ingredients)
-        logger.info(f"Final cleaned ingredients: {len(cleaned_ingredients)}")
+        logger.info(f"Raw ingredients found: {len(all_ingredients)} - {all_ingredients[:5]}")
+        try:
+            cleaned_ingredients = clean_and_deduplicate_ingredients(all_ingredients)
+            logger.info(f"Final cleaned ingredients: {len(cleaned_ingredients)} - {cleaned_ingredients[:5]}")
+        except Exception as e:
+            logger.error(f"Error cleaning ingredients: {e}")
+            # Fallback: return raw ingredients without cleaning
+            cleaned_ingredients = all_ingredients[:MAX_OCR_INGREDIENTS]
+            logger.info(f"Using raw ingredients as fallback: {len(cleaned_ingredients)}")
         
         return cleaned_ingredients[:MAX_OCR_INGREDIENTS]
         
@@ -270,91 +373,126 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
 
 def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
     """Clean and deduplicate ingredients, removing corrupted text."""
+    import re
+    from difflib import SequenceMatcher
+    
+    if not ingredients:
+        return []
+    
     cleaned = []
     seen = set()
     
-    for ingredient in ingredients:
-        if not ingredient or len(ingredient.strip()) < 2:
-            continue
-            
-        # Clean the ingredient
-        cleaned_ingredient = clean_ingredient_text(ingredient.strip())
-        
-        if not cleaned_ingredient or len(cleaned_ingredient) < 2:
-            continue
-            
-        # Skip if it's mostly corrupted characters
-        if is_corrupted_text(cleaned_ingredient):
-            continue
-            
-        # Check for duplicates using fuzzy matching
-        is_duplicate = False
-        for existing in cleaned:
-            if SequenceMatcher(None, cleaned_ingredient.lower(), existing.lower()).ratio() > 0.8:
-                is_duplicate = True
-                break
+    try:
+        for ingredient in ingredients:
+            if not ingredient or len(ingredient.strip()) < 2:
+                continue
                 
-        if not is_duplicate:
-            cleaned.append(cleaned_ingredient)
-            seen.add(cleaned_ingredient.lower())
+            # Clean the ingredient
+            try:
+                cleaned_ingredient = clean_ingredient_text(ingredient.strip())
+            except Exception as e:
+                logger.warning(f"Error cleaning ingredient '{ingredient}': {e}")
+                cleaned_ingredient = ingredient.strip()
+            
+            if not cleaned_ingredient or len(cleaned_ingredient) < 2:
+                continue
+                
+            # Skip if it's mostly corrupted characters
+            try:
+                if is_corrupted_text(cleaned_ingredient):
+                    continue
+            except Exception as e:
+                logger.warning(f"Error checking if corrupted '{cleaned_ingredient}': {e}")
+                # If we can't check, include it anyway
+                
+            # Check for duplicates using fuzzy matching
+            is_duplicate = False
+            try:
+                for existing in cleaned:
+                    if SequenceMatcher(None, cleaned_ingredient.lower(), existing.lower()).ratio() > 0.8:
+                        is_duplicate = True
+                        break
+            except Exception as e:
+                logger.warning(f"Error checking duplicates for '{cleaned_ingredient}': {e}")
+                # If we can't check duplicates, include it anyway
+                
+            if not is_duplicate:
+                cleaned.append(cleaned_ingredient)
+                seen.add(cleaned_ingredient.lower())
+    except Exception as e:
+        logger.error(f"Error in clean_and_deduplicate_ingredients: {e}")
+        # Return original ingredients if cleaning fails
+        return ingredients[:MAX_OCR_INGREDIENTS]
     
     return cleaned
 
 def clean_ingredient_text(text: str) -> str:
     """Clean corrupted ingredient text."""
-    # Remove common OCR artifacts
-    text = re.sub(r'[^\w\s\-.,()\[\]/]', '', text)  # Keep only alphanumeric, spaces, and common punctuation
-    text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
-    text = re.sub(r'^[^a-zA-Z]*', '', text)  # Remove leading non-letters
-    text = re.sub(r'[^a-zA-Z]*$', '', text)  # Remove trailing non-letters
+    if not text:
+        return ""
     
-    # Fix common OCR mistakes
-    corrections = {
-        r'\b0\b': 'O',  # Zero to O
-        r'\b1\b': 'I',  # One to I
-        r'\b5\b': 'S',  # Five to S
-        r'\b8\b': 'B',  # Eight to B
-        r'[|]': 'I',    # Pipe to I
-        r'[`\']': '',   # Remove quotes
-        r'[{}]': '',    # Remove braces
-    }
-    
-    for pattern, replacement in corrections.items():
-        text = re.sub(pattern, replacement, text)
-    
-    return text.strip()
+    try:
+        # Remove common OCR artifacts
+        text = re.sub(r'[^\w\s\-.,()\[\]/]', '', text)  # Keep only alphanumeric, spaces, and common punctuation
+        text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
+        text = re.sub(r'^[^a-zA-Z]*', '', text)  # Remove leading non-letters
+        text = re.sub(r'[^a-zA-Z]*$', '', text)  # Remove trailing non-letters
+        
+        # Fix common OCR mistakes
+        corrections = {
+            r'\b0\b': 'O',  # Zero to O
+            r'\b1\b': 'I',  # One to I
+            r'\b5\b': 'S',  # Five to S
+            r'\b8\b': 'B',  # Eight to B
+            r'[|]': 'I',    # Pipe to I
+            r'[`\']': '',   # Remove quotes
+            r'[{}]': '',    # Remove braces
+        }
+        
+        for pattern, replacement in corrections.items():
+            text = re.sub(pattern, replacement, text)
+        
+        return text.strip()
+    except Exception as e:
+        logger.warning(f"Error cleaning text '{text}': {e}")
+        return text.strip()
 
 def is_corrupted_text(text: str) -> bool:
     """Check if text is too corrupted to be useful."""
-    if len(text) < 3:
+    if not text or len(text) < 3:
         return True
-        
-    # Check for too many special characters
-    special_chars = sum(1 for c in text if not c.isalnum() and c not in ' -.,()[]/')
-    if special_chars > len(text) * 0.3:  # More than 30% special chars
-        return True
-        
-    # Check for too many numbers (ingredients rarely have many numbers)
-    numbers = sum(1 for c in text if c.isdigit())
-    if numbers > len(text) * 0.4:  # More than 40% numbers
-        return True
-        
-    # Check for repeated characters
-    if len(set(text)) < len(text) * 0.5:  # Less than 50% unique characters
-        return True
+    
+    try:
+        # Check for too many special characters
+        special_chars = sum(1 for c in text if not c.isalnum() and c not in ' -.,()[]/')
+        if special_chars > len(text) * 0.3:  # More than 30% special chars
+            return True
+            
+        # Check for too many numbers (ingredients rarely have many numbers)
+        numbers = sum(1 for c in text if c.isdigit())
+        if numbers > len(text) * 0.4:  # More than 40% numbers
+            return True
+            
+        # Check for repeated characters
+        if len(set(text)) < len(text) * 0.5:  # Less than 50% unique characters
+            return True
 
-    words = [word for word in re.split(r'\s+', text) if word]
-    if not words:
-        return True
+        words = [word for word in re.split(r'\s+', text) if word]
+        if not words:
+            return True
 
-    if not any(len(re.sub(r'[^A-Za-z]', '', word)) >= 3 for word in words) and not is_likely_ci_code(text):
-        return True
+        if not any(len(re.sub(r'[^A-Za-z]', '', word)) >= 3 for word in words):
+            return True
 
-    alphabetic_chars = sum(1 for c in text if c.isalpha())
-    if alphabetic_chars < 3 and not is_likely_ci_code(text):
-        return True
-        
-    return False
+        alphabetic_chars = sum(1 for c in text if c.isalpha())
+        if alphabetic_chars < 3:
+            return True
+            
+        return False
+    except Exception as e:
+        logger.warning(f"Error checking if text is corrupted '{text}': {e}")
+        # If we can't check, assume it's not corrupted
+        return False
 
 
 def is_likely_ci_code(text: str) -> bool:
@@ -453,7 +591,7 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
         logger.info(f"Analyzing {len(ingredients)} ingredients...")
         
         ingredients_details = []
-        ingredient_cache: Dict[str, Optional[dict]] = {}
+        ingredient_cache: Dict[str, Dict[str, Any]] = {}
         total_eco_score = 0
         risk_counts = defaultdict(int, {
             "seguro": 0,
@@ -464,65 +602,53 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
             "desconocido": 0
         })
         
-        for ingredient in ingredients:
-            try:
-                # Get ingredient data from database
-                normalized_name = ingredient.lower()
-                if normalized_name in ingredient_cache:
-                    ingredient_data = ingredient_cache[normalized_name]
-                else:
-                    # Use fetch_ingredient_data which checks local DB first, then external APIs
-                    logger.info(f"Fetching data for ingredient: {ingredient}")
-                    try:
-                        async with httpx.AsyncClient() as client:
-                            ingredient_data = await fetch_ingredient_data(ingredient, client)
-                        logger.info(f"Fetched data for {ingredient}: {ingredient_data}")
-                    except Exception as e:
-                        logger.error(f"Error fetching data for {ingredient}: {e}")
-                        ingredient_data = None
-                    ingredient_cache[normalized_name] = ingredient_data
-                
-                if ingredient_data and ingredient_data.get('eco_score') is not None:
-                    eco_score = ingredient_data.get('eco_score', 50.0)
-                    risk_level = ingredient_data.get('risk_level', 'desconocido')
-                    benefits = ingredient_data.get('benefits', 'No disponible')
-                    risks = ingredient_data.get('risks_detailed', 'No disponible')
-                    sources = ingredient_data.get('sources', 'Database')
-                    logger.info(f"Using data for {ingredient}: eco_score={eco_score}, risk_level={risk_level}")
-                else:
-                    # Default data for unknown ingredients
-                    logger.warning(f"No data found for ingredient: {ingredient}")
-                    eco_score = 50.0
-                    risk_level = 'desconocido'
-                    benefits = 'Datos no disponibles'
-                    risks = 'Datos insuficientes para evaluación'
-                    sources = 'Análisis básico'
-                
-                ingredients_details.append(IngredientAnalysisResponse(
-                    name=ingredient,
-                    eco_score=eco_score,
-                    risk_level=risk_level,
-                    benefits=benefits,
-                    risks_detailed=risks,
-                    sources=sources
-                ))
-                
-                total_eco_score += eco_score
-                risk_counts[risk_level] += 1
-                
-            except Exception as e:
-                logger.warning(f"Error analyzing ingredient {ingredient}: {e}")
-                # Add default data for failed ingredients
-                ingredients_details.append(IngredientAnalysisResponse(
-                    name=ingredient,
-                    eco_score=50.0,
-                    risk_level='desconocido',
-                    benefits='Error en análisis',
-                    risks_detailed='No se pudo analizar',
-                    sources='Error'
-                ))
-                total_eco_score += 50.0
-                risk_counts['desconocido'] += 1
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            for ingredient in ingredients:
+                try:
+                    normalized_name = ingredient.lower()
+                    if normalized_name in ingredient_cache:
+                        combined_data = ingredient_cache[normalized_name]
+                    else:
+                        local_data = get_ingredient_data(ingredient)
+                        remote_data: Optional[Dict[str, Any]] = None
+                        try:
+                            remote_data = await fetch_ingredient_data(ingredient, client)
+                            logger.info("Remote data fetched for %s", ingredient)
+                        except Exception as fetch_error:
+                            logger.error("Remote fetch failed for %s: %s", ingredient, fetch_error)
+                        combined_data = merge_ingredient_data(remote_data, local_data)
+                        ingredient_cache[normalized_name] = combined_data
+
+                    eco_score = combined_data.get('eco_score', 50.0)
+                    risk_level = combined_data.get('risk_level', 'desconocido')
+                    benefits = combined_data.get('benefits', 'No disponible')
+                    risks = combined_data.get('risks_detailed', 'No disponible')
+                    sources = combined_data.get('sources', 'Análisis básico')
+
+                    ingredients_details.append(IngredientAnalysisResponse(
+                        name=ingredient,
+                        eco_score=eco_score,
+                        risk_level=risk_level,
+                        benefits=benefits,
+                        risks_detailed=risks,
+                        sources=sources
+                    ))
+
+                    total_eco_score += eco_score
+                    risk_counts[risk_level] += 1
+
+                except Exception as e:
+                    logger.warning(f"Error analyzing ingredient {ingredient}: {e}")
+                    ingredients_details.append(IngredientAnalysisResponse(
+                        name=ingredient,
+                        eco_score=50.0,
+                        risk_level='desconocido',
+                        benefits='Error en análisis',
+                        risks_detailed='No se pudo analizar',
+                        sources='Error'
+                    ))
+                    total_eco_score += 50.0
+                    risk_counts['desconocido'] += 1
         
         # Calculate average eco score
         avg_eco_score = total_eco_score / len(ingredients) if ingredients else 50.0
@@ -590,6 +716,44 @@ def normalize_user_need(user_need: Optional[str]) -> str:
         return DEFAULT_USER_NEED
     normalized = user_need.strip().lower()
     return normalized if normalized in ALLOWED_USER_NEEDS else DEFAULT_USER_NEED
+
+
+def merge_ingredient_data(remote_data: Optional[Dict[str, Any]], local_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    base: Dict[str, Any] = {
+        "eco_score": 50.0,
+        "risk_level": "desconocido",
+        "benefits": "No disponible",
+        "risks_detailed": "Datos insuficientes para evaluación",
+        "sources": "Análisis básico"
+    }
+
+    if local_data:
+        local_clean = _sanitize_analysis_data(local_data)
+        base.update(local_clean)
+
+    if remote_data:
+        remote_clean = dict(remote_data)
+        remote_sources = remote_clean.get("sources")
+        local_sources = base.get("sources")
+        sources: List[str] = []
+        for src in (remote_sources, local_sources):
+            if not src:
+                continue
+            if isinstance(src, str):
+                parts = [part.strip() for part in src.split("|")]
+            elif isinstance(src, (list, tuple, set)):
+                parts = [str(part).strip() for part in src]
+            else:
+                parts = [str(src).strip()]
+            for part in parts:
+                if part:
+                    sources.append(part)
+        if sources:
+            remote_clean["sources"] = " | ".join(dict.fromkeys(sources))
+        remote_sanitized = _sanitize_analysis_data(remote_clean)
+        base.update(remote_sanitized)
+
+    return _sanitize_analysis_data(base)
 
 # API Endpoints
 @app.get("/")
