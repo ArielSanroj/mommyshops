@@ -429,27 +429,44 @@ async def analyze_image(
 ):
     """Analyze cosmetic product from image."""
     try:
-        logger.info(f"Analyzing image: {file.filename}")
+        logger.info(f"Starting image analysis for: {file.filename}")
         
         # Validate file
         if not file.content_type or not file.content_type.startswith('image/'):
+            logger.warning(f"Invalid file type: {file.content_type}")
             raise HTTPException(status_code=400, detail="File must be an image")
         
         # Read image data
+        logger.info("Reading image data...")
         image_data = await file.read()
         if len(image_data) == 0:
+            logger.warning("Empty image file received")
             raise HTTPException(status_code=400, detail="Empty image file")
         
+        logger.info(f"Image size: {len(image_data)} bytes")
+        
         # Limit file size for Railway
-        max_size = 5 * 1024 * 1024  # 5MB
         if len(image_data) > MAX_IMAGE_SIZE:
             max_size_mb = round(MAX_IMAGE_SIZE / (1024 * 1024), 2)
+            logger.warning(f"Image too large: {len(image_data)} bytes (max: {MAX_IMAGE_SIZE})")
             raise HTTPException(status_code=400, detail=f"Image too large. Maximum size is {max_size_mb}MB.")
         
-        # Extract ingredients
-        ingredients = await extract_ingredients_from_image(image_data)
+        # Extract ingredients with timeout
+        logger.info("Starting ingredient extraction...")
+        try:
+            ingredients = await asyncio.wait_for(
+                extract_ingredients_from_image(image_data),
+                timeout=30.0  # 30 second timeout
+            )
+        except asyncio.TimeoutError:
+            logger.error("Ingredient extraction timed out")
+            raise HTTPException(status_code=408, detail="Image processing timed out. Please try with a smaller or clearer image.")
+        
         if not ingredients:
+            logger.warning("No ingredients detected in image")
             raise HTTPException(status_code=400, detail="No ingredients detected. Try improving image quality or lighting.")
+        
+        logger.info(f"Found {len(ingredients)} ingredients: {ingredients[:3]}...")
         
         # Limit ingredients for Railway
         if len(ingredients) > MAX_ANALYZED_INGREDIENTS:
@@ -461,6 +478,7 @@ async def analyze_image(
             ingredients = ingredients[:MAX_ANALYZED_INGREDIENTS]
         
         # Analyze ingredients
+        logger.info("Starting ingredient analysis...")
         normalized_need = normalize_user_need(user_need)
         result = await analyze_ingredients(ingredients, normalized_need, db)
         result.product_name = f"Product from Image: {file.filename}"
@@ -471,7 +489,7 @@ async def analyze_image(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error analyzing image: {e}")
+        logger.error(f"Error analyzing image: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.post("/analyze-text", response_model=ProductAnalysisResponse)
