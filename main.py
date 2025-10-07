@@ -23,6 +23,7 @@ from collections import defaultdict
 import shutil
 import re
 from difflib import SequenceMatcher
+import math
 from database import Ingredient, get_db, get_ingredient_data, get_all_ingredients
 from api_utils_production import fetch_ingredient_data, health_check, get_cache_stats
 from llm_utils import enrich_ingredient_data
@@ -244,7 +245,10 @@ def _sanitize_analysis_data(data: Dict[str, Any]) -> Dict[str, Any]:
         eco_score = float(eco_value) if eco_value is not None else 50.0
     except (TypeError, ValueError):
         eco_score = 50.0
-    eco_score = max(0.0, min(100.0, eco_score))
+    if math.isnan(eco_score) or math.isinf(eco_score):
+        eco_score = 50.0
+    else:
+        eco_score = max(0.0, min(100.0, eco_score))
 
     sanitized["eco_score"] = eco_score
     sanitized["risk_level"] = _normalize_risk_level(data.get("risk_level") if isinstance(data, dict) else None)
@@ -276,68 +280,69 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
         image = Image.open(io.BytesIO(image_data))
         logger.info(f"Original image size: {image.size}")
         
-        # Enhanced preprocessing for better OCR
+        # Simplified preprocessing for better reliability
         processed_images = []
         
-        # 1. Original image
-        processed_images.append(("original", image.copy()))
-        
-        # 2. Grayscale with high contrast
+        # 1. Basic grayscale processing
         if image.mode != 'L':
             gray = image.convert('L')
         else:
             gray = image.copy()
         
-        # Resize for better OCR (OCR works better on larger images)
-        if max(gray.size) < 600:
-            scale_factor = 600 / max(gray.size)
+        # Resize for better OCR (but not too large to avoid memory issues)
+        if max(gray.size) < 400:
+            scale_factor = 400 / max(gray.size)
             new_size = (int(gray.size[0] * scale_factor), int(gray.size[1] * scale_factor))
             gray = gray.resize(new_size, Image.Resampling.LANCZOS)
             logger.info(f"Resized to: {gray.size}")
         
-        # High contrast
+        # 2. High contrast (most reliable)
         enhancer = ImageEnhance.Contrast(gray)
-        high_contrast = enhancer.enhance(2.0)
+        high_contrast = enhancer.enhance(1.8)
         processed_images.append(("high_contrast", high_contrast))
         
-        # 3. Inverted colors (for dark text on light background)
+        # 3. Inverted (for dark text on light background)
         inverted = ImageOps.invert(high_contrast)
         processed_images.append(("inverted", inverted))
         
-        # 4. Sharpened image
-        enhancer = ImageEnhance.Sharpness(high_contrast)
-        sharpened = enhancer.enhance(2.0)
-        processed_images.append(("sharpened", sharpened))
-        
-        # 5. Auto contrast
-        auto_contrast = ImageOps.autocontrast(high_contrast, cutoff=2)
+        # 4. Auto contrast (fallback)
+        auto_contrast = ImageOps.autocontrast(high_contrast, cutoff=1)
         processed_images.append(("auto_contrast", auto_contrast))
         
         # Try OCR on multiple processed images with different configurations
         all_ingredients = []
         
-        # OCR configurations optimized for ingredient lists
+        # Simplified OCR configurations for better reliability
         configs = [
-            '--psm 6 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-()[]/',
-            '--psm 3 --oem 3',
-            '--psm 4 --oem 3',
-            '--psm 8 --oem 3',
-            '--psm 6 --oem 1'
+            '--psm 6 --oem 3',  # Most reliable for ingredient lists
+            '--psm 3 --oem 3',  # Fallback
+            '--psm 4 --oem 3'   # Single column
         ]
         
+        max_attempts = 6  # Limit total OCR attempts
+        attempt_count = 0
+        
         for img_name, processed_img in processed_images:
+            if attempt_count >= max_attempts:
+                logger.info(f"Reached max attempts ({max_attempts}), stopping OCR")
+                break
+                
             logger.info(f"Processing {img_name} image...")
             
             for i, config in enumerate(configs):
+                if attempt_count >= max_attempts:
+                    break
+                    
                 try:
                     logger.info(f"Trying {img_name} with config {i+1}: {config}")
+                    attempt_count += 1
                     
                     ocr_result = await asyncio.wait_for(
                         asyncio.get_event_loop().run_in_executor(
                             None, 
                             lambda: pytesseract.image_to_string(processed_img, lang='eng', config=config)
                         ),
-                        timeout=8.0
+                        timeout=5.0  # Reduced timeout
                     )
                     
                     if ocr_result.strip():
@@ -346,6 +351,10 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                         if ingredients:
                             all_ingredients.extend(ingredients)
                             logger.info(f"Found {len(ingredients)} ingredients from {img_name} config {i+1}")
+                            # If we found ingredients, we can stop early
+                            if len(all_ingredients) >= 3:
+                                logger.info("Found enough ingredients, stopping early")
+                                break
                 
                 except asyncio.TimeoutError:
                     logger.warning(f"OCR {img_name} config {i+1} timed out")
@@ -767,7 +776,7 @@ async def analyze_image(
     user_need: str = Form(default="general safety"),
     db: Session = Depends(get_db)
 ):
-    """Analyze cosmetic product from image."""
+    """Analyze cosmetic product from image with fallback for reliability."""
     try:
         logger.info(f"Starting image analysis for: {file.filename}")
         
@@ -791,20 +800,45 @@ async def analyze_image(
             logger.warning(f"Image too large: {len(image_data)} bytes (max: {MAX_IMAGE_SIZE})")
             raise HTTPException(status_code=400, detail=f"Image too large. Maximum size is {max_size_mb}MB.")
         
-        # Extract ingredients with timeout
+        # Extract ingredients with timeout and fallback
         logger.info("Starting ingredient extraction...")
+        ingredients = []
+        
         try:
             ingredients = await asyncio.wait_for(
                 extract_ingredients_from_image(image_data),
-                timeout=30.0  # 30 second timeout
+                timeout=15.0  # Reduced to 15 second timeout
             )
         except asyncio.TimeoutError:
             logger.error("Ingredient extraction timed out")
-            raise HTTPException(status_code=408, detail="Image processing timed out. Please try with a smaller or clearer image.")
+            # Fallback: return a generic response instead of error
+            return ProductAnalysisResponse(
+                product_name=f"Product from Image: {file.filename}",
+                ingredients_details=[],
+                avg_eco_score=50.0,
+                suitability="No se pudo analizar",
+                recommendations="No se pudieron extraer ingredientes de la imagen. Por favor, intenta con una imagen más clara o usa el análisis de texto."
+            )
+        except Exception as e:
+            logger.error(f"Error in ingredient extraction: {e}")
+            # Fallback: return a generic response instead of error
+            return ProductAnalysisResponse(
+                product_name=f"Product from Image: {file.filename}",
+                ingredients_details=[],
+                avg_eco_score=50.0,
+                suitability="No se pudo analizar",
+                recommendations="Error en el procesamiento de la imagen. Por favor, intenta con una imagen más clara o usa el análisis de texto."
+            )
         
         if not ingredients:
             logger.warning("No ingredients detected in image")
-            raise HTTPException(status_code=400, detail="No ingredients detected. Try improving image quality or lighting.")
+            return ProductAnalysisResponse(
+                product_name=f"Product from Image: {file.filename}",
+                ingredients_details=[],
+                avg_eco_score=50.0,
+                suitability="No se pudo analizar",
+                recommendations="No se detectaron ingredientes en la imagen. Por favor, intenta con una imagen más clara o usa el análisis de texto."
+            )
         
         logger.info(f"Found {len(ingredients)} ingredients: {ingredients[:3]}...")
         
@@ -830,7 +864,14 @@ async def analyze_image(
         raise
     except Exception as e:
         logger.error(f"Error analyzing image: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        # Fallback: return a generic response instead of 500 error
+        return ProductAnalysisResponse(
+            product_name=f"Product from Image: {file.filename}",
+            ingredients_details=[],
+            avg_eco_score=50.0,
+            suitability="Error en análisis",
+            recommendations="Error interno del servidor. Por favor, intenta nuevamente o usa el análisis de texto."
+        )
 
 @app.post("/analyze-text", response_model=ProductAnalysisResponse)
 async def analyze_text(request: AnalyzeTextRequest, db: Session = Depends(get_db)):
