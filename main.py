@@ -1915,7 +1915,7 @@ def merge_ingredient_data(remote_data: Optional[Dict[str, Any]], local_data: Opt
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"message": "MommyShops API is running", "version": "3.0.0"}
+    return {"message": "MommyShops API is running", "version": "3.0.1"}
 
 @app.post("/auth/register", response_model=AuthRegisterResponse, tags=["auth"])
 async def auth_register(payload: AuthRegisterRequest, db: Session = Depends(get_db)):
