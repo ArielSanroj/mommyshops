@@ -1,6 +1,16 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    ForeignKey,
+    JSON,
+    DateTime,
+)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from fastapi import HTTPException
 import os
 import json
@@ -10,6 +20,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from sqlalchemy.sql import func
 
 load_dotenv()
 
@@ -71,7 +82,100 @@ except Exception as e:
     SessionLocal = None
     Base = None
 
-# Modelo de Ingredientes
+# Domain models
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(64), unique=True, index=True, nullable=True)
+    email = Column(String(128), unique=True, index=True, nullable=True)
+    hashed_password = Column(String(255), nullable=True)
+    # Google OAuth2 fields
+    google_id = Column(String(128), unique=True, index=True, nullable=True)
+    google_name = Column(String(128), nullable=True)
+    google_picture = Column(String(512), nullable=True)
+    auth_provider = Column(String(32), default='local')  # 'local' or 'google'
+    skin_face = Column(String(64))
+    hair_type = Column(String(64))
+    goals_face = Column(JSON)
+    climate = Column(String(64))
+    skin_body = Column(JSON)
+    goals_body = Column(JSON)
+    hair_porosity = Column(JSON)
+    goals_hair = Column(JSON)
+    hair_thickness_scalp = Column(JSON)
+    conditions = Column(JSON)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    routines = relationship("Routine", back_populates="user", cascade="all, delete-orphan")
+    recommendations = relationship("Recommendation", back_populates="user", cascade="all, delete-orphan")
+
+
+class Routine(Base):
+    __tablename__ = "routines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    products = Column(JSON)
+    extracted_ingredients = Column(JSON)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="routines")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), index=True)
+    brand = Column(String(128))
+    ingredients = Column(JSON)
+    category = Column(String(64))
+    eco_score = Column(Float)
+    risk_level = Column(String(64))
+    extra_metadata = Column(JSON)
+    nemotron_summary = Column(JSON)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    recommendations_source = relationship(
+        "Recommendation",
+        back_populates="original_product",
+        foreign_keys="Recommendation.original_product_id",
+    )
+    recommendations_substitute = relationship(
+        "Recommendation",
+        back_populates="substitute_product",
+        foreign_keys="Recommendation.substitute_product_id",
+    )
+
+
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    routine_id = Column(Integer, ForeignKey("routines.id", ondelete="SET NULL"), nullable=True)
+    original_product_id = Column(Integer, ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
+    substitute_product_id = Column(Integer, ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
+    original_product_name = Column(String(255))
+    substitute_product_name = Column(String(255))
+    reason = Column(Text)
+    status = Column(String(32), server_default="draft")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="recommendations")
+    routine = relationship("Routine")
+    original_product = relationship("Product", foreign_keys=[original_product_id], back_populates="recommendations_source")
+    substitute_product = relationship("Product", foreign_keys=[substitute_product_id], back_populates="recommendations_substitute")
+
+
 class Ingredient(Base):
     __tablename__ = "ingredients"
     id = Column(Integer, primary_key=True, index=True)
@@ -81,6 +185,7 @@ class Ingredient(Base):
     benefits = Column(Text)  # e.g., "Hidrata la piel"
     risks_detailed = Column(Text)  # e.g., "Puede causar irritación en dosis altas"
     sources = Column(String)  # e.g., "FDA, EWG, PubChem, IARC, INVIMA, COSING"
+    nemotron_enrichment = Column(JSON)
 
 def get_db():
     """Get database session with proper error handling."""
@@ -96,6 +201,54 @@ def get_db():
         raise
     finally:
         db.close()
+
+async def enrich_ingredients_with_nemotron(
+    db: Session,
+    ingredient_names: Optional[Iterable[str]] = None,
+    user_conditions: Optional[Iterable[str]] = None,
+) -> Dict[str, Any]:
+    """Enrich stored ingredients with Nemotron insights (risks, alternatives)."""
+    from nemotron_integration import enrich_with_nemotron_async
+
+    if ingredient_names:
+        query = db.query(Ingredient).filter(Ingredient.name.in_(ingredient_names))
+    else:
+        query = db.query(Ingredient)
+
+    targets = query.all()
+    if not targets:
+        return {"processed": 0, "updated": 0, "errors": []}
+
+    results: Dict[str, Any] = {"processed": 0, "updated": 0, "errors": []}
+    tasks = []
+    for ingredient in targets:
+        results["processed"] += 1
+        tasks.append(enrich_with_nemotron_async(ingredient.name, list(user_conditions or [])))
+
+    enriched_payloads = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for ingredient, payload in zip(targets, enriched_payloads):
+        if isinstance(payload, Exception):
+            logger.error("Nemotron enrichment failed for %s: %s", ingredient.name, payload)
+            results["errors"].append({"ingredient": ingredient.name, "error": str(payload)})
+            continue
+
+        if payload:
+            ingredient.nemotron_enrichment = payload
+            results["updated"] += 1
+
+    db.commit()
+    return results
+
+def enrich_ingredients_with_nemotron_sync(
+    db: Session,
+    ingredient_names: Optional[Iterable[str]] = None,
+    user_conditions: Optional[Iterable[str]] = None,
+) -> Dict[str, Any]:
+    """Synchronous helper for scripts that enforces a fresh event loop."""
+    return asyncio.run(
+        enrich_ingredients_with_nemotron(db, ingredient_names=ingredient_names, user_conditions=user_conditions)
+    )
 
 # Import API functions from api_utils_production
 from api_utils_production import fetch_ingredient_data
@@ -688,6 +841,16 @@ LOCAL_INGREDIENT_DATABASE = {
         "sources": "Local Database + FDA + CIR + EWG"
     }
 }
+
+def get_all_ingredient_names() -> List[str]:
+    """Get all ingredient names from the database for dynamic corrections."""
+    try:
+        with SessionLocal() as db:
+            ingredients = db.query(Ingredient.name).all()
+            return [ing.name for ing in ingredients]
+    except Exception as e:
+        logger.error(f"Error getting ingredient names: {e}")
+        return []
 
 def get_ingredient_data(ingredient_name: str) -> Optional[Dict]:
     """Get ingredient data from local database with fuzzy matching for garbled OCR text."""
