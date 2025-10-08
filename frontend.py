@@ -20,6 +20,16 @@ if not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("PRODUCTION"):
     except:
         pass
 
+# Additional production detection - check if we're not on localhost
+try:
+    import socket
+    hostname = socket.gethostname()
+    # If hostname doesn't contain common local identifiers, assume production
+    if not any(local in hostname.lower() for local in ["localhost", "127.0.0.1", "local", "desktop", "macbook", "laptop"]):
+        os.environ["PRODUCTION"] = "true"
+except:
+    pass
+
 
 st.set_page_config(page_title="MommyShops", page_icon="🌿", layout="wide")
 
@@ -30,7 +40,23 @@ def _normalize_url(value: str) -> str:
 
 def resolve_api_base() -> Optional[str]:
     # Check if we're in production (Railway environment)
-    if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION"):
+    is_production = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION")
+    
+    # Try to detect production by testing if localhost is not available
+    local = "http://127.0.0.1:8000"
+    local_available = False
+    try:
+        response = requests.get(f"{local}/health", timeout=2)
+        if response.status_code == 200:
+            local_available = True
+    except requests.RequestException:
+        pass
+    
+    # If local is not available and we're not explicitly in development, assume production
+    if not local_available and not os.getenv("DEVELOPMENT"):
+        is_production = True
+    
+    if is_production:
         # Production environment - use production URL
         secret_url = None
         try:
@@ -48,14 +74,9 @@ def resolve_api_base() -> Optional[str]:
         # Default production URL
         return "https://web-production-f23a5.up.railway.app"
     
-    # Development environment - try local first
-    local = "http://127.0.0.1:8000"
-    try:
-        response = requests.get(f"{local}/health", timeout=2)
-        if response.status_code == 200:
-            return local
-    except requests.RequestException:
-        pass
+    # Development environment - use local
+    if local_available:
+        return local
     
     # If local not available, check secrets
     secret_url = None
@@ -82,7 +103,19 @@ def debug_api_connection():
     # Check environment variables
     st.write(f"**RAILWAY_ENVIRONMENT:** {os.getenv('RAILWAY_ENVIRONMENT', 'Not set')}")
     st.write(f"**PRODUCTION:** {os.getenv('PRODUCTION', 'Not set')}")
+    st.write(f"**DEVELOPMENT:** {os.getenv('DEVELOPMENT', 'Not set')}")
     st.write(f"**API_URL (env):** {os.getenv('API_URL', 'Not set')}")
+    
+    # Check localhost availability
+    local = "http://127.0.0.1:8000"
+    local_available = False
+    try:
+        response = requests.get(f"{local}/health", timeout=2)
+        if response.status_code == 200:
+            local_available = True
+    except requests.RequestException:
+        pass
+    st.write(f"**Localhost Available:** {local_available}")
     
     # Check secrets
     try:
