@@ -9,6 +9,17 @@ import requests
 import streamlit as st
 from firebase_config import create_user, verify_user_credentials, update_user_profile, save_analysis_result, get_user_analysis_history
 
+# Force production mode if running on Railway or in production
+if not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("PRODUCTION"):
+    # Check if we're running on a production domain
+    import socket
+    try:
+        hostname = socket.gethostname()
+        if "railway" in hostname.lower() or "production" in hostname.lower():
+            os.environ["PRODUCTION"] = "true"
+    except:
+        pass
+
 
 st.set_page_config(page_title="MommyShops", page_icon="🌿", layout="wide")
 
@@ -18,7 +29,26 @@ def _normalize_url(value: str) -> str:
 
 
 def resolve_api_base() -> Optional[str]:
-    # First, try to detect local backend
+    # Check if we're in production (Railway environment)
+    if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("PRODUCTION"):
+        # Production environment - use production URL
+        secret_url = None
+        try:
+            secret_url = getattr(st.secrets, "API_URL", None)
+        except Exception:
+            secret_url = None
+        if secret_url:
+            return _normalize_url(str(secret_url).strip())
+
+        # Check environment variable
+        env_url = os.getenv("API_URL")
+        if env_url:
+            return _normalize_url(env_url.strip())
+        
+        # Default production URL
+        return "https://web-production-f23a5.up.railway.app"
+    
+    # Development environment - try local first
     local = "http://127.0.0.1:8000"
     try:
         response = requests.get(f"{local}/health", timeout=2)
@@ -43,6 +73,41 @@ def resolve_api_base() -> Optional[str]:
 
     # Default fallback to local (even if not responding)
     return local
+
+
+def debug_api_connection():
+    """Debug function to help troubleshoot API connection issues"""
+    st.write("🔍 **API Connection Debug Info:**")
+    
+    # Check environment variables
+    st.write(f"**RAILWAY_ENVIRONMENT:** {os.getenv('RAILWAY_ENVIRONMENT', 'Not set')}")
+    st.write(f"**PRODUCTION:** {os.getenv('PRODUCTION', 'Not set')}")
+    st.write(f"**API_URL (env):** {os.getenv('API_URL', 'Not set')}")
+    
+    # Check secrets
+    try:
+        secret_url = getattr(st.secrets, "API_URL", None)
+        st.write(f"**API_URL (secrets):** {secret_url}")
+    except Exception as e:
+        st.write(f"**API_URL (secrets):** Error accessing secrets: {e}")
+    
+    # Test resolved URL
+    resolved_url = resolve_api_base()
+    st.write(f"**Resolved API URL:** {resolved_url}")
+    
+    # Test connection
+    if resolved_url:
+        try:
+            response = requests.get(f"{resolved_url}/health", timeout=5)
+            st.write(f"**Health Check Status:** {response.status_code}")
+            if response.status_code == 200:
+                st.write("✅ **API is accessible!**")
+            else:
+                st.write("❌ **API returned error status**")
+        except Exception as e:
+            st.write(f"❌ **API Connection Error:** {e}")
+    else:
+        st.write("❌ **No API URL resolved**")
 
 
 def parse_error(response: requests.Response) -> str:
@@ -344,6 +409,11 @@ if st.sidebar.button("Probar conexión"):
             st.sidebar.warning(f"Backend respondió con estado {response.status_code}.")
     except requests.RequestException as exc:
         st.sidebar.error(f"No se pudo conectar: {exc}")
+
+# Debug section
+if st.sidebar.button("🔍 Debug API"):
+    with st.sidebar.expander("Debug Info", expanded=True):
+        debug_api_connection()
 
 st.sidebar.markdown("### Autenticación")
 
