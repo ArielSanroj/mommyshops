@@ -116,6 +116,8 @@ python3 test_registration_flows.py
 - `main.py` - Updated Google OAuth flow
 - `frontend.py` - Updated profile saving
 - `firebase_config.py` - Improved credential handling
+- `database.py` / `api_utils_production.py` - Normalized ingredientes, caché en memoria y logs centralizados
+- `unified_data_service.py` - Uso de context managers para sesiones y logging consistente
 
 ### **Files Added:**
 - `unified_data_service.py` - Core dual write service
@@ -124,6 +126,15 @@ python3 test_registration_flows.py
 - `test_registration_flows.py` - Registration test
 - `FIREBASE_SETUP_COMPLETE.md` - Setup guide
 - `firebase-service-account.json.example` - Template
+
+### **Recent Optimization (Mar 2025)**
+- Se introdujo `normalize_ingredient_name` y tests asociados para generar listas de ingredientes limpias, requisito previo al motor de recomendaciones.
+- El agregador de APIs fusiona respuestas y fuentes sin duplicados gracias a claves normalizadas y `_merge_sources`.
+- Las sincronizaciones externas refrescan automáticamente el caché local (`refresh_local_cache_from_db`) reduciendo discrepancias entre SQLite y Firestore.
+- `_SPECIAL_CHAR_TRANSLATIONS` cubre caracteres Unicode (µ, α, ß) y el nuevo filtro de medidas (`µg/L`, `ppm`, `mg per ml`) descarta proporciones y unidades aisladas antes de alimentar los agregadores.
+- `APICache` ahora es thread-safe, expone métricas (`hits`, `misses`, `evictions`) y se apoya en logging JSON para auditar fallos por proveedor.
+- `unified_data_service.managed_session` centraliza commits/rollbacks; `test_firebase_integration.py` valida el context manager antes de interactuar con Firebase.
+- `test_complete_system.py` y `test_minimal.py` cubren canonicalización, circuit breakers y estadísticas de caché garantizando estabilidad previa al motor de recomendaciones.
 
 ## 🚨 **Important Notes:**
 

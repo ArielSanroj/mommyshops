@@ -1,5 +1,9 @@
 # 🔥 Firebase Data Structure Analysis - MommyShops
 
+> **Actualización 2025-03**: la capa de datos unificó la normalización de ingredientes (`normalize_ingredient_name`). Toda escritura hacia Firestore debe usar los nombres canónicos que expone `database.get_ingredient_data` para preparar el futuro motor de recomendaciones.
+>
+> `managed_session(commit=True)` garantiza commits/rollbacks consistentes antes de sincronizar con Firebase, mientras que el caché thread-safe en `api_utils_production` normaliza las claves (`proveedor:ingrediente`) y elimina artefactos (`µg`, `1mg`, caracteres griegos) detectados por OCR. La prueba `test_firebase_integration.py::test_session_manager` confirma este flujo dual. El filtro de medidas ahora descarta proporciones como `µg/L` y `ppm`, asegurando que Firestore sólo reciba nombres de ingredientes limpios.
+
 ## 📊 Current Data Collection Status
 
 ### ✅ **What We SHOULD Have in Firebase:**
@@ -161,6 +165,8 @@
   "created_at": "timestamp"
 }
 ```
+
+- 📌 **Nota**: `name` y `inci_name` deben provenir del caché normalizado (por ejemplo `get_ingredient_data(...)['name']`) para evitar duplicados y alinear la base con SQLite.
 
 #### **7. Analytics Collection (`/analytics/{eventId}`)**
 ```json

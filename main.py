@@ -31,12 +31,17 @@ from passlib.context import CryptContext
 from database import (
     Ingredient,
     Recommendation,
+    RecommendationFeedback,
     Routine,
     SessionLocal,
     User,
+    Product,
     get_db,
     get_ingredient_data,
     get_all_ingredients,
+    canonicalize_ingredients,
+    normalize_ingredient_name,
+    ensure_recommendation_feedback_schema,
 )
 from api_utils_production import fetch_ingredient_data, health_check, get_cache_stats
 from llm_utils import enrich_ingredient_data
@@ -46,6 +51,17 @@ from google_vision_integration import extract_ingredients_with_google_vision, an
 from google_auth_integration import get_google_auth_url, handle_google_callback, verify_google_token
 from firebase_config import get_firestore_client, get_firebase_auth, is_firebase_available
 from firebase_admin import firestore
+from ingredient_substitute_recommendation import generate_recommendations as generate_ingredient_recommendations
+from ollama_integration import (
+    ollama_integration,
+    analyze_ingredients_with_ollama,
+    suggest_alternatives_with_ollama,
+    stream_ingredient_analysis,
+    test_ollama_connection,
+    enhance_ocr_text_with_ollama,
+    analyze_ingredient_safety_with_ollama
+)
+from substitution_endpoints import router as substitution_router
 
 # Configure logging with timestamps
 logging.basicConfig(
@@ -57,6 +73,7 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+ensure_recommendation_feedback_schema()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", 5 * 1024 * 1024))
@@ -466,6 +483,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Include substitution router
+app.include_router(substitution_router)
 
 RECOMMENDER = IngredientRecommender()
 RECOMMENDER.configure(SessionLocal)
@@ -778,12 +797,54 @@ def _sanitize_analysis_data(data: Dict[str, Any]) -> Dict[str, Any]:
     return sanitized
 
 
+class IngredientRecommendationRequest(BaseModel):
+    ingredients: List[str]
+    user_id: Optional[str] = None
+
+
+class IngredientRiskItem(BaseModel):
+    name: str
+    risk_level: str
+    eco_status: str
+    eco_score: Optional[float] = None
+    risks_detailed: Optional[str] = None
+    sources: Optional[str] = None
+    is_risky: bool = False
+
+
+class IngredientSubstituteItem(BaseModel):
+    original: str
+    substitute: str
+
+
+class ProductSuggestionItem(BaseModel):
+    product_id: Optional[int] = None
+    name: str
+    brand: Optional[str] = None
+    eco_score: Optional[float] = None
+    risk_level: Optional[str] = None
+    reason: Optional[str] = None
+    similarity: Optional[float] = None
+    category: Optional[str] = None
+    rating_average: Optional[float] = None
+    rating_count: int = 0
+
+
+class IngredientRecommendationResponse(BaseModel):
+    analysis: List[IngredientRiskItem]
+    substitutes: List[IngredientSubstituteItem]
+    recommendations: List[ProductSuggestionItem]
+
+
 class ProductAnalysisResponse(BaseModel):
     product_name: str
     ingredients_details: List[IngredientAnalysisResponse]
     avg_eco_score: float
     suitability: str
     recommendations: str
+    ingredient_breakdown: List["IngredientRiskItem"] = Field(default_factory=list)
+    ingredient_substitutes: List["IngredientSubstituteItem"] = Field(default_factory=list)
+    product_suggestions: List["ProductSuggestionItem"] = Field(default_factory=list)
 
 
 class SubstituteSuggestion(BaseModel):
@@ -794,6 +855,8 @@ class SubstituteSuggestion(BaseModel):
     risk_level: Optional[str] = None
     similarity: float = 0.0
     reason: str
+    rating_average: Optional[float] = None
+    rating_count: int = 0
 
 
 class ProductEvaluation(BaseModel):
@@ -823,6 +886,19 @@ class RecommendationItem(BaseModel):
     reason: str
     status: str
     created_at: datetime
+    rating_average: Optional[float] = None
+    rating_count: int = 0
+
+
+class RecommendationRatingRequest(BaseModel):
+    rating: float = Field(..., ge=1, le=5)
+    comment: Optional[str] = Field(default=None, max_length=1000)
+
+
+class RecommendationRatingResponse(BaseModel):
+    recommendation_id: int
+    rating_average: Optional[float]
+    rating_count: int
 
 
 class UserRecommendationsResponse(BaseModel):
@@ -1082,6 +1158,72 @@ def _simple_ocr_parse(image_data: bytes) -> List[str]:
         return []
 
 
+def extract_ingredients_from_enhanced_text(text: str) -> List[str]:
+    """
+    Extract ingredients from Ollama-enhanced text with better parsing
+    """
+    ingredients = []
+    lines = text.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if not line or len(line) < 3:
+            continue
+        
+        # Skip common non-ingredient words
+        skip_words = [
+            'ingredients', 'ingrediente', 'ingredientes', 'ingredient',
+            'analysis', 'assessment', 'safety', 'benefits', 'risks',
+            'recommendations', 'alternatives', 'substitutes', 'model=',
+            'created_at=', 'done=', 'total_duration=', 'load_duration=',
+            'prompt_eval_count=', 'eval_count=', 'message=', 'role=',
+            'content=', 'thinking=', 'images=', 'tool_name=', 'tool_calls='
+        ]
+        
+        line_lower = line.lower()
+        if any(skip_word in line_lower for skip_word in skip_words):
+            continue
+        
+        # Skip lines that look like metadata
+        if any(pattern in line_lower for pattern in [
+            'model=', 'created_at=', 'done=', 'total_duration=',
+            'load_duration=', 'prompt_eval_count=', 'eval_count=',
+            'message=', 'role=', 'content=', 'thinking=',
+            'images=', 'tool_name=', 'tool_calls='
+        ]):
+            continue
+        
+        # Look for ingredient patterns
+        if any(pattern in line_lower for pattern in [
+            'acid', 'alcohol', 'oil', 'extract', 'vitamin', 'sodium',
+            'glycerin', 'paraben', 'sulfate', 'oxide', 'ester',
+            'cetyl', 'stearyl', 'myristyl', 'palmitate', 'stearate',
+            'helianthus', 'hexanediol', 'cera', 'beeswax', 'polyglyceryl',
+            'aqua', 'water', 'eau', 'butylene', 'propylene', 'glycol',
+            'acrylate', 'copolymer', 'distearate', 'hydroxyethyl'
+        ]):
+            # Clean up the ingredient name
+            ingredient = line.strip()
+            # Remove common prefixes/suffixes and metadata
+            ingredient = ingredient.replace('*', '').replace('•', '').replace('-', ' ').strip()
+            # Remove numbers at the beginning (like "1. ", "2. ", etc.)
+            if ingredient and ingredient[0].isdigit() and len(ingredient) > 2:
+                ingredient = ingredient.split('.', 1)[1].strip() if '.' in ingredient else ingredient[1:].strip()
+            
+            if ingredient and len(ingredient) > 2:
+                ingredients.append(ingredient)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_ingredients = []
+    for ingredient in ingredients:
+        if ingredient.lower() not in seen:
+            seen.add(ingredient.lower())
+            unique_ingredients.append(ingredient)
+    
+    return unique_ingredients
+
+
 async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
     """Extract ingredients from image using enhanced OCR with better preprocessing."""
     try:
@@ -1095,6 +1237,49 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
                 return ingredients
         except Exception as e:
             logger.warning(f"Google Vision failed for image: {e}")
+        
+        # Try Ollama for enhanced OCR text processing
+        try:
+            if ollama_integration.is_available():
+                logger.info("Trying Ollama for enhanced OCR processing...")
+                # First get basic OCR text
+                image = Image.open(io.BytesIO(image_data))
+                basic_ocr_text = pytesseract.image_to_string(image, lang='eng+spa')
+                
+                if basic_ocr_text.strip():
+                    # Create a specific prompt for OCR improvement and ingredient extraction
+                    ocr_improvement_prompt = f"""
+Please analyze this OCR text from a cosmetic product label and extract the ingredient list clearly. 
+The text may have OCR errors, so please correct them and provide a clean, properly formatted ingredient list.
+
+OCR Text:
+{basic_ocr_text}
+
+Please provide:
+1. A corrected and cleaned ingredient list
+2. Each ingredient on a separate line
+3. Use proper cosmetic ingredient names (INCI names when possible)
+4. Remove any non-ingredient text
+
+Format your response as a simple list of ingredients, one per line.
+"""
+                    
+                    # Use Ollama to improve and extract ingredients from OCR text
+                    ollama_result = await enhance_ocr_text_with_ollama(basic_ocr_text)
+                    if ollama_result.success and ollama_result.content:
+                        # Parse ingredients from Ollama response
+                        ingredients = extract_ingredients_from_enhanced_text(ollama_result.content)
+                        if ingredients:
+                            logger.info(f"Ollama enhanced OCR extracted {len(ingredients)} ingredients")
+                            return canonicalize_ingredients(ingredients[:MAX_OCR_INGREDIENTS])
+                        else:
+                            # Fallback to basic text extraction
+                            ingredients = extract_ingredients_from_text(ollama_result.content)
+                            if ingredients:
+                                logger.info(f"Ollama fallback extracted {len(ingredients)} ingredients")
+                                return canonicalize_ingredients(ingredients[:MAX_OCR_INGREDIENTS])
+        except Exception as e:
+            logger.warning(f"Ollama OCR enhancement failed: {e}")
         
         if not TESSERACT_AVAILABLE:
             logger.error("Tesseract not available")
@@ -1255,14 +1440,16 @@ async def extract_ingredients_from_image(image_data: bytes) -> List[str]:
             fallback_ingredients = _simple_ocr_parse(image_data)
             if fallback_ingredients:
                 logger.info("Simple OCR fallback extracted %d ingredients", len(fallback_ingredients))
-                return fallback_ingredients[:MAX_OCR_INGREDIENTS]
+                return canonicalize_ingredients(fallback_ingredients[:MAX_OCR_INGREDIENTS])
         
         return cleaned_ingredients[:MAX_OCR_INGREDIENTS]
         
     except Exception as e:
         logger.error(f"Image processing failed: {e}")
         fallback_ingredients = _simple_ocr_parse(image_data)
-        return fallback_ingredients[:MAX_OCR_INGREDIENTS] if fallback_ingredients else []
+        if not fallback_ingredients:
+            return []
+        return canonicalize_ingredients(fallback_ingredients[:MAX_OCR_INGREDIENTS])
 
 def detect_garbled_text(text: str) -> bool:
     """Detect if OCR text is garbled/corrupted."""
@@ -1477,51 +1664,6 @@ def fuzzy_match_ingredients(text: str, db_ingredients: List[str], threshold: flo
         logger.error(f"Fuzzy matching failed: {e}")
         return []
 
-def fuzzy_match_ingredients(text: str, db_ingredients: List[str], threshold: float = 0.6) -> List[str]:
-    """Fuzzy match text against database ingredients with adaptive threshold."""
-    try:
-        from difflib import SequenceMatcher
-        
-        words = text.split()
-        matched_ingredients = []
-        
-        for word in words:
-            if len(word) < 3:
-                continue
-                
-            best_match = None
-            best_ratio = 0
-            
-            for ingredient in db_ingredients:
-                # Try exact substring match first
-                if word.lower() in ingredient.lower():
-                    matched_ingredients.append(ingredient)
-                    continue
-                
-                # Try fuzzy matching
-                ratio = SequenceMatcher(None, word.lower(), ingredient.lower()).ratio()
-                
-                # Adaptive threshold based on word length
-                adaptive_threshold = threshold
-                if len(word) < 5:
-                    adaptive_threshold = 0.5  # Lower threshold for short words
-                elif len(word) > 10:
-                    adaptive_threshold = 0.7  # Higher threshold for long words
-                
-                if ratio > best_ratio and ratio >= adaptive_threshold:
-                    best_ratio = ratio
-                    best_match = ingredient
-            
-            if best_match and best_match not in matched_ingredients:
-                matched_ingredients.append(best_match)
-                logger.info(f"Fuzzy matched '{word}' -> '{best_match}' (ratio: {best_ratio:.2f})")
-        
-        return matched_ingredients
-        
-    except Exception as e:
-        logger.error(f"Fuzzy matching failed: {e}")
-        return []
-
 def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
     """Clean and deduplicate ingredients, removing corrupted text."""
     import re
@@ -1573,9 +1715,9 @@ def clean_and_deduplicate_ingredients(ingredients: List[str]) -> List[str]:
     except Exception as e:
         logger.error(f"Error in clean_and_deduplicate_ingredients: {e}")
         # Return original ingredients if cleaning fails
-        return ingredients[:MAX_OCR_INGREDIENTS]
-    
-    return cleaned
+        return canonicalize_ingredients(ingredients[:MAX_OCR_INGREDIENTS])
+
+    return canonicalize_ingredients(cleaned)
 
 def clean_ingredient_text(text: str) -> str:
     """Clean corrupted ingredient text."""
@@ -1683,6 +1825,10 @@ def resolve_canonical_ingredient(cleaned_candidate: str) -> Optional[str]:
     if best_ratio >= 0.88:
         return best_match
 
+    local_entry = get_ingredient_data(cleaned_candidate)
+    if local_entry and local_entry.get("name"):
+        return local_entry["name"]
+
     return None
 
 def extract_ingredients_from_text(text: str) -> List[str]:
@@ -1723,7 +1869,7 @@ def extract_ingredients_from_text(text: str) -> List[str]:
         results.append(value)
 
     if results:
-        return results
+        return canonicalize_ingredients(results)
 
     fallback_matches = re.findall(r"\b[A-Za-z][A-Za-z-]+(?:\s+[A-Za-z][A-Za-z-]+)*\b", text)
     fallback_results = []
@@ -1734,7 +1880,7 @@ def extract_ingredients_from_text(text: str) -> List[str]:
         canonical = resolve_canonical_ingredient(match)
         seen.add(normalized_match)
         fallback_results.append(canonical or match.strip())
-    return fallback_results
+    return canonicalize_ingredients(fallback_results)
 
 
 def extract_ingredients_from_corrupted_text(text: str) -> List[str]:
@@ -1761,7 +1907,7 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
         async with httpx.AsyncClient(timeout=30.0) as client:
             for ingredient in ingredients:
                 try:
-                    normalized_name = ingredient.lower()
+                    normalized_name = normalize_ingredient_name(ingredient)
                     if normalized_name in ingredient_cache:
                         combined_data = ingredient_cache[normalized_name]
                     else:
@@ -1780,9 +1926,10 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
                     benefits = combined_data.get('benefits', 'No disponible')
                     risks = combined_data.get('risks_detailed', 'No disponible')
                     sources = combined_data.get('sources', 'Análisis básico')
+                    canonical_name = combined_data.get('name', ingredient)
 
                     ingredients_details.append(IngredientAnalysisResponse(
-                        name=ingredient,
+                        name=canonical_name,
                         eco_score=eco_score,
                         risk_level=risk_level,
                         benefits=benefits,
@@ -1817,22 +1964,72 @@ async def analyze_ingredients(ingredients: List[str], user_need: str, db: Sessio
         else:
             suitability = "Sí"
         
-        # Generate recommendations
-        recommendations = generate_recommendations(ingredients_details, user_need, avg_eco_score, risk_counts)
+        # Generate recommendations summary
+        recommendations = build_recommendation_summary(ingredients_details, user_need, avg_eco_score, risk_counts)
         
+        # Enhance analysis with Ollama if available
+        try:
+            if ollama_integration.is_available():
+                logger.info("Enhancing analysis with Ollama...")
+                ollama_analysis = await analyze_ingredients_with_ollama(ingredients, [user_need])
+                if ollama_analysis.success and ollama_analysis.content:
+                    # Append Ollama insights to recommendations
+                    ollama_insights = f"\n\n🤖 Análisis adicional con IA:\n{ollama_analysis.content}"
+                    recommendations += ollama_insights
+                    logger.info("Ollama analysis successfully integrated")
+        except Exception as e:
+            logger.warning(f"Ollama analysis enhancement failed: {e}")
+        
+        ingredient_names_for_reco = [detail.name for detail in ingredients_details if detail.name]
+        breakdown_items: List[IngredientRiskItem] = []
+        substitute_items: List[IngredientSubstituteItem] = []
+        product_items: List[ProductSuggestionItem] = []
+
+        if ingredient_names_for_reco:
+            try:
+                reco_payload = await generate_ingredient_recommendations(
+                    ingredient_names_for_reco,
+                    RECOMMENDER,
+                    user_conditions=[],
+                    top_k=3,
+                )
+                for entry in reco_payload.get("analysis", []):
+                    breakdown_items.append(
+                        IngredientRiskItem(
+                            name=str(entry.get("name", "")),
+                            risk_level=str(entry.get("risk_level", "desconocido")),
+                            eco_status=str(entry.get("eco_status", "desconocido")),
+                            eco_score=entry.get("eco_score"),
+                            risks_detailed=entry.get("risks_detailed"),
+                            sources=entry.get("sources"),
+                            is_risky=bool(entry.get("is_risky", False)),
+                        )
+                    )
+                for entry in reco_payload.get("substitutes", []):
+                    if entry.get("original") and entry.get("substitute"):
+                        substitute_items.append(IngredientSubstituteItem(**entry))
+                for entry in reco_payload.get("recommendations", []):
+                    if entry.get("name"):
+                        product_items.append(ProductSuggestionItem(**entry))
+            except Exception as reco_exc:
+                logger.warning("Advanced ingredient recommendations failed: %s", reco_exc)
+
         return ProductAnalysisResponse(
             product_name="Product Analysis",
             ingredients_details=ingredients_details,
             avg_eco_score=round(avg_eco_score, 1),
             suitability=suitability,
-            recommendations=recommendations
+            recommendations=recommendations,
+            ingredient_breakdown=breakdown_items,
+            ingredient_substitutes=substitute_items,
+            product_suggestions=product_items,
         )
         
     except Exception as e:
         logger.error(f"Error in ingredient analysis: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-def generate_recommendations(ingredients: List[IngredientAnalysisResponse], user_need: str, avg_eco_score: float, risk_counts: Dict) -> str:
+def build_recommendation_summary(ingredients: List[IngredientAnalysisResponse], user_need: str, avg_eco_score: float, risk_counts: Dict) -> str:
     """Generate personalized recommendations."""
     recommendations = []
     
@@ -2669,6 +2866,8 @@ async def analyze_routine_endpoint(
                             risk_level=item.get("risk_level"),
                             similarity=float(item.get("similarity", 0.0)),
                             reason=reason_text,
+                            rating_average=item.get("rating_average"),
+                            rating_count=int(item.get("rating_count", 0) or 0),
                         )
                         substitutes.append(suggestion)
                         substitute_accumulator.append(suggestion)
@@ -2776,11 +2975,103 @@ async def get_user_recommendations(user_id: int, db: Session = Depends(get_db)):
             reason=entry.reason or "",
             status=entry.status or "draft",
             created_at=entry.created_at or datetime.utcnow(),
+            rating_average=entry.rating_average,
+            rating_count=int(entry.rating_count or 0),
         )
         for entry in entries
     ]
 
     return UserRecommendationsResponse(user_id=user_id, items=items)
+
+
+@app.post("/ingredients/analyze", response_model=IngredientRecommendationResponse)
+async def analyze_ingredients_and_recommend(
+    payload: IngredientRecommendationRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    ingredients = payload.ingredients or []
+    if not ingredients:
+        raise HTTPException(status_code=400, detail="Debes proporcionar al menos un ingrediente")
+
+    target_user: Optional[User] = None
+    if payload.user_id and payload.user_id.isdigit():
+        try:
+            target_user = db.query(User).filter(User.id == int(payload.user_id)).first()
+        except Exception as exc:
+            logger.warning("Error fetching user %s: %s", payload.user_id, exc)
+            target_user = None
+    if not target_user and current_user:
+        target_user = current_user
+
+    firebase_profile: Optional[FirebaseUserProfile] = None
+    if payload.user_id:
+        firebase_profile = await _get_firebase_user_profile(payload.user_id)
+    if not firebase_profile and target_user and getattr(target_user, "firebase_uid", None):
+        firebase_profile = await _get_firebase_user_profile(target_user.firebase_uid)
+
+    user_conditions: List[str] = []
+    if firebase_profile and firebase_profile.conditions:
+        raw_conditions = firebase_profile.conditions
+        if isinstance(raw_conditions, dict):
+            for key, value in raw_conditions.items():
+                if isinstance(value, bool) and not value:
+                    continue
+                text = str(key).strip().lower()
+                if text:
+                    user_conditions.append(text)
+        elif isinstance(raw_conditions, list):
+            for item in raw_conditions:
+                text = str(item).strip().lower()
+                if text:
+                    user_conditions.append(text)
+    if not user_conditions and target_user:
+        try:
+            user_conditions = _list_from_model(target_user.conditions)
+        except Exception:
+            user_conditions = []
+
+    try:
+        result = await generate_ingredient_recommendations(
+            ingredients,
+            RECOMMENDER,
+            user_conditions=user_conditions,
+            top_k=3,
+        )
+    except Exception as exc:
+        logger.error("Ingredient recommendation failed: %s", exc)
+        raise HTTPException(status_code=500, detail="No se pudo generar la recomendación")
+
+    analysis_items = [
+        IngredientRiskItem(
+            name=str(item.get("name", "")),
+            risk_level=str(item.get("risk_level", "desconocido")),
+            eco_status=str(item.get("eco_status", "desconocido")),
+            eco_score=item.get("eco_score"),
+            risks_detailed=item.get("risks_detailed"),
+            sources=item.get("sources"),
+            is_risky=bool(item.get("is_risky", False)),
+        )
+        for item in result.get("analysis", [])
+    ]
+
+    substitutes = [
+        IngredientSubstituteItem(**entry)
+        for entry in result.get("substitutes", [])
+        if entry.get("original") and entry.get("substitute")
+    ]
+
+    recommendations = [
+        ProductSuggestionItem(**entry)
+        for entry in result.get("recommendations", [])
+        if entry.get("name")
+    ]
+
+    return IngredientRecommendationResponse(
+        analysis=analysis_items,
+        substitutes=substitutes,
+        recommendations=recommendations,
+    )
 
 
 @app.post("/ml/rebuild")
@@ -2925,6 +3216,103 @@ async def analyze_text(request: AnalyzeTextRequest, db: Session = Depends(get_db
         logger.error(f"Error analyzing text: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+@app.post("/recommendations/{recommendation_id}/rating", response_model=RecommendationRatingResponse)
+async def rate_recommendation(
+    recommendation_id: int,
+    payload: RecommendationRatingRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Autenticación requerida")
+
+    recommendation = (
+        db.query(Recommendation)
+        .filter(Recommendation.id == recommendation_id)
+        .first()
+    )
+    if recommendation is None:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+
+    if recommendation.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Solo puedes calificar tus recomendaciones")
+
+    rating_value = float(payload.rating)
+    new_feedback = False
+    previous_rating = 0.0
+
+    feedback = (
+        db.query(RecommendationFeedback)
+        .filter(
+            RecommendationFeedback.recommendation_id == recommendation_id,
+            RecommendationFeedback.user_id == current_user.id,
+        )
+        .one_or_none()
+    )
+
+    if feedback is None:
+        feedback = RecommendationFeedback(
+            recommendation_id=recommendation_id,
+            user_id=current_user.id,
+            rating=rating_value,
+            comment=payload.comment,
+        )
+        db.add(feedback)
+        new_feedback = True
+    else:
+        previous_rating = float(feedback.rating or 0.0)
+        feedback.rating = rating_value
+        feedback.comment = payload.comment
+
+    current_count = int(recommendation.rating_count or 0)
+    current_average = float(recommendation.rating_average or 0.0)
+    total_score = current_average * current_count
+
+    if new_feedback:
+        current_count += 1
+        total_score += rating_value
+    else:
+        total_score = total_score - previous_rating + rating_value
+
+    recommendation.rating_count = current_count
+    recommendation.rating_average = round(total_score / current_count, 4) if current_count else rating_value
+
+    product = None
+    if recommendation.substitute_product_id:
+        product = (
+            db.query(Product)
+            .filter(Product.id == recommendation.substitute_product_id)
+            .first()
+        )
+
+    if product is not None:
+        prod_count = int(product.rating_count or 0)
+        prod_average = float(product.rating_average or 0.0)
+        prod_total = prod_average * prod_count
+        if new_feedback:
+            prod_count += 1
+            prod_total += rating_value
+        else:
+            prod_total = prod_total - previous_rating + rating_value
+        product.rating_count = prod_count
+        product.rating_average = round(prod_total / prod_count, 4) if prod_count else rating_value
+
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Failed to persist recommendation rating: %s", exc)
+        raise HTTPException(status_code=500, detail="No se pudo guardar tu calificación")
+
+    asyncio.create_task(ensure_recommender_ready(force=True))
+
+    return RecommendationRatingResponse(
+        recommendation_id=recommendation_id,
+        rating_average=recommendation.rating_average,
+        rating_count=recommendation.rating_count or 0,
+    )
+
+
 @app.get("/health")
 async def health():
     """Health check for all APIs."""
@@ -2984,6 +3372,123 @@ async def list_all_ingredients(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error getting ingredients: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+# Ollama Integration Endpoints
+
+@app.get("/ollama/status")
+async def ollama_status():
+    """Check Ollama integration status."""
+    try:
+        is_available = ollama_integration.is_available()
+        if is_available:
+            connection_test = await test_ollama_connection()
+            return {
+                "available": True,
+                "connected": connection_test,
+                "model": ollama_integration.default_model,
+                "host": ollama_integration.host
+            }
+        else:
+            return {
+                "available": False,
+                "error": "OLLAMA_API_KEY not configured"
+            }
+    except Exception as e:
+        logger.error(f"Ollama status check error: {e}")
+        return {"available": False, "error": str(e)}
+
+@app.post("/ollama/analyze")
+async def ollama_analyze_ingredients(
+    ingredients: List[str],
+    user_conditions: Optional[List[str]] = None
+):
+    """Analyze ingredients using Ollama AI."""
+    try:
+        if not ollama_integration.is_available():
+            raise HTTPException(
+                status_code=503, 
+                detail="Ollama integration not available. Please configure OLLAMA_API_KEY."
+            )
+        
+        result = await analyze_ingredients_with_ollama(ingredients, user_conditions)
+        
+        if not result.success:
+            raise HTTPException(status_code=500, detail=result.error or "Analysis failed")
+        
+        return {
+            "analysis": result.content,
+            "model": result.model,
+            "ingredients_analyzed": ingredients,
+            "user_conditions": user_conditions or []
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ollama analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.post("/ollama/alternatives")
+async def ollama_suggest_alternatives(
+    problematic_ingredients: List[str],
+    user_conditions: Optional[List[str]] = None
+):
+    """Suggest safer alternatives using Ollama AI."""
+    try:
+        if not ollama_integration.is_available():
+            raise HTTPException(
+                status_code=503, 
+                detail="Ollama integration not available. Please configure OLLAMA_API_KEY."
+            )
+        
+        result = await suggest_alternatives_with_ollama(problematic_ingredients, user_conditions)
+        
+        if not result.success:
+            raise HTTPException(status_code=500, detail=result.error or "Alternative suggestion failed")
+        
+        return {
+            "alternatives": result.content,
+            "model": result.model,
+            "problematic_ingredients": problematic_ingredients,
+            "user_conditions": user_conditions or []
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ollama alternatives error: {e}")
+        raise HTTPException(status_code=500, detail=f"Alternative suggestion failed: {str(e)}")
+
+@app.post("/ollama/analyze/stream")
+async def ollama_stream_analysis(
+    ingredients: List[str],
+    user_conditions: Optional[List[str]] = None
+):
+    """Stream ingredient analysis using Ollama AI."""
+    try:
+        if not ollama_integration.is_available():
+            raise HTTPException(
+                status_code=503, 
+                detail="Ollama integration not available. Please configure OLLAMA_API_KEY."
+            )
+        
+        from fastapi.responses import StreamingResponse
+        
+        async def generate():
+            async for chunk in stream_ingredient_analysis(ingredients, user_conditions):
+                yield f"data: {json.dumps({'content': chunk})}\n\n"
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/plain",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ollama stream analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Stream analysis failed: {str(e)}")
 
 # Run the application
 if __name__ == "__main__":

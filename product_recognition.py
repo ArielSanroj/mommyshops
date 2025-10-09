@@ -17,6 +17,14 @@ import json
 import os
 from dataclasses import dataclass
 
+from database import canonicalize_ingredients
+from ollama_integration import (
+    ollama_integration, 
+    analyze_ingredients_with_ollama,
+    enhance_ocr_text_with_ollama,
+    analyze_ingredient_safety_with_ollama
+)
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -103,6 +111,8 @@ class ProductRecognitionEngine:
                     product_info.ingredients = ocr_ingredients
                     product_info.source = "ocr_fallback"
             
+            if product_info.ingredients:
+                product_info.ingredients = canonicalize_ingredients(product_info.ingredients)
             return product_info
             
         except Exception as e:
@@ -188,7 +198,7 @@ class ProductRecognitionEngine:
                 logger.warning(f"Lookup method {method.__name__} failed: {e}")
                 continue
         
-        return list(set(ingredients))  # Remove duplicates
+        return canonicalize_ingredients(ingredients)
     
     async def _lookup_from_incidecoder(self, product_info: ProductInfo) -> List[str]:
         """Look up ingredients from INCI Decoder"""
@@ -399,6 +409,41 @@ class ProductRecognitionEngine:
     async def _extract_ingredients_with_llm(self, image_data: bytes, product_info: ProductInfo) -> List[str]:
         """Use LLM to analyze the image and extract ingredients"""
         try:
+            # Try Ollama first if available
+            if ollama_integration.is_available():
+                logger.info("Trying Ollama for LLM analysis...")
+                try:
+                    # Convert image to base64
+                    import base64
+                    image_b64 = base64.b64encode(image_data).decode('utf-8')
+                    
+                    # Create prompt for Ollama
+                    prompt = f"""
+                    Analyze this cosmetic product image and extract the ingredient list.
+                    
+                    Product Information:
+                    - Brand: {product_info.brand or 'Unknown'}
+                    - Product Name: {product_info.product_name or 'Unknown'}
+                    - Product Type: {product_info.product_type or 'Unknown'}
+                    
+                    Please identify and list all cosmetic ingredients visible in the image.
+                    Return only a comma-separated list of ingredient names in INCI format.
+                    If you cannot see ingredients clearly, return "No ingredients visible".
+                    """
+                    
+                    # Use Ollama for analysis
+                    ollama_result = await ollama_integration.analyze_ingredients([prompt])
+                    if ollama_result.success and ollama_result.content:
+                        if "No ingredients visible" not in ollama_result.content:
+                            # Parse ingredients from response
+                            ingredients = [ing.strip() for ing in ollama_result.content.split(',') if ing.strip()]
+                            if ingredients:
+                                logger.info(f"Ollama LLM extracted {len(ingredients)} ingredients")
+                                return canonicalize_ingredients(ingredients)
+                except Exception as e:
+                    logger.warning(f"Ollama LLM analysis failed: {e}")
+            
+            # Fallback to OpenAI if available
             if not self.openai_api_key:
                 logger.warning("OpenAI API key not available for LLM analysis")
                 return []
@@ -458,12 +503,101 @@ class ProductRecognitionEngine:
                     
                     # Parse ingredients from response
                     ingredients = [ing.strip() for ing in content.split(',') if ing.strip()]
-                    return ingredients
+                    return canonicalize_ingredients(ingredients)
                     
         except Exception as e:
             logger.error(f"LLM analysis failed: {e}")
         
         return []
+    
+    def _extract_ingredients_from_text(self, text: str) -> List[str]:
+        """Extract ingredients from text using pattern matching"""
+        ingredients = []
+        lines = text.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line or len(line) < 3:
+                continue
+            
+            # Skip common non-ingredient words
+            skip_words = [
+                'ingredients', 'ingrediente', 'ingredientes', 'ingredient',
+                'analysis', 'assessment', 'safety', 'benefits', 'risks',
+                'recommendations', 'alternatives', 'substitutes'
+            ]
+            
+            line_lower = line.lower()
+            if any(skip_word in line_lower for skip_word in skip_words):
+                continue
+            
+            # Look for ingredient patterns
+            if any(pattern in line_lower for pattern in [
+                'acid', 'alcohol', 'oil', 'extract', 'vitamin', 'sodium',
+                'glycerin', 'paraben', 'sulfate', 'oxide', 'ester',
+                'cetyl', 'stearyl', 'myristyl', 'palmitate', 'stearate',
+                'helianthus', 'hexanediol', 'cera', 'beeswax', 'polyglyceryl',
+                'aqua', 'water', 'eau', 'butylene', 'propylene', 'glycol',
+                'acrylate', 'copolymer', 'distearate', 'hydroxyethyl'
+            ]):
+                # Clean up the ingredient name
+                ingredient = line.strip()
+                # Remove common prefixes/suffixes
+                ingredient = ingredient.replace('*', '').replace('•', '').replace('-', ' ').strip()
+                # Remove numbers at the beginning (like "1. ", "2. ", etc.)
+                if ingredient and ingredient[0].isdigit() and len(ingredient) > 2:
+                    ingredient = ingredient.split('.', 1)[1].strip() if '.' in ingredient else ingredient[1:].strip()
+                
+                if ingredient and len(ingredient) > 2:
+                    ingredients.append(ingredient)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_ingredients = []
+        for ingredient in ingredients:
+            if ingredient.lower() not in seen:
+                seen.add(ingredient.lower())
+                unique_ingredients.append(ingredient)
+        
+        return unique_ingredients
+    
+    async def _enhance_ocr_with_ollama(self, ocr_text: str) -> Optional[str]:
+        """Enhance OCR text using Ollama for better ingredient extraction"""
+        if not ollama_integration.is_available():
+            return None
+        
+        try:
+            ollama_result = await enhance_ocr_text_with_ollama(ocr_text)
+            if ollama_result.success and ollama_result.content:
+                logger.info("OCR text enhanced with Ollama")
+                return ollama_result.content
+            else:
+                logger.warning(f"Ollama OCR enhancement failed: {ollama_result.error}")
+                return None
+        except Exception as e:
+            logger.error(f"Error enhancing OCR with Ollama: {e}")
+            return None
+    
+    async def _analyze_ingredients_with_ollama(self, ingredients: List[str], skin_type: str = "normal") -> Optional[Dict[str, Any]]:
+        """Analyze ingredients using Ollama for detailed safety assessment"""
+        if not ollama_integration.is_available():
+            return None
+        
+        try:
+            ollama_result = await analyze_ingredient_safety_with_ollama(ingredients, skin_type)
+            if ollama_result.success and ollama_result.content:
+                logger.info("Ingredient safety analysis completed with Ollama")
+                return {
+                    'content': ollama_result.content,
+                    'model': ollama_result.model,
+                    'skin_type': skin_type
+                }
+            else:
+                logger.warning(f"Ollama safety analysis failed: {ollama_result.error}")
+                return None
+        except Exception as e:
+            logger.error(f"Error analyzing ingredients with Ollama: {e}")
+            return None
     
     async def _extract_ingredients_with_ocr(self, image_data: bytes) -> List[str]:
         """Fallback to traditional OCR for ingredient extraction"""
@@ -475,12 +609,26 @@ class ProductRecognitionEngine:
             # If OCR found ingredients, return them
             if ingredients:
                 logger.info(f"OCR fallback found {len(ingredients)} ingredients")
-                return ingredients
+                return canonicalize_ingredients(ingredients)
             
             # If OCR didn't find ingredients, try simple text extraction
             logger.info("OCR didn't find ingredients, trying simple text extraction...")
             image = Image.open(io.BytesIO(image_data))
             text = pytesseract.image_to_string(image, lang='eng+spa')
+            
+            # Try Ollama to improve OCR text if available
+            if ollama_integration.is_available() and text.strip():
+                try:
+                    logger.info("Using Ollama to improve OCR text...")
+                    enhanced_text = await self._enhance_ocr_with_ollama(text)
+                    if enhanced_text:
+                        # Parse ingredients from improved text
+                        improved_ingredients = self._extract_ingredients_from_text(enhanced_text)
+                        if improved_ingredients:
+                            logger.info(f"Ollama improved OCR found {len(improved_ingredients)} ingredients")
+                            return canonicalize_ingredients(improved_ingredients)
+                except Exception as e:
+                    logger.warning(f"Ollama OCR improvement failed: {e}")
             
             # Look for ingredient patterns in the text
             ingredients = []
@@ -502,11 +650,89 @@ class ProductRecognitionEngine:
                             ingredients.append(ing)
             
             logger.info(f"Simple text extraction found {len(ingredients)} ingredients: {ingredients}")
-            return ingredients
+            return canonicalize_ingredients(ingredients)
             
         except Exception as e:
             logger.error(f"OCR fallback failed: {e}")
             return []
+    
+    async def get_comprehensive_analysis(self, image_data: bytes, skin_type: str = "normal") -> Dict[str, Any]:
+        """
+        Get comprehensive product analysis combining all available methods with Ollama enhancement
+        
+        Args:
+            image_data: Product image data
+            skin_type: User's skin type for personalized analysis
+            
+        Returns:
+            Comprehensive analysis results
+        """
+        try:
+            logger.info("Starting comprehensive product analysis...")
+            
+            # Step 1: Extract basic product information
+            product_info = await self.recognize_product(image_data)
+            
+            # Step 2: Extract ingredients using all available methods
+            ingredients = []
+            
+            # Try OCR with Ollama enhancement
+            if product_info.ingredients:
+                ingredients = product_info.ingredients
+                logger.info(f"Found {len(ingredients)} ingredients from product recognition")
+            else:
+                # Fallback to direct OCR
+                ingredients = await self._extract_ingredients_with_ocr(image_data)
+                logger.info(f"Found {len(ingredients)} ingredients from OCR")
+            
+            # Step 3: Enhance with Ollama analysis if available
+            ollama_analysis = None
+            if ingredients and ollama_integration.is_available():
+                try:
+                    ollama_analysis = await self._analyze_ingredients_with_ollama(ingredients, skin_type)
+                    if ollama_analysis:
+                        logger.info("Ollama safety analysis completed")
+                except Exception as e:
+                    logger.warning(f"Ollama analysis failed: {e}")
+            
+            # Step 4: Compile comprehensive results
+            results = {
+                'product_info': {
+                    'brand': product_info.brand,
+                    'product_name': product_info.product_name,
+                    'product_type': product_info.product_type,
+                    'confidence': product_info.confidence,
+                    'source': product_info.source
+                },
+                'ingredients': {
+                    'list': ingredients,
+                    'count': len(ingredients),
+                    'canonicalized': canonicalize_ingredients(ingredients)
+                },
+                'ollama_analysis': ollama_analysis,
+                'analysis_metadata': {
+                    'skin_type': skin_type,
+                    'ollama_available': ollama_integration.is_available(),
+                    'timestamp': asyncio.get_event_loop().time()
+                }
+            }
+            
+            logger.info(f"Comprehensive analysis completed: {len(ingredients)} ingredients, Ollama: {ollama_analysis is not None}")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Comprehensive analysis failed: {e}")
+            return {
+                'error': str(e),
+                'product_info': None,
+                'ingredients': {'list': [], 'count': 0, 'canonicalized': []},
+                'ollama_analysis': None,
+                'analysis_metadata': {
+                    'skin_type': skin_type,
+                    'ollama_available': False,
+                    'timestamp': asyncio.get_event_loop().time()
+                }
+            }
 
 # Global instance
 product_recognizer = ProductRecognitionEngine()

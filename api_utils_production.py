@@ -2,34 +2,143 @@
 Production-ready API utilities for MommyShops MVP
 """
 import asyncio
-import httpx
-import pandas as pd
-from Bio import Entrez
-import ssl
-from bs4 import BeautifulSoup
+import copy
+import json
 import logging
 import os
+import re
+import ssl
+import threading
 import time
-from typing import Dict, List, Optional, Any, Tuple
 import urllib.request
 from dataclasses import dataclass
 from functools import lru_cache
-import json
+from pathlib import Path
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+
+import httpx
+import pandas as pd
+from Bio import Entrez
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 # Import scrapers and APIs
-from ewg_scraper import EWGScraper
 from cir_scraper import CIRScraper
 from sccs_scraper import SCCSScraper
 from iccr_scraper import ICCRScraper
 from inci_beauty_api import INCIClient
 from cosing_api_store import CosIngClient
+from ewg_scraper import EWGScraper
+
+# Import Ollama integration
+try:
+    from ollama_integration import (
+        ollama_integration,
+        analyze_ingredient_safety_with_ollama,
+        enhance_ocr_text_with_ollama
+    )
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logger.warning("Ollama integration not available")
 
 load_dotenv()
 
+_STANDARD_LOG_KEYS = {
+    "name",
+    "msg",
+    "args",
+    "levelname",
+    "levelno",
+    "pathname",
+    "filename",
+    "module",
+    "exc_info",
+    "exc_text",
+    "stack_info",
+    "lineno",
+    "funcName",
+    "created",
+    "msecs",
+    "relativeCreated",
+    "thread",
+    "threadName",
+    "processName",
+    "process",
+}
+
+
+class _JSONFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:  # pragma: no cover - logging helper
+        payload = {
+            "timestamp": self.formatTime(record, self.datefmt) if self.datefmt else self.formatTime(record),
+            "logger": record.name,
+            "level": record.levelname,
+            "message": record.getMessage(),
+        }
+        extras = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in _STANDARD_LOG_KEYS and not key.startswith("_")
+        }
+        if extras:
+            payload["context"] = extras
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
+
+
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("mommyshops.api_utils")
+if not logger.handlers:
+    backend_log_path = Path(os.getenv("BACKEND_LOG_PATH", Path(__file__).resolve().parent / "backend.log"))
+    try:
+        backend_log_path.parent.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(backend_log_path)
+        handler.setFormatter(_JSONFormatter())
+        logger.addHandler(handler)
+    except Exception as log_exc:  # pragma: no cover - logging fallback
+        logging.getLogger(__name__).warning("Failed to attach api_utils logger handler", exc_info=log_exc)
+logger.setLevel(logging.INFO)
+logger.propagate = False
+
+_NORMALIZATION_PATTERN = re.compile(r"[^a-z0-9]+")
+_SHARED_NORMALIZER = None
+_SHARED_NORMALIZER_INITIALIZED = False
+
+
+@lru_cache(maxsize=2048)
+def _fallback_normalize(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    lowered = str(value).strip().lower()
+    if not lowered:
+        return ""
+    normalized = _NORMALIZATION_PATTERN.sub(" ", lowered)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _get_shared_normalizer():
+    global _SHARED_NORMALIZER_INITIALIZED, _SHARED_NORMALIZER
+    if not _SHARED_NORMALIZER_INITIALIZED:
+        try:
+            from database import normalize_ingredient_name as shared_normalizer  # type: ignore import
+            _SHARED_NORMALIZER = shared_normalizer
+            logger.debug("Successfully imported shared normalizer from database")
+        except Exception as e:
+            logger.warning(f"Failed to import shared normalizer from database: {e}. Using fallback normalizer.")
+            _SHARED_NORMALIZER = None
+        _SHARED_NORMALIZER_INITIALIZED = True
+    return _SHARED_NORMALIZER
+
+
+@lru_cache(maxsize=2048)
+def _normalize_ingredient_name(value: Optional[str]) -> str:
+    normalizer = _get_shared_normalizer()
+    if normalizer:
+        return normalizer(value)
+    return _fallback_normalize(value)
 
 # Configure SSL context for Entrez
 ssl_context = ssl.create_default_context()
@@ -154,29 +263,59 @@ class CircuitBreaker:
             raise e
 
 class APICache:
-    """Simple in-memory cache for API responses."""
-    
-    def __init__(self, ttl: int = 3600):  # 1 hour TTL
-        self.cache = {}
+    """Thread-safe in-memory cache for API responses with TTL handling."""
+
+    def __init__(self, ttl: int = 3600):  # 1 hour TTL by default
         self.ttl = ttl
-    
-    def get(self, key: str) -> Optional[Dict]:
-        """Get cached response."""
-        if key in self.cache:
-            data, timestamp = self.cache[key]
-            if time.time() - timestamp < self.ttl:
-                return data
-            else:
-                del self.cache[key]
-        return None
-    
-    def set(self, key: str, data: Dict):
-        """Cache response."""
-        self.cache[key] = (data, time.time())
-    
-    def clear(self):
-        """Clear cache."""
-        self.cache.clear()
+        self._store: Dict[str, Tuple[Dict[str, Any], float]] = {}
+        self._lock = threading.Lock()
+        self._hits = 0
+        self._misses = 0
+        self._evictions = 0
+
+    def get(self, key: str) -> Optional[Dict[str, Any]]:
+        now = time.time()
+        with self._lock:
+            entry = self._store.get(key)
+            if not entry:
+                self._misses += 1
+                return None
+
+            payload, expires_at = entry
+            if expires_at <= now:
+                self._evictions += 1
+                self._misses += 1
+                self._store.pop(key, None)
+                return None
+
+            self._hits += 1
+            return copy.deepcopy(payload)
+
+    def set(self, key: str, data: Dict[str, Any]) -> None:
+        expires_at = time.time() + self.ttl
+        with self._lock:
+            self._store[key] = (copy.deepcopy(data), expires_at)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._store.clear()
+            self._hits = 0
+            self._misses = 0
+            self._evictions = 0
+
+    def stats(self) -> Dict[str, Any]:
+        with self._lock:
+            return {
+                "ttl": self.ttl,
+                "size": len(self._store),
+                "hits": self._hits,
+                "misses": self._misses,
+                "evictions": self._evictions,
+            }
+
+    def keys(self) -> List[str]:
+        with self._lock:
+            return list(self._store.keys())
 
 # Global instances
 rate_limiters = {
@@ -207,6 +346,186 @@ circuit_breakers = {
 
 api_cache = APICache()
 
+
+def _build_default_payload(source: str = "") -> Dict[str, Any]:
+    return {
+        "benefits": "No disponible",
+        "risks_detailed": "No disponible",
+        "risk_level": "desconocido",
+        "sources": source,
+    }
+
+
+async def _fetch_with_scraper(
+    provider_key: str,
+    ingredient: str,
+    scraper_cls,
+    *,
+    source_label: str,
+    cache_prefix: Optional[str] = None,
+) -> APIResponse:
+    prefix = cache_prefix or provider_key
+    cache_key = _cache_key(prefix, ingredient)
+    cached_data = api_cache.get(cache_key)
+    if cached_data:
+        logger.debug("%s cache hit for %s", source_label, ingredient)
+        return APIResponse(success=True, data=cached_data, source=source_label, cached=True)
+
+    async def _scrape():
+        async with scraper_cls() as scraper:
+            return await scraper.get_ingredient_data(ingredient)
+
+    async def _wrapped_scrape():
+        await rate_limiters[provider_key].acquire()
+        return await _scrape()
+
+    try:
+        result = await circuit_breakers[provider_key].call(_wrapped_scrape)
+        if result.get("success"):
+            data = result.get("data", {}) or {}
+            if data:
+                api_cache.set(cache_key, data)
+            return APIResponse(success=True, data=data, source=source_label)
+
+        error_message = result.get("error", "Unknown error")
+        fallback = _build_default_payload(source_label)
+        return APIResponse(success=False, data=fallback, error=error_message, source=source_label)
+    except Exception as exc:
+        logger.error("%s scraping error for %s: %s", source_label, ingredient, exc)
+        fallback = _build_default_payload(source_label)
+        return APIResponse(success=False, data=fallback, error=str(exc), source=source_label)
+
+
+async def _fetch_with_client(
+    provider_key: str,
+    ingredient: str,
+    client_cls,
+    *,
+    source_label: str,
+    cache_prefix: Optional[str] = None,
+) -> APIResponse:
+    prefix = cache_prefix or provider_key
+    cache_key = _cache_key(prefix, ingredient)
+    cached_data = api_cache.get(cache_key)
+    if cached_data:
+        logger.debug("%s cache hit for %s", source_label, ingredient)
+        return APIResponse(success=True, data=cached_data, source=source_label, cached=True)
+
+    async def _call_client():
+        async with client_cls() as client:
+            return await client.get_ingredient_data(ingredient)
+
+    async def _wrapped_call():
+        await rate_limiters[provider_key].acquire()
+        return await _call_client()
+
+    try:
+        result = await circuit_breakers[provider_key].call(_wrapped_call)
+        if getattr(result, "success", False):
+            data = dict(getattr(result, "data", {}) or {})
+            if data:
+                api_cache.set(cache_key, data)
+            source_name = getattr(result, "source", source_label)
+            return APIResponse(success=True, data=data, source=source_name)
+
+        error_message = getattr(result, "error", "Unknown error")
+        source_name = getattr(result, "source", source_label)
+        fallback = _build_default_payload(source_name)
+        return APIResponse(success=False, data=fallback, error=error_message, source=source_name)
+    except Exception as exc:
+        logger.error("%s client error for %s: %s", source_label, ingredient, exc)
+        fallback = _build_default_payload(source_label)
+        return APIResponse(success=False, data=fallback, error=str(exc), source=source_label)
+
+
+def _cache_key(prefix: str, ingredient: str) -> str:
+    normalized = normalize_ingredient_name(ingredient)
+    return f"{prefix}:{normalized}" if normalized else f"{prefix}:{ingredient.strip().lower()}"
+
+
+def _merge_sources(*values: Optional[str]) -> str:
+    seen: Dict[str, None] = {}
+    for value in values:
+        if not value:
+            continue
+        fragments = [fragment.strip() for fragment in str(value).split(",") if fragment.strip()]
+        for fragment in fragments:
+            if fragment not in seen:
+                seen[fragment] = None
+    return ",".join(seen.keys())
+
+
+_EMPTY_FIELD_MARKERS = {"", "no disponible", "desconocido", "datos insuficientes para evaluación"}
+
+
+def _first_non_placeholder(responses: Dict[str, APIResponse], order: List[str], field: str) -> Optional[Any]:
+    for provider in order:
+        response = responses.get(provider)
+        if not response:
+            continue
+        value = response.data.get(field)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped or stripped.lower() in _EMPTY_FIELD_MARKERS:
+                continue
+            return value
+        if value is None:
+            continue
+        return value
+    return None
+
+
+def _normalize_text_field(value: Any, default: str) -> str:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped if stripped else default
+    if isinstance(value, (list, tuple, set)):
+        parts = [str(item).strip() for item in value if str(item).strip()]
+        return ", ".join(parts) if parts else default
+    if isinstance(value, dict):
+        parts = [f"{key}: {val}" for key, val in value.items() if val is not None]
+        return ", ".join(parts) if parts else default
+    return str(value)
+
+
+RISK_PRIORITY_ORDER = [
+    "IARC",
+    "FDA",
+    "CIR",
+    "SCCS",
+    "INVIMA",
+    "EWG",
+    "ICCR",
+    "INCI Beauty",
+    "CosIng API",
+    "CosIng CSV",
+]
+
+BENEFITS_PRIORITY_ORDER = [
+    "INCI Beauty",
+    "CIR",
+    "SCCS",
+    "CosIng API",
+    "PubChem",
+    "CosIng CSV",
+]
+
+RISK_DETAILS_PRIORITY_ORDER = [
+    "IARC",
+    "FDA",
+    "CIR",
+    "SCCS",
+    "EWG",
+    "INVIMA",
+    "ICCR",
+    "INCI Beauty",
+    "CosIng API",
+    "CosIng CSV",
+    "PubChem",
+]
+
 async def retry_with_backoff(func, max_retries: int = 3, base_delay: float = 1.0):
     """Retry function with exponential backoff."""
     for attempt in range(max_retries):
@@ -227,7 +546,7 @@ async def retry_with_backoff(func, max_retries: int = 3, base_delay: float = 1.0
 )
 async def fetch_fda_data(ingredient: str, client: httpx.AsyncClient) -> APIResponse:
     """Fetch FDA adverse event data for cosmetic ingredients using FAERS API."""
-    cache_key = f"fda:{ingredient}"
+    cache_key = _cache_key("fda", ingredient)
     cached_data = api_cache.get(cache_key)
     if cached_data:
         return APIResponse(success=True, data=cached_data, source="FDA", cached=True)
@@ -311,40 +630,7 @@ async def fetch_fda_data(ingredient: str, client: httpx.AsyncClient) -> APIRespo
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError))
 )
 async def fetch_cir_data(ingredient: str) -> APIResponse:
-    """Fetch cosmetic ingredient safety data from CIR using web scraping."""
-    cache_key = f"cir:{ingredient}"
-    cached_data = api_cache.get(cache_key)
-    if cached_data:
-        return APIResponse(success=True, data=cached_data, source="CIR", cached=True)
-    
-    async def _fetch():
-        await rate_limiters["cir"].acquire()
-        
-        async with CIRScraper() as scraper:
-            result = await scraper.get_ingredient_data(ingredient)
-            
-            if result["success"]:
-                api_cache.set(cache_key, result["data"])
-                return APIResponse(success=True, data=result["data"], source="CIR")
-            else:
-                return APIResponse(
-                    success=False,
-                    data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-                    error=result.get("error", "Unknown error"),
-                    source="CIR"
-                )
-    
-    try:
-        data = await circuit_breakers["cir"].call(_fetch)
-        return data
-    except Exception as e:
-        logger.error(f"CIR scraping error for {ingredient}: {e}")
-        return APIResponse(
-            success=False,
-            data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-            error=str(e),
-            source="CIR"
-        )
+    return await _fetch_with_scraper("cir", ingredient, CIRScraper, source_label="CIR")
 
 @retry(
     stop=stop_after_attempt(3),
@@ -352,40 +638,7 @@ async def fetch_cir_data(ingredient: str) -> APIResponse:
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError))
 )
 async def fetch_sccs_data(ingredient: str) -> APIResponse:
-    """Fetch cosmetic ingredient safety data from SCCS using web scraping."""
-    cache_key = f"sccs:{ingredient}"
-    cached_data = api_cache.get(cache_key)
-    if cached_data:
-        return APIResponse(success=True, data=cached_data, source="SCCS", cached=True)
-    
-    async def _fetch():
-        await rate_limiters["sccs"].acquire()
-        
-        async with SCCSScraper() as scraper:
-            result = await scraper.get_ingredient_data(ingredient)
-            
-            if result["success"]:
-                api_cache.set(cache_key, result["data"])
-                return APIResponse(success=True, data=result["data"], source="SCCS")
-            else:
-                return APIResponse(
-                    success=False,
-                    data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-                    error=result.get("error", "Unknown error"),
-                    source="SCCS"
-                )
-    
-    try:
-        data = await circuit_breakers["sccs"].call(_fetch)
-        return data
-    except Exception as e:
-        logger.error(f"SCCS scraping error for {ingredient}: {e}")
-        return APIResponse(
-            success=False,
-            data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-            error=str(e),
-            source="SCCS"
-        )
+    return await _fetch_with_scraper("sccs", ingredient, SCCSScraper, source_label="SCCS")
 
 @retry(
     stop=stop_after_attempt(3),
@@ -393,40 +646,7 @@ async def fetch_sccs_data(ingredient: str) -> APIResponse:
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError))
 )
 async def fetch_iccr_data(ingredient: str) -> APIResponse:
-    """Fetch cosmetic ingredient safety data from ICCR using web scraping."""
-    cache_key = f"iccr:{ingredient}"
-    cached_data = api_cache.get(cache_key)
-    if cached_data:
-        return APIResponse(success=True, data=cached_data, source="ICCR", cached=True)
-    
-    async def _fetch():
-        await rate_limiters["iccr"].acquire()
-        
-        async with ICCRScraper() as scraper:
-            result = await scraper.get_ingredient_data(ingredient)
-            
-            if result["success"]:
-                api_cache.set(cache_key, result["data"])
-                return APIResponse(success=True, data=result["data"], source="ICCR")
-            else:
-                return APIResponse(
-                    success=False,
-                    data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-                    error=result.get("error", "Unknown error"),
-                    source="ICCR"
-                )
-    
-    try:
-        data = await circuit_breakers["iccr"].call(_fetch)
-        return data
-    except Exception as e:
-        logger.error(f"ICCR scraping error for {ingredient}: {e}")
-        return APIResponse(
-            success=False,
-            data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-            error=str(e),
-            source="ICCR"
-        )
+    return await _fetch_with_scraper("iccr", ingredient, ICCRScraper, source_label="ICCR")
 
 @retry(
     stop=stop_after_attempt(3),
@@ -434,40 +654,7 @@ async def fetch_iccr_data(ingredient: str) -> APIResponse:
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError))
 )
 async def fetch_inci_beauty_data(ingredient: str) -> APIResponse:
-    """Fetch ingredient data from INCI Beauty Pro API."""
-    cache_key = f"inci_beauty:{ingredient}"
-    cached_data = api_cache.get(cache_key)
-    if cached_data:
-        return APIResponse(success=True, data=cached_data, source="INCI Beauty", cached=True)
-    
-    async def _fetch():
-        await rate_limiters["inci_beauty"].acquire()
-        
-        async with INCIClient() as client:
-            result = await client.get_ingredient_data(ingredient)
-            
-            if result.success:
-                api_cache.set(cache_key, result.data)
-                return APIResponse(success=True, data=result.data, source="INCI Beauty")
-            else:
-                return APIResponse(
-                    success=False,
-                    data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-                    error=result.error,
-                    source="INCI Beauty"
-                )
-    
-    try:
-        data = await circuit_breakers["inci_beauty"].call(_fetch)
-        return data
-    except Exception as e:
-        logger.error(f"INCI Beauty API error for {ingredient}: {e}")
-        return APIResponse(
-            success=False,
-            data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-            error=str(e),
-            source="INCI Beauty"
-        )
+    return await _fetch_with_client("inci_beauty", ingredient, INCIClient, source_label="INCI Beauty")
 
 @retry(
     stop=stop_after_attempt(3),
@@ -475,40 +662,13 @@ async def fetch_inci_beauty_data(ingredient: str) -> APIResponse:
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError))
 )
 async def fetch_cosing_api_data(ingredient: str) -> APIResponse:
-    """Fetch ingredient data from CosIng API Store."""
-    cache_key = f"cosing_api:{ingredient}"
-    cached_data = api_cache.get(cache_key)
-    if cached_data:
-        return APIResponse(success=True, data=cached_data, source="CosIng API", cached=True)
-    
-    async def _fetch():
-        await rate_limiters["cosing"].acquire()
-        
-        async with CosIngClient() as client:
-            result = await client.get_ingredient_data(ingredient)
-            
-            if result.success:
-                api_cache.set(cache_key, result.data)
-                return APIResponse(success=True, data=result.data, source="CosIng API")
-            else:
-                return APIResponse(
-                    success=False,
-                    data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-                    error=result.error,
-                    source="CosIng API"
-                )
-    
-    try:
-        data = await circuit_breakers["cosing"].call(_fetch)
-        return data
-    except Exception as e:
-        logger.error(f"CosIng API error for {ingredient}: {e}")
-        return APIResponse(
-            success=False,
-            data={"benefits": "No disponible", "risks_detailed": "No disponible", "risk_level": "desconocido", "sources": ""},
-            error=str(e),
-            source="CosIng API"
-        )
+    return await _fetch_with_client(
+        "cosing",
+        ingredient,
+        CosIngClient,
+        source_label="CosIng API",
+        cache_prefix="cosing_api",
+    )
 
 @retry(
     stop=stop_after_attempt(3),
@@ -517,7 +677,7 @@ async def fetch_cosing_api_data(ingredient: str) -> APIResponse:
 )
 async def fetch_pubchem_data(ingredient: str, client: httpx.AsyncClient) -> APIResponse:
     """Fetch chemical data from PubChem."""
-    cache_key = f"pubchem:{ingredient}"
+    cache_key = _cache_key("pubchem", ingredient)
     cached_data = api_cache.get(cache_key)
     if cached_data:
         return APIResponse(success=True, data=cached_data, source="PubChem", cached=True)
@@ -562,7 +722,7 @@ async def fetch_pubchem_data(ingredient: str, client: httpx.AsyncClient) -> APIR
 )
 async def fetch_ewg_data(ingredient: str, client: httpx.AsyncClient) -> APIResponse:
     """Fetch eco and risk data from EWG Skin Deep using web scraping."""
-    cache_key = f"ewg:{ingredient}"
+    cache_key = _cache_key("ewg", ingredient)
     cached_data = api_cache.get(cache_key)
     if cached_data:
         return APIResponse(success=True, data=cached_data, source="EWG", cached=True)
@@ -601,7 +761,7 @@ async def fetch_ewg_data(ingredient: str, client: httpx.AsyncClient) -> APIRespo
 
 async def fetch_iarc_data(ingredient: str) -> APIResponse:
     """Fetch carcinogen data from IARC via PubMed using PubChem Power User Gateway search terms."""
-    cache_key = f"iarc:{ingredient}"
+    cache_key = _cache_key("iarc", ingredient)
     cached_data = api_cache.get(cache_key)
     if cached_data:
         return APIResponse(success=True, data=cached_data, source="IARC", cached=True)
@@ -646,7 +806,7 @@ async def fetch_iarc_data(ingredient: str) -> APIResponse:
 
 async def fetch_invima_data(ingredient: str, client: httpx.AsyncClient) -> APIResponse:
     """Fetch approval status from INVIMA (Colombia) via scraping."""
-    cache_key = f"invima:{ingredient}"
+    cache_key = _cache_key("invima", ingredient)
     cached_data = api_cache.get(cache_key)
     if cached_data:
         return APIResponse(success=True, data=cached_data, source="INVIMA", cached=True)
@@ -770,7 +930,7 @@ def fetch_cosing_data(ingredient: str) -> Dict[str, Any]:
 
 def get_default_ingredient_data(ingredient: str) -> Dict[str, Any]:
     """Provide default data for common cosmetic ingredients when APIs fail."""
-    ingredient_lower = ingredient.lower()
+    ingredient_key = normalize_ingredient_name(ingredient)
     
     # Datos por defecto para ingredientes comunes
     defaults = {
@@ -825,7 +985,8 @@ def get_default_ingredient_data(ingredient: str) -> Dict[str, Any]:
     
     # Buscar coincidencia exacta o parcial
     for key, data in defaults.items():
-        if key in ingredient_lower:
+        normalized_key = normalize_ingredient_name(key)
+        if normalized_key and normalized_key in ingredient_key:
             return data
     
     # Datos por defecto genéricos
@@ -839,129 +1000,145 @@ def get_default_ingredient_data(ingredient: str) -> Dict[str, Any]:
 
 async def fetch_ingredient_data(ingredient: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     """Aggregate data from all APIs for an ingredient with production-grade error handling."""
-    from database import get_ingredient_data
-    
+    from database import get_ingredient_data  # local import to avoid circular dependency
+
+    normalized_name = _normalize_ingredient_name(ingredient)
     local_data = get_ingredient_data(ingredient)
     if local_data:
-        logger.info(f"Found {ingredient} in local database; enriching with external APIs")
+        logger.info(
+            "Local ingredient record found",
+            extra={"ingredient": normalized_name or ingredient, "source": "local"},
+        )
     else:
-        logger.info(f"Fetching {ingredient} from external APIs...")
-    
-    # Run API calls in parallel with retry logic
-    tasks = [
-        retry_with_backoff(lambda: fetch_fda_data(ingredient, client)),
-        retry_with_backoff(lambda: fetch_pubchem_data(ingredient, client)),
-        retry_with_backoff(lambda: fetch_ewg_data(ingredient, client)),
-        retry_with_backoff(lambda: fetch_iarc_data(ingredient)),
-        retry_with_backoff(lambda: fetch_invima_data(ingredient, client)),
-        retry_with_backoff(lambda: fetch_cir_data(ingredient)),
-        retry_with_backoff(lambda: fetch_sccs_data(ingredient)),
-        retry_with_backoff(lambda: fetch_iccr_data(ingredient)),
-        retry_with_backoff(lambda: fetch_inci_beauty_data(ingredient)),
-        retry_with_backoff(lambda: fetch_cosing_api_data(ingredient)),
-    ]
-    
-    # Run parallel tasks
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    
-    # Process results
-    fda_data = results[0] if not isinstance(results[0], Exception) else APIResponse(success=False, data={}, error=str(results[0]), source="FDA")
-    pubchem_data = results[1] if not isinstance(results[1], Exception) else APIResponse(success=False, data={}, error=str(results[1]), source="PubChem")
-    ewg_data = results[2] if not isinstance(results[2], Exception) else APIResponse(success=False, data={}, error=str(results[2]), source="EWG")
-    iarc_data = results[3] if not isinstance(results[3], Exception) else APIResponse(success=False, data={}, error=str(results[3]), source="IARC")
-    invima_data = results[4] if not isinstance(results[4], Exception) else APIResponse(success=False, data={}, error=str(results[4]), source="INVIMA")
-    cir_data = results[5] if not isinstance(results[5], Exception) else APIResponse(success=False, data={}, error=str(results[5]), source="CIR")
-    sccs_data = results[6] if not isinstance(results[6], Exception) else APIResponse(success=False, data={}, error=str(results[6]), source="SCCS")
-    iccr_data = results[7] if not isinstance(results[7], Exception) else APIResponse(success=False, data={}, error=str(results[7]), source="ICCR")
-    inci_beauty_data = results[8] if not isinstance(results[8], Exception) else APIResponse(success=False, data={}, error=str(results[8]), source="INCI Beauty")
-    cosing_api_data = results[9] if not isinstance(results[9], Exception) else APIResponse(success=False, data={}, error=str(results[9]), source="CosIng API")
-    
-    # COSING is synchronous, so call it separately
-    cosing_data = fetch_cosing_data(ingredient)
+        logger.info(
+            "Fetching ingredient from external providers",
+            extra={"ingredient": normalized_name or ingredient, "source": "external"},
+        )
 
-    # Prioritize risk_level: IARC > FDA > CIR > SCCS > INVIMA > EWG > ICCR > INCI Beauty > CosIng API > default
-    risk_level = (
-        iarc_data.data.get("risk_level", "desconocido") if iarc_data.data.get("risk_level") != "desconocido" else
-        fda_data.data.get("risk_level", "desconocido") if fda_data.data.get("risk_level") != "desconocido" else
-        cir_data.data.get("risk_level", "desconocido") if cir_data.data.get("risk_level") != "desconocido" else
-        sccs_data.data.get("risk_level", "desconocido") if sccs_data.data.get("risk_level") != "desconocido" else
-        invima_data.data.get("risk_level", "desconocido") if invima_data.data.get("risk_level") != "desconocido" else
-        ewg_data.data.get("risk_level", "desconocido") if ewg_data.data.get("risk_level") != "desconocido" else
-        iccr_data.data.get("risk_level", "desconocido") if iccr_data.data.get("risk_level") != "desconocido" else
-        inci_beauty_data.data.get("risk_level", "desconocido") if inci_beauty_data.data.get("risk_level") != "desconocido" else
-        cosing_api_data.data.get("risk_level", "desconocido") if cosing_api_data.data.get("risk_level") != "desconocido" else
-        cosing_data.get("risk_level", "desconocido")
+    provider_specs: List[Tuple[str, Callable[[], Awaitable[APIResponse]]]] = [
+        ("FDA", lambda: retry_with_backoff(lambda: fetch_fda_data(ingredient, client))),
+        ("PubChem", lambda: retry_with_backoff(lambda: fetch_pubchem_data(ingredient, client))),
+        ("EWG", lambda: retry_with_backoff(lambda: fetch_ewg_data(ingredient, client))),
+        ("IARC", lambda: retry_with_backoff(lambda: fetch_iarc_data(ingredient))),
+        ("INVIMA", lambda: retry_with_backoff(lambda: fetch_invima_data(ingredient, client))),
+        ("CIR", lambda: retry_with_backoff(lambda: fetch_cir_data(ingredient))),
+        ("SCCS", lambda: retry_with_backoff(lambda: fetch_sccs_data(ingredient))),
+        ("ICCR", lambda: retry_with_backoff(lambda: fetch_iccr_data(ingredient))),
+        ("INCI Beauty", lambda: retry_with_backoff(lambda: fetch_inci_beauty_data(ingredient))),
+        ("CosIng API", lambda: retry_with_backoff(lambda: fetch_cosing_api_data(ingredient))),
+    ]
+
+    coroutines = [factory() for _, factory in provider_specs]
+    raw_results = await asyncio.gather(*coroutines, return_exceptions=True)
+
+    responses: Dict[str, APIResponse] = {}
+    failed_details: Dict[str, str] = {}
+
+    for (provider, _), outcome in zip(provider_specs, raw_results):
+        if isinstance(outcome, Exception):
+            error_message = str(outcome)
+            responses[provider] = APIResponse(
+                success=False,
+                data=_build_default_payload(provider),
+                error=error_message,
+                source=provider,
+            )
+            failed_details[provider] = error_message
+            logger.error(
+                "Provider call raised exception",
+                extra={"provider": provider, "ingredient": normalized_name or ingredient, "error": error_message},
+            )
+            continue
+
+        if not isinstance(outcome, APIResponse):
+            error_message = "Unexpected response type"
+            responses[provider] = APIResponse(
+                success=False,
+                data=_build_default_payload(provider),
+                error=error_message,
+                source=provider,
+            )
+            failed_details[provider] = error_message
+            logger.error(
+                "Provider returned unexpected payload",
+                extra={"provider": provider, "ingredient": normalized_name or ingredient},
+            )
+            continue
+
+        responses[provider] = outcome
+        if not outcome.success and outcome.error:
+            failed_details[provider] = outcome.error
+
+    cosing_csv_payload = fetch_cosing_data(ingredient)
+    responses["CosIng CSV"] = APIResponse(
+        success=True,
+        data=cosing_csv_payload,
+        source="CosIng CSV",
     )
 
-    # Combine sources
-    sources = ",".join(filter(None, [
-        fda_data.data.get("sources", ""),
-        pubchem_data.data.get("sources", ""),
-        ewg_data.data.get("sources", ""),
-        iarc_data.data.get("sources", ""),
-        invima_data.data.get("sources", ""),
-        cir_data.data.get("sources", ""),
-        sccs_data.data.get("sources", ""),
-        iccr_data.data.get("sources", ""),
-        inci_beauty_data.data.get("sources", ""),
-        cosing_api_data.data.get("sources", ""),
-        cosing_data.get("sources", "")
-    ]))
+    successful_providers = [name for name, resp in responses.items() if resp.success]
+    logger.info(
+        "API call summary",
+        extra={
+            "ingredient": normalized_name or ingredient,
+            "successful": successful_providers,
+            "failed": failed_details,
+        },
+    )
 
-    # Log API performance
-    successful_apis = [r.source for r in [fda_data, pubchem_data, ewg_data, iarc_data, invima_data, cir_data, sccs_data, iccr_data, inci_beauty_data, cosing_api_data] if r.success]
-    failed_apis = [r.source for r in [fda_data, pubchem_data, ewg_data, iarc_data, invima_data, cir_data, sccs_data, iccr_data, inci_beauty_data, cosing_api_data] if not r.success]
-    
-    logger.info(f"API calls for {ingredient}: Success={successful_apis}, Failed={failed_apis}")
-
-    # Proporcionar datos por defecto más útiles basados en el tipo de ingrediente
     default_data = get_default_ingredient_data(ingredient)
-    
+
+    eco_value = _first_non_placeholder(responses, ["EWG"], "eco_score")
+    if eco_value is None:
+        eco_value = default_data.get("eco_score", 50.0)
+    try:
+        eco_score = float(eco_value)
+    except (TypeError, ValueError):
+        eco_score = float(default_data.get("eco_score", 50.0))
+    eco_score = max(0.0, min(100.0, eco_score))
+
+    risk_level = _first_non_placeholder(responses, RISK_PRIORITY_ORDER, "risk_level")
+    if not risk_level:
+        risk_level = default_data.get("risk_level", "desconocido")
+
+    benefits_value = _first_non_placeholder(responses, BENEFITS_PRIORITY_ORDER, "benefits")
+    risks_value = _first_non_placeholder(responses, RISK_DETAILS_PRIORITY_ORDER, "risks_detailed")
+
+    benefits = _normalize_text_field(benefits_value, default_data.get("benefits", "No disponible"))
+    risks_detailed = _normalize_text_field(risks_value, default_data.get("risks_detailed", "No disponible"))
+
+    sources = _merge_sources(
+        *(resp.data.get("sources") for resp in responses.values()),
+        default_data.get("sources"),
+    )
+
+    canonical_name = (local_data or {}).get("name") or ingredient
+
     api_result = {
-        "name": ingredient,
-        "eco_score": ewg_data.data.get("eco_score", default_data["eco_score"]),
-        "risk_level": risk_level if risk_level != "desconocido" else default_data["risk_level"],
-        "benefits": (
-            inci_beauty_data.data.get("benefits") or
-            cir_data.data.get("benefits") or
-            sccs_data.data.get("benefits") or
-            cosing_api_data.data.get("benefits") or
-            pubchem_data.data.get("benefits") or 
-            cosing_data.get("benefits") or 
-            default_data["benefits"]
-        ),
-        "risks_detailed": (
-            iarc_data.data.get("risks_detailed") or
-            fda_data.data.get("risks_detailed") or
-            cir_data.data.get("risks_detailed") or
-            sccs_data.data.get("risks_detailed") or
-            ewg_data.data.get("risks_detailed") or
-            invima_data.data.get("risks_detailed") or
-            iccr_data.data.get("risks_detailed") or
-            inci_beauty_data.data.get("risks_detailed") or
-            cosing_api_data.data.get("risks_detailed") or
-            cosing_data.get("risks_detailed") or
-            default_data["risks_detailed"]
-        ),
-        "sources": sources or default_data["sources"]
+        "name": canonical_name,
+        "eco_score": eco_score,
+        "risk_level": risk_level,
+        "benefits": benefits,
+        "risks_detailed": risks_detailed,
+        "sources": sources,
     }
 
     if local_data:
         combined = {
-            "name": ingredient,
-            "eco_score": default_data["eco_score"],
-            "risk_level": default_data["risk_level"],
-            "benefits": default_data["benefits"],
-            "risks_detailed": default_data["risks_detailed"],
-            "sources": default_data["sources"]
+            "name": canonical_name,
+            "eco_score": default_data.get("eco_score", 50.0),
+            "risk_level": default_data.get("risk_level", "desconocido"),
+            "benefits": default_data.get("benefits", "No disponible"),
+            "risks_detailed": default_data.get("risks_detailed", "No disponible"),
+            "sources": default_data.get("sources", "Default"),
         }
         combined.update({k: v for k, v in local_data.items() if v is not None})
-        combined.update({k: v for k, v in api_result.items() if v is not None})
-
-        source_candidates = [combined.get("sources"), local_data.get("sources"), api_result.get("sources")]
-        sources_clean = [src.strip() for src in source_candidates if src]
-        if sources_clean:
-            combined["sources"] = ",".join(dict.fromkeys(sources_clean))
+        combined.update(api_result)
+        combined["sources"] = _merge_sources(
+            combined.get("sources"),
+            local_data.get("sources"),
+            api_result.get("sources"),
+        )
         return combined
 
     return api_result
@@ -1005,10 +1182,9 @@ async def health_check() -> Dict[str, Any]:
 
 def get_cache_stats() -> Dict[str, Any]:
     """Get cache statistics."""
-    return {
-        "cache_size": len(api_cache.cache),
-        "cache_keys": list(api_cache.cache.keys())
-    }
+    stats = api_cache.stats()
+    stats["cache_keys"] = api_cache.keys()
+    return stats
 
 def clear_cache():
     """Clear API cache."""
@@ -1029,7 +1205,7 @@ async def fetch_apify_data(url: str) -> dict:
                 "startUrls": [{"url": url}],
                 "maxCrawlDepth": 1,
                 "maxCrawlPages": 1,
-                "extendOutputFunction": """
+                "extendOutputFunction": r"""
                 async ({ data, item, helpers, page, customData, label }) => {
                     const $ = helpers.$;
                     
@@ -1100,4 +1276,165 @@ async def fetch_apify_data(url: str) -> dict:
             "success": False,
             "ingredients": [],
             "error": str(e)
+        }
+
+
+async def enhance_ingredient_analysis_with_ollama(ingredient_data: Dict[str, Any], skin_type: str = "normal") -> Dict[str, Any]:
+    """
+    Enhance ingredient analysis using Ollama AI for better safety assessment and recommendations
+    
+    Args:
+        ingredient_data: Dictionary containing ingredient information
+        skin_type: User's skin type for personalized analysis
+        
+    Returns:
+        Enhanced ingredient data with Ollama analysis
+    """
+    if not OLLAMA_AVAILABLE or not ollama_integration.is_available():
+        logger.warning("Ollama not available for enhanced analysis")
+        return ingredient_data
+    
+    try:
+        # Extract ingredient names for analysis
+        ingredients = []
+        if isinstance(ingredient_data.get('ingredients'), list):
+            ingredients = ingredient_data['ingredients']
+        elif isinstance(ingredient_data.get('ingredients'), str):
+            ingredients = [ingredient_data['ingredients']]
+        
+        if not ingredients:
+            logger.warning("No ingredients found for Ollama analysis")
+            return ingredient_data
+        
+        # Get enhanced safety analysis from Ollama
+        ollama_result = await analyze_ingredient_safety_with_ollama(ingredients, skin_type)
+        
+        if ollama_result.success and ollama_result.content:
+            # Add Ollama analysis to the ingredient data
+            enhanced_data = ingredient_data.copy()
+            enhanced_data['ollama_analysis'] = {
+                'content': ollama_result.content,
+                'model': ollama_result.model,
+                'skin_type': skin_type,
+                'timestamp': time.time()
+            }
+            
+            # Try to extract safety score from Ollama response
+            safety_score = extract_safety_score_from_ollama(ollama_result.content)
+            if safety_score:
+                enhanced_data['ollama_safety_score'] = safety_score
+            
+            logger.info(f"Enhanced analysis completed for {len(ingredients)} ingredients")
+            return enhanced_data
+        else:
+            logger.warning(f"Ollama analysis failed: {ollama_result.error}")
+            return ingredient_data
+            
+    except Exception as e:
+        logger.error(f"Error enhancing analysis with Ollama: {e}")
+        return ingredient_data
+
+
+def extract_safety_score_from_ollama(content: str) -> Optional[float]:
+    """
+    Extract safety score from Ollama response content
+    
+    Args:
+        content: Ollama response content
+        
+    Returns:
+        Safety score if found, None otherwise
+    """
+    try:
+        # Look for patterns like "8/10", "Score: 8", "Safety Score: 8.5", etc.
+        import re
+        
+        # Pattern 1: X/Y format (e.g., "8/10")
+        pattern1 = r'(\d+(?:\.\d+)?)\s*/\s*10'
+        match1 = re.search(pattern1, content, re.IGNORECASE)
+        if match1:
+            return float(match1.group(1))
+        
+        # Pattern 2: "Score: X" format
+        pattern2 = r'(?:safety\s+)?score\s*:?\s*(\d+(?:\.\d+)?)'
+        match2 = re.search(pattern2, content, re.IGNORECASE)
+        if match2:
+            return float(match2.group(1))
+        
+        # Pattern 3: "X out of 10" format
+        pattern3 = r'(\d+(?:\.\d+)?)\s+out\s+of\s+10'
+        match3 = re.search(pattern3, content, re.IGNORECASE)
+        if match3:
+            return float(match3.group(1))
+        
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Error extracting safety score: {e}")
+        return None
+
+
+async def enhance_ocr_with_ollama(ocr_text: str) -> Optional[str]:
+    """
+    Enhance OCR text using Ollama for better ingredient extraction
+    
+    Args:
+        ocr_text: Raw OCR text from image processing
+        
+    Returns:
+        Enhanced OCR text or None if Ollama is not available
+    """
+    if not OLLAMA_AVAILABLE or not ollama_integration.is_available():
+        logger.warning("Ollama not available for OCR enhancement")
+        return None
+    
+    try:
+        ollama_result = await enhance_ocr_text_with_ollama(ocr_text)
+        
+        if ollama_result.success and ollama_result.content:
+            logger.info("OCR text enhanced with Ollama")
+            return ollama_result.content
+        else:
+            logger.warning(f"OCR enhancement failed: {ollama_result.error}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error enhancing OCR with Ollama: {e}")
+        return None
+
+
+async def get_comprehensive_ingredient_analysis(ingredients: List[str], skin_type: str = "normal") -> Dict[str, Any]:
+    """
+    Get comprehensive ingredient analysis combining traditional APIs with Ollama AI
+    
+    Args:
+        ingredients: List of ingredient names
+        skin_type: User's skin type
+        
+    Returns:
+        Comprehensive analysis results
+    """
+    try:
+        # Get traditional API data
+        traditional_data = await fetch_ingredient_data(ingredients[0] if ingredients else "")
+        
+        # Enhance with Ollama analysis
+        enhanced_data = await enhance_ingredient_analysis_with_ollama(traditional_data, skin_type)
+        
+        # Add metadata
+        enhanced_data['analysis_metadata'] = {
+            'ingredients_analyzed': len(ingredients),
+            'skin_type': skin_type,
+            'ollama_enhanced': OLLAMA_AVAILABLE and ollama_integration.is_available(),
+            'timestamp': time.time()
+        }
+        
+        return enhanced_data
+        
+    except Exception as e:
+        logger.error(f"Error in comprehensive analysis: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'ingredients': ingredients
         }
