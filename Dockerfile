@@ -33,9 +33,9 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies with optimizations
+# Install Python dependencies with conflict resolution
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --ignore-installed --break-system-packages -r requirements.txt
 
 # Install minimal system dependencies (Playwright not used in codebase)
 RUN apt-get update && \
