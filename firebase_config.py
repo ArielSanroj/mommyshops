@@ -22,13 +22,7 @@ _firestore_client = None
 def get_firebase_credentials() -> Optional[credentials.Certificate]:
     """Get Firebase credentials from environment variables or service account file."""
     try:
-        # Option 1: Service account file path
-        service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
-        if service_account_path and os.path.exists(service_account_path):
-            logger.info(f"Using Firebase service account file: {service_account_path}")
-            return credentials.Certificate(service_account_path)
-        
-        # Option 2: JSON credentials as environment variable
+        # Option 1: JSON credentials as environment variable (for Railway)
         firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS")
         if firebase_credentials_json:
             try:
@@ -39,12 +33,25 @@ def get_firebase_credentials() -> Optional[credentials.Certificate]:
                 logger.error(f"Invalid JSON in FIREBASE_CREDENTIALS: {e}")
                 return None
         
-        # Option 3: Google Application Default Credentials
+        # Option 2: Service account file path (for local development)
+        service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        if service_account_path and os.path.exists(service_account_path):
+            logger.info(f"Using Firebase service account file: {service_account_path}")
+            return credentials.Certificate(service_account_path)
+        
+        # Option 3: Default service account file (for local development)
+        default_service_account = "firebase-service-account.json"
+        if os.path.exists(default_service_account):
+            logger.info(f"Using default Firebase service account file: {default_service_account}")
+            return credentials.Certificate(default_service_account)
+        
+        # Option 4: Google Application Default Credentials
         if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
             logger.info("Using Google Application Default Credentials")
             return credentials.ApplicationDefault()
         
         logger.warning("No Firebase credentials found. Firebase features will be disabled.")
+        logger.warning("To enable Firebase, set FIREBASE_CREDENTIALS environment variable or create firebase-service-account.json")
         return None
         
     except Exception as e:

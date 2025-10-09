@@ -2002,28 +2002,36 @@ async def google_auth_callback(
             detail="Google authentication failed"
         )
     
-    # Check if user exists
-    user = db.query(User).filter(
-        (User.google_id == google_user['google_id']) | 
-        (User.email == google_user['email'])
-    ).first()
+    # Check if user exists using unified data service
+    from unified_data_service import get_user_by_email_unified
+    existing_user = get_user_by_email_unified(google_user['email'])
     
-    if not user:
-        # Create new user
-        user = User(
-            google_id=google_user['google_id'],
-            email=google_user['email'],
-            username=google_user['email'].split('@')[0],  # Use email prefix as username
-            google_name=google_user['name'],
-            google_picture=google_user['picture'],
-            auth_provider='google'
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        logger.info(f"Created new Google user: {user.email}")
+    if not existing_user:
+        # Create new user using unified data service
+        from unified_data_service import create_user_unified
+        
+        user_data = {
+            'google_id': google_user['google_id'],
+            'email': google_user['email'],
+            'username': google_user['email'].split('@')[0],  # Use email prefix as username
+            'google_name': google_user['name'],
+            'google_picture': google_user['picture'],
+            'auth_provider': 'google'
+        }
+        
+        success, sqlite_id, firebase_uid = create_user_unified(user_data)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user"
+            )
+        
+        # Get the created user from database
+        user = db.query(User).filter(User.id == int(sqlite_id)).first()
+        logger.info(f"Created new Google user: {user.email} (SQLite: {sqlite_id}, Firebase: {firebase_uid})")
     else:
         # Update existing user with Google info
+        user = db.query(User).filter(User.id == existing_user['id']).first()
         user.google_id = google_user['google_id']
         user.google_name = google_user['name']
         user.google_picture = google_user['picture']
@@ -2931,6 +2939,18 @@ async def health():
     except Exception as e:
         logger.error(f"Health check error: {e}")
         return {"status": "unhealthy", "error": str(e)}
+
+@app.get("/debug/env")
+async def debug_env():
+    """Debug environment variables."""
+    return {
+        "GOOGLE_CLIENT_ID": "SET" if os.getenv("GOOGLE_CLIENT_ID") else "NOT_SET",
+        "GOOGLE_CLIENT_SECRET": "SET" if os.getenv("GOOGLE_CLIENT_SECRET") else "NOT_SET",
+        "GOOGLE_REDIRECT_URI": os.getenv("GOOGLE_REDIRECT_URI", "NOT_SET"),
+        "FIREBASE_CREDENTIALS": "SET" if os.getenv("FIREBASE_CREDENTIALS") else "NOT_SET",
+        "GOOGLE_VISION_API_KEY": "SET" if os.getenv("GOOGLE_VISION_API_KEY") else "NOT_SET",
+        "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT", "NOT_SET")
+    }
 
 @app.get("/debug/tesseract")
 async def debug_tesseract():
