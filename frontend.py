@@ -366,7 +366,7 @@ def login_account(username: str, password: str) -> Optional[Dict[str, Any]]:
 
 
 def submit_profile(payload: Dict[str, Any], token: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Submit profile using Firebase"""
+    """Submit profile using unified data service (both SQLite and Firebase)"""
     try:
         # Get current user ID from session state
         user_id = st.session_state.auth.get("user_id") if st.session_state.auth else None
@@ -375,11 +375,15 @@ def submit_profile(payload: Dict[str, Any], token: Optional[str] = None) -> Opti
             st.error("No hay usuario autenticado.")
             return None
         
-        # Update user profile in Firebase
-        success = update_user_profile(user_id, payload)
+        # Get Firebase UID if available
+        firebase_uid = st.session_state.auth.get("firebase_uid") if st.session_state.auth else None
+        
+        # Update user profile using unified data service
+        from unified_data_service import update_user_profile_unified
+        success = update_user_profile_unified(user_id, payload, firebase_uid)
         
         if success:
-            st.success("Perfil guardado correctamente.")
+            st.success("Perfil guardado correctamente en ambos sistemas.")
             return {"user_id": user_id, "status": "success"}
         else:
             st.error("Error al guardar el perfil.")
