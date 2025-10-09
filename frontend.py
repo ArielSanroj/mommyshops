@@ -46,7 +46,7 @@ def resolve_api_base() -> Optional[str]:
     local = "http://127.0.0.1:8000"
     local_available = False
     try:
-        response = requests.get(f"{local}/health", timeout=2)
+        response = requests.get(f"{local}/health", timeout=10)
         if response.status_code == 200:
             local_available = True
     except requests.RequestException:
@@ -110,7 +110,7 @@ def debug_api_connection():
     local = "http://127.0.0.1:8000"
     local_available = False
     try:
-        response = requests.get(f"{local}/health", timeout=2)
+        response = requests.get(f"{local}/health", timeout=10)
         if response.status_code == 200:
             local_available = True
     except requests.RequestException:
@@ -131,7 +131,7 @@ def debug_api_connection():
     # Test connection
     if resolved_url:
         try:
-            response = requests.get(f"{resolved_url}/health", timeout=5)
+            response = requests.get(f"{resolved_url}/health", timeout=10)
             st.write(f"**Health Check Status:** {response.status_code}")
             if response.status_code == 200:
                 st.write("✅ **API is accessible!**")
@@ -182,6 +182,166 @@ def register_account(username: str, email: str, password: str) -> bool:
         st.sidebar.error(f"Error al registrar: {e}")
         return False
 
+
+def create_interactive_questionnaire():
+    """Create an interactive step-by-step questionnaire"""
+    
+    # Initialize questionnaire state
+    if "questionnaire_step" not in st.session_state:
+        st.session_state.questionnaire_step = 0
+    if "questionnaire_answers" not in st.session_state:
+        st.session_state.questionnaire_answers = {}
+    if "questionnaire_completed" not in st.session_state:
+        st.session_state.questionnaire_completed = False
+    
+    # Questionnaire steps
+    steps = [
+        {
+            "title": "Tipo de piel facial",
+            "question": "¿Cuál es tu tipo de piel facial?",
+            "options": ["Seca", "Grasa", "Mixta", "Sensible", "Normal"],
+            "key": "skin_face"
+        },
+        {
+            "title": "Tipo de cabello",
+            "question": "¿Cuál es tu tipo de cabello?",
+            "options": ["Liso", "Ondulado", "Rizado", "Afro"],
+            "key": "hair_type"
+        },
+        {
+            "title": "Objetivos faciales",
+            "question": "¿Cuáles son tus objetivos principales para el cuidado facial?",
+            "options": ["Hidratar", "Controlar brillo", "Tratar manchas", "Prevenir arrugas", "Reducir sensibilidad"],
+            "key": "goals_face",
+            "multiple": True
+        },
+        {
+            "title": "Clima",
+            "question": "¿En qué tipo de clima vives?",
+            "options": ["Húmedo", "Seco", "Templado", "Cambiante"],
+            "key": "climate"
+        },
+        {
+            "title": "Piel corporal",
+            "question": "¿Cuál es tu tipo de piel corporal?",
+            "options": ["Seca", "Grasa", "Mixta", "Sensible", "Normal"],
+            "key": "skin_body",
+            "multiple": True
+        },
+        {
+            "title": "Objetivos corporales",
+            "question": "¿Cuáles son tus objetivos para el cuidado corporal?",
+            "options": ["Hidratar", "Mejorar firmeza", "Reducir manchas", "Atenuar estrías o cicatrices", "Reducir sensibilidad"],
+            "key": "goals_body",
+            "multiple": True
+        },
+        {
+            "title": "Porosidad del cabello",
+            "question": "¿Cuál es la porosidad de tu cabello?",
+            "options": ["Baja", "Media", "Alta"],
+            "key": "hair_porosity"
+        },
+        {
+            "title": "Objetivos del cabello",
+            "question": "¿Cuáles son tus objetivos para el cuidado del cabello?",
+            "options": ["Hidratar", "Definir", "Aumentar volumen", "Reducir frizz", "Fortalecer"],
+            "key": "goals_hair",
+            "multiple": True
+        },
+        {
+            "title": "Condiciones especiales",
+            "question": "¿Tienes alguna condición especial de la piel?",
+            "options": ["Acné", "Rosácea", "Dermatitis", "Psoriasis", "Ninguna"],
+            "key": "conditions",
+            "multiple": True
+        }
+    ]
+    
+    # Progress bar
+    progress = (st.session_state.questionnaire_step + 1) / len(steps)
+    st.progress(progress)
+    st.caption(f"Paso {st.session_state.questionnaire_step + 1} de {len(steps)}")
+    
+    # Current step
+    current_step = steps[st.session_state.questionnaire_step]
+    
+    st.markdown(f"### {current_step['title']}")
+    st.markdown(f"**{current_step['question']}**")
+    
+    # Question input
+    if current_step.get('multiple', False):
+        answer = st.multiselect(
+            "Selecciona todas las opciones que apliquen:",
+            current_step['options'],
+            default=st.session_state.questionnaire_answers.get(current_step['key'], [])
+        )
+    else:
+        answer = st.selectbox(
+            "Selecciona una opción:",
+            current_step['options'],
+            index=current_step['options'].index(st.session_state.questionnaire_answers.get(current_step['key'], current_step['options'][0]))
+        )
+    
+    # Navigation buttons
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col1:
+        if st.button("⬅️ Anterior", disabled=st.session_state.questionnaire_step == 0):
+            st.session_state.questionnaire_step -= 1
+            st.rerun()
+    
+    with col2:
+        if st.button("💾 Guardar respuesta"):
+            st.session_state.questionnaire_answers[current_step['key']] = answer
+            st.success("¡Respuesta guardada!")
+    
+    with col3:
+        if st.button("Siguiente ➡️", disabled=st.session_state.questionnaire_step == len(steps) - 1):
+            if answer:  # Check if answer is not empty
+                st.session_state.questionnaire_answers[current_step['key']] = answer
+                if st.session_state.questionnaire_step < len(steps) - 1:
+                    st.session_state.questionnaire_step += 1
+                    st.rerun()
+                else:
+                    # Complete questionnaire
+                    st.session_state.questionnaire_completed = True
+                    st.success("¡Cuestionario completado! 🎉")
+                    st.rerun()
+            else:
+                st.warning("Por favor selecciona una respuesta antes de continuar.")
+    
+    # Show completion button if on last step
+    if st.session_state.questionnaire_step == len(steps) - 1 and st.session_state.questionnaire_answers.get(current_step['key']):
+        if st.button("✅ Completar cuestionario", type="primary", use_container_width=True):
+            st.session_state.questionnaire_answers[current_step['key']] = answer
+            st.session_state.questionnaire_completed = True
+            st.success("¡Cuestionario completado! 🎉")
+            st.rerun()
+    
+    return st.session_state.questionnaire_answers
+
+def handle_google_callback(code: str) -> Optional[Dict[str, Any]]:
+    """Handle Google OAuth callback and get user info"""
+    try:
+        api_base = st.session_state.get("api_base")
+        if not api_base:
+            st.error("Backend no configurado")
+            return None
+        
+        # Call the backend to handle the OAuth callback
+        response = requests.get(f"{api_base}/auth/google/callback", params={"code": code}, timeout=30)
+        
+        if response.status_code == 200:
+            auth_data = response.json()
+            st.success("¡Inicio de sesión exitoso!")
+            return auth_data
+        else:
+            st.error(f"Error en la autenticación: {response.text}")
+            return None
+            
+    except Exception as e:
+        st.error(f"Error al procesar la autenticación: {e}")
+        return None
 
 def login_account(username: str, password: str) -> Optional[Dict[str, Any]]:
     """Login account using Firebase"""
@@ -312,6 +472,14 @@ def ensure_session_state() -> None:
     if "api_base" not in st.session_state:
         st.session_state.api_base = resolve_api_base()
 
+    # Check for Google OAuth callback
+    if "code" in st.query_params and not st.session_state.get("auth"):
+        code = st.query_params["code"]
+        auth_result = handle_google_callback(code)
+        if auth_result:
+            st.session_state.auth = auth_result
+            st.rerun()
+
 
 def require_backend(target: str = "main") -> Optional[str]:
     base = st.session_state.get("api_base")
@@ -435,7 +603,7 @@ if st.sidebar.button("Guardar backend"):
 
 if st.sidebar.button("Probar conexión"):
     try:
-        response = requests.get(f"{current_base}/health", timeout=5)
+        response = requests.get(f"{current_base}/health", timeout=10)
         if response.status_code == 200:
             st.sidebar.success("Conexión exitosa con el backend.")
         else:
@@ -448,204 +616,154 @@ if st.sidebar.button("🔍 Debug API"):
     with st.sidebar.expander("Debug Info", expanded=True):
         debug_api_connection()
 
-st.sidebar.markdown("### Autenticación")
+# User info in sidebar when authenticated
+if st.session_state.get("auth"):
+    user = st.session_state.auth.get("user", {})
+    user_name = user.get("name", "Usuario")
+    user_email = user.get("email", "")
+    user_picture = user.get("picture", "")
+    
+    st.sidebar.markdown("### 👋 ¡Bienvenida!")
+    
+    # User info display
+    col1, col2 = st.sidebar.columns([1, 3])
+    if user_picture:
+        col1.image(user_picture, width=50)
+    col2.markdown(f"**{user_name}**")
+    col2.caption(user_email)
+    
+    st.sidebar.success("✅ Sesión activa")
+    
+    # Logout button
+    if st.sidebar.button("🚪 Cerrar sesión", type="secondary", use_container_width=True):
+        st.session_state.auth = None
+        st.session_state.analysis = None
+        st.session_state.stored_recommendations = None
+        st.rerun()
 
-sidebar_username = st.sidebar.text_input("Usuario")
-sidebar_email = st.sidebar.text_input("Email")
-sidebar_password = st.sidebar.text_input("Contraseña", type="password")
 
-col_reg, col_login, col_logout = st.sidebar.columns(3)
-if col_reg.button("Registrar"):
-    if not sidebar_username or not sidebar_email or not sidebar_password:
-        st.sidebar.error("Completa usuario, email y contraseña.")
-    else:
-        register_account(sidebar_username, sidebar_email, sidebar_password)
-
-if col_login.button("Iniciar sesión"):
-    if not sidebar_username or not sidebar_password:
-        st.sidebar.error("Usuario y contraseña son obligatorios.")
-    else:
-        profile = login_account(sidebar_username, sidebar_password)
-        if profile:
-            st.session_state.auth = {
-                "token": profile.get("access_token"),
-                "user_id": profile.get("user_id"),
-                "username": profile.get("username"),
-                "email": profile.get("email"),
-            }
-            st.sidebar.success(f"Sesión iniciada como {profile.get('username')}")
-
-# Google OAuth2 Login
-st.sidebar.markdown("---")
-st.sidebar.markdown("**O inicia sesión con:**")
-
-if st.sidebar.button("🔐 Iniciar con Gmail", type="primary"):
-    try:
-        # Get Google auth URL
-        api_base = st.session_state.get("api_base")
-        if not api_base:
-            st.sidebar.error("Backend no configurado")
-        else:
-            response = requests.get(f"{api_base}/auth/google", timeout=10)
-            if response.status_code == 200:
-                auth_data = response.json()
-                auth_url = auth_data.get("auth_url")
-                if auth_url:
-                    st.sidebar.markdown(f"[Iniciar sesión con Google]({auth_url})")
-                    st.sidebar.info("Se abrirá una nueva ventana para autenticarte con Google")
-                else:
-                    st.sidebar.error("No se pudo obtener la URL de autenticación")
+# Authentication Section - Moved to top
+st.markdown("---")
+if not st.session_state.get("auth"):
+    st.markdown("### 🔐 Registrarme o Iniciar sesión")
+    
+    if st.button("🚀 Iniciar con Gmail", type="primary", use_container_width=True):
+        try:
+            # Get Google auth URL
+            api_base = st.session_state.get("api_base")
+            if not api_base:
+                st.error("Backend no configurado")
             else:
-                st.sidebar.error("Error al conectar con el servidor")
-    except Exception as e:
-        st.sidebar.error(f"Error: {e}")
+                response = requests.get(f"{api_base}/auth/google", timeout=30)
+                if response.status_code == 200:
+                    auth_data = response.json()
+                    auth_url = auth_data.get("auth_url")
+                    if auth_url:
+                        st.markdown(f"[🔗 Iniciar sesión con Google]({auth_url})")
+                        st.info("Se abrirá una nueva ventana para autenticarte con Google")
+                    else:
+                        st.error("No se pudo obtener la URL de autenticación")
+                else:
+                    st.error("Error al conectar con el servidor")
+        except Exception as e:
+            st.error(f"Error: {e}")
+    
+    st.markdown("---")
+    st.markdown("**¿No tienes cuenta?** El registro es automático al iniciar sesión con Gmail")
 
-if col_logout.button("Cerrar sesión"):
-    st.session_state.auth = None
-    st.session_state.analysis = None
-    st.session_state.stored_recommendations = None
-
-if st.session_state.auth:
-    st.sidebar.success(f"Conectado como {st.session_state.auth.get('username')}")
-
-
-st.title("MommyShops · Personalización de rutina")
-st.markdown("Completa tu perfil y recibe recomendaciones adaptadas.")
-
-# OCR Improvements info
-st.info("🔧 **Nuevo**: Sistema OCR mejorado con Otsu binarization, corrección de inclinación y fuzzy matching para 90%+ de precisión en análisis de ingredientes.")
+# Personalized title based on authentication status
+if st.session_state.get("auth"):
+    user = st.session_state.auth.get("user", {})
+    user_name = user.get("name", "Usuario")
+    st.title(f"👋 ¡Hola {user_name}!")
+    st.markdown("Completa tu perfil y recibe recomendaciones personalizadas para ti.")
+else:
+    st.title("MommyShops · Personalización de rutina")
+    st.markdown("Inicia sesión con Gmail para recibir recomendaciones adaptadas a tu perfil.")
 
 
-with st.form("Perfil Personalizado"):
-    st.subheader("Características personales")
-    skin_face = st.selectbox("Tipo de piel facial", ["Seca", "Grasa", "Mixta", "Sensible", "Normal"], index=0)
-    hair_type = st.selectbox("Tipo de cabello", ["Liso", "Ondulado", "Rizado", "Afro"], index=0)
-    goals_face = st.multiselect(
-        "Objetivo principal para tu cara",
-        ["Hidratar", "Controlar brillo", "Tratar manchas", "Prevenir arrugas", "Reducir sensibilidad"],
-    )
-    climate = st.selectbox("Clima donde vives", ["Húmedo", "Seco", "Templado", "Cambiante"], index=0)
 
-    st.subheader("Cuidado corporal")
-    skin_body = st.multiselect(
-        "Tipo de piel corporal",
-        ["Seca", "Grasa", "Mixta", "Sensible", "Normal"],
-    )
-    goals_body = st.multiselect(
-        "Objetivos para el cuerpo",
-        ["Hidratar", "Mejorar firmeza", "Reducir manchas", "Atenuar estrías o cicatrices", "Reducir sensibilidad"],
-    )
-
-    st.subheader("Cabello")
-    hair_porosity = st.multiselect(
-        "Porosidad",
-        ["Baja porosidad", "Media porosidad", "Alta porosidad", "No estoy segura"],
-    )
-    st.markdown("Selecciona objetivos y asigna prioridad (1-5).")
-    goals_hair_options = [
-        "Reducir frizz",
-        "Estimular crecimiento",
-        "Dar volumen",
-        "Reparar daño",
-        "Mantener color",
-        "Hidratación/más suavidad",
-    ]
-    goals_hair: Dict[str, int] = {}
-    for goal in goals_hair_options:
-        enabled = st.checkbox(goal, key=f"goal_{goal}")
-        if enabled:
-            goals_hair[goal] = st.slider(goal, 1, 5, 3, key=f"slider_{goal}")
-
-    st.subheader("Grosor y cuero cabelludo")
-    hair_thickness = st.multiselect("Grosor", ["Fino", "Medio", "Grueso"])
-    scalp = st.multiselect("Condición del cuero cabelludo", ["Graso", "Seco", "Sensible", "Normal"])
-
-    st.subheader("Condiciones o sensibilidades")
-    conditions = st.multiselect(
-        "Selecciona las que aplican",
-        [
-            "Alergias",
-            "Acné severo",
-            "Dermatitis",
-            "Psoriasis",
-            "Rosácea",
-            "Queratosis",
-            "Manchas o hiperpigmentación",
-            "Cicatrices visibles",
-            "Calvicie o pérdida de densidad",
-            "Caspa o descamación",
-            "Cuero cabelludo sensible",
-            "Cabello muy fino o quebradizo",
-            "Ninguna",
-        ],
-    )
-    other_condition = st.text_input("Otra condición (opcional)")
-
-    products_input = st.text_area(
-        "Productos que usas habitualmente",
-        "Ej: La Roche-Posay Anthelios, TRESemmé Shampoo",
-    )
-    product_list = [item.strip() for item in products_input.split(",") if item.strip()]
-
-    uploaded_file = st.file_uploader(
-        "Sube foto de etiqueta para análisis",
-        type=["jpg", "jpeg", "png"],
-        help="Utiliza nuestro sistema OCR avanzado con Otsu binarization, corrección de inclinación y fuzzy matching para máxima precisión"
-    )
-
-    submitted = st.form_submit_button("Analizar y recomendar")
-
-if submitted:
-    if not product_list:
-        st.error("Agrega al menos un producto.")
-    elif not goals_hair:
-        st.error("Selecciona al menos un objetivo para el cabello.")
+# Interactive Questionnaire - Only for authenticated users
+if st.session_state.get("auth"):
+    st.markdown("---")
+    st.markdown("### 📋 Cuestionario Personalizado")
+    
+    if not st.session_state.get("questionnaire_completed", False):
+        st.info("Completa este cuestionario para recibir recomendaciones personalizadas.")
+        questionnaire_answers = create_interactive_questionnaire()
     else:
-        payload = {
-            "skin_face": skin_face,
-            "hair_type": hair_type,
-            "goals_face": goals_face,
-            "climate": climate,
-            "skin_body": skin_body,
-            "goals_body": goals_body,
-            "hair_porosity": hair_porosity,
-            "goals_hair": goals_hair,
-            "hair_thickness_scalp": {"thickness": hair_thickness, "scalp": scalp},
-            "conditions": conditions,
-            "other_condition": other_condition,
-            "products": product_list,
-            "accept_terms": True,
-        }
+        st.success("✅ Cuestionario completado")
+        
+        # Show summary of answers
+        with st.expander("Ver respuestas del cuestionario", expanded=False):
+            for key, value in st.session_state.questionnaire_answers.items():
+                if isinstance(value, list):
+                    st.write(f"**{key.replace('_', ' ').title()}:** {', '.join(value)}")
+                else:
+                    st.write(f"**{key.replace('_', ' ').title()}:** {value}")
+        
+        # Option to restart questionnaire
+        if st.button("🔄 Reiniciar cuestionario"):
+            st.session_state.questionnaire_step = 0
+            st.session_state.questionnaire_answers = {}
+            st.session_state.questionnaire_completed = False
+            st.rerun()
+        
+        # Submit profile to backend
+        if st.button("💾 Guardar perfil en el sistema", type="primary"):
+            # Convert answers to API format
+            profile_data = {}
+            for key, value in st.session_state.questionnaire_answers.items():
+                if key in ["goals_face", "skin_body", "goals_body", "hair_porosity", "goals_hair", "conditions"]:
+                    if isinstance(value, list):
+                        profile_data[key] = {item.lower().replace(" ", "_"): True for item in value}
+                    else:
+                        profile_data[key] = {value.lower().replace(" ", "_"): True}
+                else:
+                    profile_data[key] = value.lower() if isinstance(value, str) else value
+            
+            # Submit profile
+            result = submit_profile(profile_data)
+            if result:
+                st.success("¡Perfil guardado exitosamente en el sistema!")
+                st.session_state.profile_saved = True
+            else:
+                st.error("Error al guardar el perfil. Inténtalo de nuevo.")
+        
+        # Show analysis section after profile is saved
+        if st.session_state.get("profile_saved", False):
+            st.markdown("---")
+            st.markdown("### 📸 Análisis de Productos")
+            st.info("Ahora puedes analizar productos subiendo una foto de la etiqueta para recibir recomendaciones personalizadas.")
+            
+            uploaded_file = st.file_uploader(
+                "Sube foto de etiqueta para análisis",
+                type=["jpg", "jpeg", "png"],
+                help="Utiliza nuestro sistema OCR avanzado para máxima precisión"
+            )
+            
+            if uploaded_file:
+                st.success("¡Archivo cargado! Haz clic en 'Analizar' para procesar la imagen.")
+                if st.button("🔍 Analizar producto", type="primary"):
+                    # Process the uploaded file
+                    user_id = st.session_state.auth.get("user", {}).get("id")
+                    if user_id:
+                        file_bytes = uploaded_file.getvalue()
+                        
+                        # Show OCR processing status
+                        st.info("🔧 Procesando imagen...")
+                        with st.spinner("Aplicando análisis OCR avanzado..."):
+                            analysis = analyze_routine(user_id, None, file_bytes, uploaded_file.name)
+                        
+                        if analysis:
+                            st.session_state.analysis = analysis
+                            rec_items = fetch_recommendations(user_id, None)
+                            st.session_state.stored_recommendations = rec_items
+                            st.success("✅ Análisis completado con alta precisión")
+else:
+    st.markdown("---")
+    st.info("🔐 Inicia sesión con Gmail para acceder al cuestionario personalizado y recibir recomendaciones adaptadas a tu perfil.")
 
-        profile_response = submit_profile(payload)
-        if profile_response:
-            st.success("Perfil guardado correctamente.")
-            user_id = profile_response.get("user_id")
-            if user_id:
-                # Store user_id in session state for anonymous users
-                if not st.session_state.auth:
-                    st.session_state.auth = {"user_id": user_id}
-                else:
-                    st.session_state.auth["user_id"] = user_id
-                
-                file_bytes = uploaded_file.getvalue() if uploaded_file else None
-                
-                # Show OCR processing status if file is uploaded
-                if uploaded_file:
-                    st.info("🔧 Procesando imagen...")
-                    with st.spinner("Aplicando Otsu binarization, corrección de inclinación y fuzzy matching..."):
-                        analysis = analyze_routine(user_id, None, file_bytes, uploaded_file.name if uploaded_file else None)
-                else:
-                    analysis = analyze_routine(user_id, None, file_bytes, uploaded_file.name if uploaded_file else None)
-                
-                if analysis:
-                    st.session_state.analysis = analysis
-                    rec_items = fetch_recommendations(user_id, None)
-                    st.session_state.stored_recommendations = rec_items
-                    
-                    # Show OCR success message if file was processed
-                    if uploaded_file:
-                        st.success("✅ Análisis de imagen completado")
 
 
 analysis_result = st.session_state.analysis
@@ -655,95 +773,6 @@ if analysis_result:
 stored_recs = st.session_state.stored_recommendations or []
 render_recommendations(stored_recs)
 
-# Nueva sección para análisis de URL
-st.markdown("---")
-st.markdown("## 🌐 Análisis por URL")
-st.markdown("Analiza un producto específico ingresando su URL")
-
-with st.form("url_analysis_form"):
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        product_url = st.text_input(
-            "URL del producto",
-            placeholder="https://www.isdin.com/producto...",
-            help="Ingresa la URL completa del producto"
-        )
-    
-    with col2:
-        user_need_url = st.selectbox(
-            "Tipo de análisis",
-            ["general safety", "skin sensitivity", "pregnancy safety", "eco-friendly", "acne-prone skin"],
-            help="Selecciona tu necesidad específica"
-        )
-    
-    url_submitted = st.form_submit_button("🔍 Analizar Producto", use_container_width=True)
-
-if url_submitted and product_url:
-    if not product_url.startswith(('http://', 'https://')):
-        st.error("Por favor, ingresa una URL válida que comience con http:// o https://")
-    else:
-        with st.spinner("Analizando producto desde URL..."):
-            url_analysis = analyze_url(product_url, user_need_url)
-            if url_analysis:
-                st.session_state.url_analysis = url_analysis
-                st.success("✅ Análisis de URL completado")
-
-# Mostrar resultados del análisis de URL
-if hasattr(st.session_state, 'url_analysis') and st.session_state.url_analysis:
-    st.markdown("### 📊 Resultados del Análisis de URL")
-    
-    result = st.session_state.url_analysis
-    
-    # Información del producto
-    if 'product_name' in result and result['product_name']:
-        st.info(f"**Producto:** {result['product_name']}")
-    
-    # Métricas principales
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("🌱 Puntaje Eco", f"{result.get('avg_eco_score', 0)}/100")
-    
-    with col2:
-        suitability = result.get('suitability', 'No disponible')
-        st.metric("👤 Adecuado para tu piel", suitability)
-    
-    with col3:
-        ingredients_count = len(result.get('ingredients_details', []))
-        st.metric("🔬 Ingredientes", ingredients_count)
-    
-    # Ingredientes detectados
-    if 'ingredients_details' in result and result['ingredients_details']:
-        st.markdown("#### 📋 Ingredientes Detectados")
-        
-        ingredients_data = []
-        for ing in result['ingredients_details']:
-            risk_level = ing.get('risk_level', 'desconocido')
-            eco_score = ing.get('eco_score', 50)
-            
-            # Determinar color según nivel de riesgo
-            if risk_level == "seguro":
-                risk_color = "🟢"
-            elif risk_level in ["riesgo bajo", "riesgo medio"]:
-                risk_color = "🟡"
-            else:
-                risk_color = "🔴"
-            
-            ingredients_data.append({
-                "Ingrediente": ing.get('name', 'Unknown'),
-                "Eco-Score": f"{eco_score}/100",
-                "Nivel de Riesgo": f"{risk_color} {risk_level}",
-                "Beneficios": ing.get('benefits', 'No disponible'),
-                "Riesgos": ing.get('risks_detailed', 'No disponible')
-            })
-        
-        st.dataframe(ingredients_data, hide_index=True)
-    
-    # Recomendaciones
-    if 'recommendations' in result and result['recommendations']:
-        st.markdown("#### 💡 Recomendaciones")
-        st.write(result['recommendations'])
 
 
 st.markdown("---")
