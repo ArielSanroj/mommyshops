@@ -33,36 +33,21 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies with --ignore-installed to bypass any issues
-RUN pip install --no-cache-dir --ignore-installed -r requirements.txt
+# Install Python dependencies with optimizations
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Install system dependencies for Playwright and install browsers
+# Install minimal system dependencies (Playwright not used in codebase)
 RUN apt-get update && \
     apt-get install -y \
-        fonts-liberation \
-        libasound2 \
-        libatk-bridge2.0-0 \
-        libatk1.0-0 \
-        libatspi2.0-0 \
-        libcairo2 \
-        libdbus-1-3 \
-        libdrm2 \
-        libgbm1 \
-        libgtk-3-0 \
-        libnspr4 \
-        libnss3 \
-        libpango-1.0-0 \
-        libx11-6 \
-        libxcb1 \
-        libxcomposite1 \
-        libxdamage1 \
+        libgl1-mesa-glx \
+        libglib2.0-0 \
+        libsm6 \
         libxext6 \
-        libxfixes3 \
-        libxrandr2 \
-        xdg-utils \
+        libxrender-dev \
+        libgomp1 \
         wget && \
-    rm -rf /var/lib/apt/lists/* && \
-    playwright install --with-deps
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the application
 COPY . .
@@ -74,4 +59,4 @@ EXPOSE 8001
 ENV PORT=8001
 
 # Run the application
-CMD ["python", "test_minimal.py"]
+CMD ["python", "main.py"]
