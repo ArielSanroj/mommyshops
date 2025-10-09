@@ -7,7 +7,7 @@ import logging
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Iterable, List, Optional, Sequence
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -50,6 +50,8 @@ class ProductMetadata:
     risk_level: Optional[str]
     ingredients: List[str]
     category: Optional[str]
+    rating_average: Optional[float]
+    rating_count: int
 
 
 class IngredientRecommender:
@@ -128,6 +130,8 @@ class IngredientRecommender:
                         risk_level=product.risk_level,
                         ingredients=ingredient_list,
                         category=product.category,
+                        rating_average=getattr(product, "rating_average", None),
+                        rating_count=int(getattr(product, "rating_count", 0) or 0),
                     )
                 )
 
@@ -232,7 +236,7 @@ class IngredientRecommender:
     ) -> List[Dict[str, object]]:
         self.ensure_loaded()
 
-        if not self._product_matrix or not self._product_meta:
+        if self._product_matrix is None or not self._product_meta:
             return []
 
         safe_ingredients = _normalize_list(ingredients)
@@ -258,12 +262,12 @@ class IngredientRecommender:
 
         allowed_risks = {"", "seguro", "riesgo bajo"}
         user_condition_set = {c.lower() for c in _normalize_list(user_conditions)}
-        suggestions: List[Dict[str, object]] = []
+        candidate_entries: List[Tuple[float, Dict[str, object]]] = []
 
         for index in order:
             meta = self._product_meta[index]
-            score = float(similarity_scores[index])
-            if score <= 0:
+            base_score = float(similarity_scores[index])
+            if base_score <= 0:
                 continue
 
             if target_product_name and meta.name.lower() == target_product_name.lower():
@@ -295,25 +299,47 @@ class IngredientRecommender:
                 reason_parts.append("sin los ingredientes observados de alto riesgo")
             if meta.category:
                 reason_parts.append(f"categoría {meta.category}")
+            rating_avg = float(meta.rating_average or 0.0)
+            rating_count = int(meta.rating_count or 0)
+            if rating_count > 0 and rating_avg > 0:
+                bounded = max(0.0, min(rating_avg, 5.0)) / 5.0
+                crowd_weight = min(rating_count, 25) / 25.0
+                rating_bonus = 1.0 + bounded * 0.2 * crowd_weight
+            else:
+                rating_bonus = 1.0
 
-            suggestions.append(
-                {
-                    "product_id": meta.product_id,
-                    "name": meta.name,
-                    "brand": meta.brand,
-                    "eco_score": meta.eco_score,
-                    "risk_level": meta.risk_level,
-                    "similarity": round(score, 4),
-                    "reason": ", ".join(reason_parts) if reason_parts else "Compatibilidad alta",
-                    "ingredients": meta.ingredients,
-                    "category": meta.category,
-                }
+            final_score = base_score * rating_bonus
+
+            if rating_count > 0:
+                reason_parts.append(
+                    f"valoración {rating_avg:.1f}/5 ({rating_count} opinión{'es' if rating_count != 1 else ''})"
+                )
+
+            candidate_entries.append(
+                (
+                    final_score,
+                    {
+                        "product_id": meta.product_id,
+                        "name": meta.name,
+                        "brand": meta.brand,
+                        "eco_score": meta.eco_score,
+                        "risk_level": meta.risk_level,
+                        "similarity": round(final_score, 4),
+                        "base_similarity": round(base_score, 4),
+                        "reason": ", ".join(reason_parts) if reason_parts else "Compatibilidad alta",
+                        "ingredients": meta.ingredients,
+                        "category": meta.category,
+                        "rating_average": rating_avg if rating_count > 0 else None,
+                        "rating_count": rating_count,
+                    },
+                )
             )
 
-            if len(suggestions) >= top_k:
-                break
+        if not candidate_entries:
+            return []
 
-        return suggestions
+        candidate_entries.sort(key=lambda item: item[0], reverse=True)
+        return [item[1] for item in candidate_entries[:top_k]]
 
     # ------------------------------------------------------------------
     # Introspection helpers

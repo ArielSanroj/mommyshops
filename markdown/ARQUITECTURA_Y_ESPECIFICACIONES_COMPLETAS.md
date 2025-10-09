@@ -287,7 +287,14 @@ configs = [
 4. **SCCS (Scientific Committee on Consumer Safety)**
 5. **ICCR (International Cooperation on Cosmetics Regulation)**
 6. **PubChem (NIH)**
-7. **INCI Beauty Database**
+7. **INCI Beauty Database / CosIng API**
+8. **IARC / INVIMA**
+
+### **Orquestación y Cacheo**
+- `api_utils_production.py` unifica la lógica en wrappers reutilizables que **normalizan** el nombre del ingrediente antes de generar claves de cache.
+- Cache in-memory **thread-safe** con TTL configurable, métricas (`hits`, `misses`, `evictions`) y claves normalizadas para maximizar aciertos y permitir observabilidad.
+- Circuit breakers y rate limiters coordinados con prioridad de riesgo (IARC ➝ FDA ➝ CIR ➝ SCCS ➝ INVIMA ➝ EWG ➝ ICCR ➝ INCI ➝ CosIng) asegurando resiliencia frente a caídas parciales.
+- Logging estructurado en formato JSON con contexto (`provider`, `ingredient`, `estado del circuito`) para trazabilidad en `backend.log`.
 
 ### **Cliente HTTP Optimizado**
 ```python
@@ -308,6 +315,8 @@ async def fetch_ingredient_data(ingredient: str, client: httpx.AsyncClient) -> D
     return aggregate_results(results)
 ```
 
+> **Actualización 2025-03**: ahora la agregación normaliza cada ingrediente antes de disparar solicitudes, usa caché en memoria con TTL y fusiona fuentes sin duplicados. Los circuit breakers y rate limiters se activan por proveedor para estabilizar FDA/EWG/INVIMA.
+
 ### **Sistema de Caché**
 ```python
 # Caché por archivo JSON
@@ -316,6 +325,9 @@ EWG_CACHE_FILE = "ewg_cache.json"
 SCCS_CACHE_FILE = "sccs_cache.json"
 ICCR_CACHE_FILE = "iccr_cache.json"
 ```
+
+- `APICache` mantiene respuestas recientes en memoria empleando claves normalizadas (`prefijo:ingrediente`), reduciendo llamadas redundantes por variantes de OCR.
+- Los archivos JSON continúan disponibles como respaldo para scrapers extensos, pero el runtime favorece el caché en memoria para baja latencia.
 
 ---
 
@@ -326,13 +338,23 @@ ICCR_CACHE_FILE = "iccr_cache.json"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_db():
-    db = SessionLocal()
+@contextmanager
+def managed_session(commit: bool = False):
+    if SessionLocal is None:
+        raise RuntimeError("Database session factory not configured")
+    session = SessionLocal()
     try:
-        yield db
+        yield session
+        if commit:
+            session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        db.close()
+        session.close()
 ```
+
+> **Actualización 2025-03**: `managed_session()` estandariza el manejo de transacciones (incluyendo commit automático opcional), mientras que el logging JSON captura contexto (`phase`, `ingredient`, `user_id`) en `backend.log`.
 
 ### **Funciones de Consulta**
 ```python
@@ -342,6 +364,11 @@ def get_ingredient_data(ingredient_name: str) -> Optional[Dict]:
 def get_all_ingredients() -> List[Ingredient]:
     """Get all ingredients from database."""
 ```
+
+- El diccionario en memoria se construye con claves normalizadas e incluye el nombre canónico junto con los metadatos de riesgo.
+- Se amplió la normalización con mapeos Unicode (µ ➝ micro, α ➝ alpha, ß ➝ beta) y filtros de medidas (`mg`, `µg/L`, `ppm`, `mg per ml`) que eliminan proporciones y unidades aisladas antes de ingresar a la base.
+- Nuevos alias y entradas locales (`vitamin e`, `beta carotene`) refuerzan la precisión durante la canonicalización y evitan colisiones por coincidencias parciales.
+- Tras cada sincronización externa se refresca automáticamente (`refresh_local_cache_from_db`) para preparar el motor de recomendaciones.
 
 ---
 
@@ -363,6 +390,9 @@ except Exception as e:
         result = fallback_method()
 ```
 
+- Los servicios críticos envían excepciones a `backend.log` con contexto (nombre del proveedor/API) para acelerar el debugging.
+- Los scrapers utilizan reintentos exponenciales (`tenacity`) y circuit breakers antes de degradarse a datos locales.
+
 ### **Validación de Datos**
 ```python
 # Validación de archivos
@@ -375,11 +405,12 @@ if len(image_data) == 0:
 ```
 
 ### **Logging Estructurado**
-```python
-logger.info(f"Starting analysis for {file.filename}")
-logger.info(f"Image data size: {len(image_data)} bytes")
-logger.error(f"Error analyzing image: {e}", exc_info=True)
+- `database.py`, `api_utils_production.py` y `unified_data_service.py` emplean un `JSONFormatter` personalizado que serializa cada evento con `timestamp`, `level`, `logger` y `context`.
+- Ejemplo (`backend.log`):
+```json
+{"timestamp": "2025-03-01T12:43:10", "logger": "mommyshops.api_utils", "level": "INFO", "message": "API call summary", "context": {"ingredient": "vitamin e", "successful": ["FDA", "EWG"], "failed": {}}}
 ```
+- Los errores críticos utilizan `logger.exception(...)` para adjuntar `stacktrace` y metadatos (`provider`, `phase`, `user_id`).
 
 ---
 
@@ -415,6 +446,11 @@ if max(original_size) < 200:
 if len(ingredients) > 5:
     ingredients = ingredients[:5]
 ```
+
+### **4. Cache Inteligente de Ingredientes**
+- `APICache` ahora es **thread-safe**, con TTL configurable y estadísticas consultables vía API (`get_cache_stats`).
+- Las claves emplean el nombre normalizado (`proveedor:ingrediente`) para compartir resultados entre OCR, APIs y base de datos.
+- Tras procesar respuestas, los datos se fusionan junto con la fuente local para evitar duplicados y acelerar el futuro motor de recomendaciones.
 
 ### **4. Caché Inteligente**
 ```python
@@ -479,6 +515,11 @@ async def main():
         ("FastAPI", test_fastapi_endpoints),
     ]
 ```
+
+### **Cobertura Actualizada (Mar 2025)**
+- `test_minimal.py` incorpora casos para caracteres especiales (`α`, `µ`, `ß`), filtrado de medidas compuestas (`µg/L`, `ppm`, `mg per ml`), métricas del `APICache` y recuperación del `CircuitBreaker`.
+- `test_complete_system.py` valida el pipeline de canonicalización asegurando salidas limpias antes del motor de recomendaciones.
+- `test_firebase_integration.py` prueba el nuevo context manager `managed_session`, garantizando commits y rollbacks consistentes antes de sincronizar con Firebase.
 
 ### **Endpoints de Testing**
 ```python

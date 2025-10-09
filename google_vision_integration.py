@@ -10,6 +10,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 import httpx
+from ollama_integration import ollama_integration, analyze_ingredients_with_ollama
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -80,13 +81,27 @@ class GoogleVisionOCR:
                             full_text = text_annotations[0].get('description', '')
                             logger.info(f"Google Vision extracted {len(full_text)} characters")
                             
+                            # Try to enhance text with Ollama if available
+                            enhanced_text = full_text
+                            try:
+                                if ollama_integration.is_available():
+                                    logger.info("Enhancing Google Vision text with Ollama...")
+                                    ollama_result = await ollama_integration.analyze_ingredients([full_text])
+                                    if ollama_result.success and ollama_result.content:
+                                        # Use Ollama's improved text if it's significantly different
+                                        if len(ollama_result.content) > len(full_text) * 0.5:
+                                            enhanced_text = ollama_result.content
+                                            logger.info("Text enhanced with Ollama")
+                            except Exception as e:
+                                logger.warning(f"Ollama text enhancement failed: {e}")
+                            
                             # Split into lines and clean
-                            lines = [line.strip() for line in full_text.split('\n') if line.strip()]
+                            lines = [line.strip() for line in enhanced_text.split('\n') if line.strip()]
                             
                             # Extract ingredients from the text
                             ingredients = self._extract_ingredients_from_text(lines)
                             
-                            logger.info(f"Extracted {len(ingredients)} ingredients using Google Vision")
+                            logger.info(f"Extracted {len(ingredients)} ingredients using Google Vision (with Ollama enhancement)")
                             return ingredients
                         else:
                             logger.warning("No text detected by Google Vision")
@@ -208,7 +223,7 @@ class GoogleVisionOCR:
     
     async def analyze_ingredient_safety(self, ingredients: List[str], user_conditions: List[str] = None) -> Dict[str, Any]:
         """
-        Analyze ingredient safety using Google Vision API (placeholder for future enhancement)
+        Analyze ingredient safety using Google Vision API and Ollama enhancement
         
         Args:
             ingredients: List of ingredients to analyze
@@ -217,13 +232,13 @@ class GoogleVisionOCR:
         Returns:
             Analysis results
         """
-        # This is a placeholder for future enhancement
-        # For now, return basic analysis
+        # Basic analysis
         analysis = {
             "total_ingredients": len(ingredients),
             "ingredients": ingredients,
             "safety_notes": [],
-            "recommendations": []
+            "recommendations": [],
+            "ollama_analysis": ""
         }
         
         # Basic safety analysis
@@ -240,6 +255,19 @@ class GoogleVisionOCR:
         
         if not analysis["safety_notes"]:
             analysis["safety_notes"].append("✅ No obviously problematic ingredients detected")
+        
+        # Enhance analysis with Ollama if available
+        try:
+            if ollama_integration.is_available():
+                logger.info("Enhancing Google Vision analysis with Ollama...")
+                ollama_result = await analyze_ingredients_with_ollama(ingredients, user_conditions)
+                if ollama_result.success and ollama_result.content:
+                    analysis["ollama_analysis"] = ollama_result.content
+                    # Add Ollama insights to recommendations
+                    analysis["recommendations"].append(f"🤖 AI Analysis: {ollama_result.content}")
+                    logger.info("Ollama analysis successfully integrated with Google Vision")
+        except Exception as e:
+            logger.warning(f"Ollama enhancement failed in Google Vision analysis: {e}")
         
         return analysis
 

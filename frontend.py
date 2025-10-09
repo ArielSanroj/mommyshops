@@ -464,6 +464,38 @@ def fetch_recommendations(user_id: int, token: Optional[str]) -> Optional[List[D
     return None
 
 
+def rate_recommendation_entry(
+    recommendation_id: int,
+    rating: float,
+    comment: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    base = require_backend()
+    if not base:
+        return None
+    auth = st.session_state.get("auth")
+    token = (auth or {}).get("access_token")
+    if not token:
+        st.warning("Debes iniciar sesión para calificar una recomendación.")
+        return None
+    headers = {"Authorization": f"Bearer {token}"}
+    payload: Dict[str, Any] = {"rating": float(rating)}
+    if comment:
+        payload["comment"] = comment.strip()
+    try:
+        response = requests.post(
+            f"{base}/recommendations/{recommendation_id}/rating",
+            json=payload,
+            headers=headers,
+            timeout=20,
+        )
+        if response.status_code == 200:
+            return response.json()
+        st.error(f"No se pudo enviar tu calificación: {parse_error(response)}")
+    except requests.RequestException as exc:
+        st.error(f"Error al enviar la calificación: {exc}")
+    return None
+
+
 def ensure_session_state() -> None:
     if "auth" not in st.session_state:
         st.session_state.auth = None
@@ -530,6 +562,12 @@ def render_analysis(result: Dict[str, Any]) -> None:
         st.markdown("### Sustitutos sugeridos")
         table = []
         for item in substitutes:
+            rating_avg = item.get("rating_average")
+            rating_count = int(item.get("rating_count", 0) or 0)
+            if rating_avg and rating_count:
+                rating_label = f"{rating_avg:.1f}/5 ({rating_count})"
+            else:
+                rating_label = "—"
             table.append(
                 {
                     "Producto": item.get("name"),
@@ -538,6 +576,7 @@ def render_analysis(result: Dict[str, Any]) -> None:
                     "Riesgo": item.get("risk_level"),
                     "Similitud": round(item.get("similarity", 0.0), 2),
                     "Razón": item.get("reason", ""),
+                    "Calificación": rating_label,
                 }
             )
         st.dataframe(table, hide_index=True)
@@ -552,15 +591,23 @@ def render_analysis(result: Dict[str, Any]) -> None:
                 if product.get("substitutes"):
                     st.write("**Sustitutos:**")
                     for alt in product["substitutes"]:
-                        st.write(f"• {alt.get('name')} ({alt.get('reason', 'Sin motivo')})")
+                        rating_info = ""
+                        if alt.get("rating_average") and alt.get("rating_count"):
+                            rating_info = f" · ⭐️ {alt['rating_average']:.1f}/5 ({alt['rating_count']})"
+                        st.write(f"• {alt.get('name')} ({alt.get('reason', 'Sin motivo')}{rating_info})")
 
 
 def render_recommendations(items: List[Dict[str, Any]]) -> None:
     if not items:
         return
+
     st.markdown("### Recomendaciones guardadas")
-    for entry in items:
-        with st.expander(entry.get("reason", "Recomendación")):
+    auth = st.session_state.get("auth")
+
+    for idx, entry in enumerate(items):
+        rec_id = entry.get("id") or f"rec_{idx}"
+        title = entry.get("reason") or entry.get("original_product_name") or "Recomendación"
+        with st.expander(title):
             st.write(f"Estado: {entry.get('status', 'pendiente')}")
             original = entry.get("original_product_name")
             substitute = entry.get("substitute_product_name")
@@ -568,6 +615,52 @@ def render_recommendations(items: List[Dict[str, Any]]) -> None:
                 st.write(f"Producto analizado: {original}")
             if substitute:
                 st.write(f"Sugerido: {substitute}")
+
+            avg = entry.get("rating_average")
+            count = int(entry.get("rating_count", 0) or 0)
+            if avg and count:
+                st.info(f"Calificación promedio: {avg:.1f}/5 ⭐️ (basado en {count} opinión{'es' if count != 1 else ''})")
+            else:
+                st.caption("Aún no hay calificaciones para esta recomendación.")
+
+            if auth:
+                with st.form(f"rate_form_{rec_id}"):
+                    default_value = 4.5
+                    rating_value = st.slider(
+                        "Tu calificación",
+                        min_value=1.0,
+                        max_value=5.0,
+                        step=0.5,
+                        value=default_value,
+                        key=f"rating_slider_{rec_id}",
+                    )
+                    comment_value = st.text_area(
+                        "Comentario opcional",
+                        key=f"rating_comment_{rec_id}",
+                        placeholder="Cuéntanos qué te pareció la recomendación",
+                        height=80,
+                    )
+                    submitted = st.form_submit_button("Enviar calificación", use_container_width=True)
+
+                    if submitted:
+                        backend_id = entry.get("id")
+                        if backend_id is None:
+                            st.error("No se pudo identificar la recomendación para calificar.")
+                        else:
+                            with st.spinner("Enviando calificación..."):
+                                result = rate_recommendation_entry(
+                                    recommendation_id=backend_id,
+                                    rating=rating_value,
+                                    comment=comment_value,
+                                )
+                            if result:
+                                st.success("¡Gracias por tu opinión! Actualizaremos tus recomendaciones.")
+                                entry["rating_average"] = result.get("rating_average")
+                                entry["rating_count"] = result.get("rating_count")
+                                st.session_state.stored_recommendations[idx] = entry
+                                st.rerun()
+            else:
+                st.warning("Inicia sesión para calificar esta recomendación.")
 
 
 ensure_session_state()

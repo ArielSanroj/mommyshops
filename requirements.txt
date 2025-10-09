@@ -32,6 +32,5 @@ google-api-python-client>=2.184.0
 firebase-admin>=6.5.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
-fuzzywuzzy>=0.18.0
-python-Levenshtein>=0.25.0
 tenacity>=8.2.3
+ollama>=0.3.0

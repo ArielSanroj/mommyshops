@@ -10,6 +10,11 @@ A FastAPI-based application that analyzes cosmetic and food ingredients for safe
 - **MCP Integration**: Model Context Protocol for AI-powered ingredient enrichment
 - **Database Caching**: SQLAlchemy-based caching of ingredient data
 - **Parallel API Calls**: Optimized performance with concurrent API requests
+- **Canonical Ingredient Normalization**: Shared utilities clean and align ingredient names before analysis or recommendations
+- **Resilient API Layer**: Normalized cache keys, per-provider rate limiting, and circuit breakers keep external calls stable
+- **Thread-Safe TTL Cache & Metrics**: In-memory cache tracks hits/misses/evictions and reuses normalized keys across OCR, APIs, and DB lookups
+- **Unicode-Safe Canonicalization**: Handles accents, Greek letters (`α`, `µ`, `ß`) and filters measurement noise (`µg/L`, `ppm`, `mg per ml`) before enrichment
+- **Structured JSON Logging**: Database and API layers emit context-aware JSON logs for reproducible debugging
 
 ## Architecture
 
@@ -169,7 +174,10 @@ async with httpx.AsyncClient() as client:
 ### Running Tests
 
 ```bash
-pytest test.py
+pytest test_minimal.py
+# Optional end-to-end checks (require external services)
+python test_complete_system.py
+python test_firebase_integration.py
 ```
 
 ### Code Formatting
@@ -192,7 +200,7 @@ alembic upgrade head
 - `.env`: Environment variables
 - `requirements.txt`: Python dependencies
 - `database.py`: Database models and utilities
-- `api_utils.py`: External API integrations
+- `api_utils_production.py`: External API integrations and caching
 
 ## Troubleshooting
 
@@ -205,10 +213,10 @@ alembic upgrade head
 
 ### Logs
 
-The application uses structured logging. Check logs for detailed error information:
+The application writes consolidated logs (API, DB sync, OCR) to `backend.log` in the project root:
 
 ```bash
-tail -f logs/app.log
+tail -f backend.log
 ```
 
 ## Contributing

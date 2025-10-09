@@ -45,45 +45,63 @@ def migrate_existing_user():
         firebase_uid = unified_data_service._get_firebase_user_uid(user.email)
         if firebase_uid:
             print(f"✅ User already exists in Firebase: {firebase_uid}")
-            return True
-        
-        # Prepare user data for Firebase
-        user_data = {
-            'email': user.email,
-            'username': user.username,
-            'google_id': user.google_id,
-            'google_name': user.google_name,
-            'google_picture': user.google_picture,
-            'auth_provider': user.auth_provider or 'google',
-            'skin_face': user.skin_face,
-            'hair_type': user.hair_type,
-            'goals_face': user.goals_face,
-            'climate': user.climate,
-            'skin_body': user.skin_body,
-            'goals_body': user.goals_body,
-            'hair_porosity': user.hair_porosity,
-            'goals_hair': user.goals_hair,
-            'hair_thickness_scalp': user.hair_thickness_scalp,
-            'conditions': user.conditions
-        }
-        
-        # Create user in Firebase
-        print("🔄 Creating user in Firebase...")
-        success, sqlite_id, firebase_uid = unified_data_service.create_user(user_data)
-        
-        if success and firebase_uid:
-            print(f"✅ User successfully migrated to Firebase!")
-            print(f"   - SQLite ID: {sqlite_id}")
-            print(f"   - Firebase UID: {firebase_uid}")
-            
             # Update SQLite user with Firebase UID for future reference
             user.firebase_uid = firebase_uid
             db.commit()
             print("✅ SQLite user updated with Firebase UID")
+            return True
+        
+        # Create user directly in Firebase (not through unified service to avoid SQLite conflict)
+        print("🔄 Creating user in Firebase...")
+        try:
+            from firebase_config import get_firebase_auth, get_firestore_client
+            firebase_auth = get_firebase_auth()
+            firestore_db = get_firestore_client()
+            
+            # Create user in Firebase Auth
+            user_record = firebase_auth.create_user(
+                email=user.email,
+                display_name=user.google_name or user.username
+            )
+            
+            # Create user profile in Firestore
+            profile_data = {
+                'uid': user_record.uid,
+                'email': user.email,
+                'username': user.username,
+                'google_id': user.google_id,
+                'google_name': user.google_name,
+                'google_picture': user.google_picture,
+                'auth_provider': 'google',
+                'skin_face': user.skin_face,
+                'hair_type': user.hair_type,
+                'goals_face': user.goals_face,
+                'climate': user.climate,
+                'skin_body': user.skin_body,
+                'goals_body': user.goals_body,
+                'hair_porosity': user.hair_porosity,
+                'goals_hair': user.goals_hair,
+                'hair_thickness_scalp': user.hair_thickness_scalp,
+                'conditions': user.conditions,
+                'created_at': firestore.SERVER_TIMESTAMP,
+                'updated_at': firestore.SERVER_TIMESTAMP
+            }
+            
+            firestore_db.collection('users').document(user_record.uid).set(profile_data)
+            
+            # Update SQLite user with Firebase UID for future reference
+            user.firebase_uid = user_record.uid
+            db.commit()
+            
+            print(f"✅ User successfully migrated to Firebase!")
+            print(f"   - SQLite ID: {user.id}")
+            print(f"   - Firebase UID: {user_record.uid}")
+            print("✅ SQLite user updated with Firebase UID")
             
             return True
-        else:
-            print("❌ Failed to migrate user to Firebase")
+            
+        except Exception as e:
+            print(f"❌ Failed to create user in Firebase: {e}")
             return False
             
     except Exception as e:

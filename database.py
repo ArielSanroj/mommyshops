@@ -8,29 +8,464 @@ from sqlalchemy import (
     ForeignKey,
     JSON,
     DateTime,
+    inspect,
+    text,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from fastapi import HTTPException
 import os
 import json
 import asyncio
 import logging
+import re
+import unicodedata
 from pathlib import Path
+from difflib import SequenceMatcher, get_close_matches
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
 import httpx
 from dotenv import load_dotenv
-from typing import Any, Dict, Iterable, List, Optional, Tuple
 from sqlalchemy.sql import func
+
+# Import Ollama integration
+try:
+    from ollama_integration import (
+        ollama_integration,
+        enhance_ocr_text_with_ollama
+    )
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logger.warning("Ollama integration not available")
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+_STANDARD_LOG_KEYS = {
+    "name",
+    "msg",
+    "args",
+    "levelname",
+    "levelno",
+    "pathname",
+    "filename",
+    "module",
+    "exc_info",
+    "exc_text",
+    "stack_info",
+    "lineno",
+    "funcName",
+    "created",
+    "msecs",
+    "relativeCreated",
+    "thread",
+    "threadName",
+    "processName",
+    "process",
+}
+
+
+class _JSONFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:  # pragma: no cover - formatting logic
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt) if self.datefmt else self.formatTime(record),
+            "logger": record.name,
+            "level": record.levelname,
+            "message": record.getMessage(),
+        }
+        extras = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in _STANDARD_LOG_KEYS and not key.startswith("_")
+        }
+        if extras:
+            log_record["context"] = extras
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_record, ensure_ascii=False)
+
+
+logger = logging.getLogger("mommyshops.database")
+if not logger.handlers:
+    backend_log_path = Path(os.getenv("BACKEND_LOG_PATH", Path(__file__).resolve().parent / "backend.log"))
+    try:
+        backend_log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(backend_log_path)
+        formatter = _JSONFormatter()
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except Exception as log_exc:  # pragma: no cover - logging setup fallback
+        logging.getLogger(__name__).warning("Failed to configure database logger handler", exc_info=log_exc)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 BASE_DIR = Path(__file__).resolve().parent
 LEXICON_PATH = Path(os.getenv("INGREDIENT_LEXICON_PATH", BASE_DIR / "cosmetic_ingredients_lexicon.txt"))
 DEFAULT_SYNC_CONCURRENCY = max(1, int(os.getenv("INGREDIENT_SYNC_CONCURRENCY", "3")))
 DEFAULT_SYNC_TIMEOUT = float(os.getenv("INGREDIENT_SYNC_TIMEOUT", "30"))
+
 _LEXICON_CACHE: Optional[List[str]] = None
+
+_NORMALIZATION_PATTERN = re.compile(r"[^a-z0-9]+")
+
+_MEASUREMENT_TOKENS = {
+    "g",
+    "gram",
+    "grams",
+    "mg",
+    "milligram",
+    "milligrams",
+    "kg",
+    "mcg",
+    "µg",
+    "ug",
+    "microg",
+    "iu",
+    "iuu",
+    "ppm",
+    "ppb",
+    "percent",
+    "porcentaje",
+    "ml",
+    "milliliter",
+    "millilitre",
+    "milliliters",
+    "l",
+    "liter",
+    "litre",
+    "liters",
+    "dl",
+    "cl",
+    "oz",
+    "ounce",
+    "ounces",
+}
+_MEASUREMENT_CONNECTORS = {"per", "por", "x", "each", "ratio", "sobre"}
+_MEASUREMENT_PATTERN = re.compile(
+    r"^\d{1,6}(mg|g|kg|mcg|µg|ug|microg|ml|l|dl|cl|oz|iu|ppm|ppb|percent)$"
+)
+
+_SPECIAL_CHAR_TRANSLATIONS = {
+    ord("µ"): "micro",
+    ord("μ"): "micro",
+    ord("α"): "alpha",
+    ord("β"): "beta",
+    ord("γ"): "gamma",
+    ord("δ"): "delta",
+    ord("θ"): "theta",
+    ord("λ"): "lambda",
+    ord("ω"): "omega",
+    ord("Ω"): "omega",
+    ord("®"): "",
+    ord("™"): "",
+    ord("½"): " 1/2",
+    ord("¼"): " 1/4",
+    ord("¾"): " 3/4",
+    ord("⅛"): " 1/8",
+    ord("⅜"): " 3/8",
+    ord("⅝"): " 5/8",
+    ord("⅞"): " 7/8",
+    ord("ß"): "beta",
+    ord("œ"): "oe",
+    ord("Œ"): "oe",
+}
+
+
+def _strip_accents(value: str) -> str:
+    translated = value.translate(_SPECIAL_CHAR_TRANSLATIONS)
+    return "".join(
+        char for char in unicodedata.normalize("NFKD", translated) if not unicodedata.combining(char)
+    )
+
+
+def _basic_normalize(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    lowered = _strip_accents(str(value).strip().lower())
+    if not lowered:
+        return ""
+    normalized = _NORMALIZATION_PATTERN.sub(" ", lowered)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _build_synonym_map(raw_map: Dict[str, str]) -> Dict[str, str]:
+    aliases: Dict[str, str] = {}
+    for raw_key, raw_value in raw_map.items():
+        key = _basic_normalize(raw_key)
+        value = _basic_normalize(raw_value)
+        if not key:
+            continue
+        aliases[key] = value or key
+    return aliases
+
+
+def _is_numeric_token(token: str) -> bool:
+    if not token:
+        return False
+    if token.isdigit():
+        return True
+    try:
+        float(token)
+        return True
+    except ValueError:
+        return False
+
+
+def _looks_like_measurement(tokens: List[str], compact: str) -> bool:
+    if not tokens:
+        return False
+    if _MEASUREMENT_PATTERN.match(compact):
+        return True
+    measurement_tokens = 0
+    for token in tokens:
+        if token in _MEASUREMENT_TOKENS:
+            measurement_tokens += 1
+            continue
+        if token in _MEASUREMENT_CONNECTORS:
+            continue
+        if _is_numeric_token(token):
+            continue
+        # tokens such as "microg" may appear concatenated after normalization
+        for unit in _MEASUREMENT_TOKENS:
+            if unit and token.endswith(unit):
+                measurement_tokens += 1
+                break
+        else:
+            return False
+    return measurement_tokens > 0
+
+
+_RAW_SYNONYMS: Dict[str, str] = {
+    "agua": "water",
+    "aqua": "water",
+    "eau": "water",
+    "ácido hialurónico": "hyaluronic acid",
+    "acido hialuronico": "hyaluronic acid",
+    "hialuronic acid": "hyaluronic acid",
+    "ácido salicílico": "salicylic acid",
+    "acido salicilico": "salicylic acid",
+    "ácido láctico": "lactic acid",
+    "acido lactico": "lactic acid",
+    "ácido glicólico": "glycolic acid",
+    "acido glicolico": "glycolic acid",
+    "vitamina c": "vitamin c",
+    "ácido ascórbico": "ascorbic acid",
+    "acido ascorbico": "ascorbic acid",
+    "vitamina e": "vitamin e",
+    "niacina": "niacinamide",
+    "niacinamida": "niacinamide",
+    "nicotinamida": "niacinamide",
+    "aceite de coco": "coconut oil",
+    "aceite de jojoba": "jojoba oil",
+    "aceite de argán": "argan oil",
+    "aceite de argan": "argan oil",
+    "aceite de girasol": "sunflower seed oil",
+    "aceite de oliva": "olive oil",
+    "aceite de almendras": "sweet almond oil",
+    "aceite mineral": "mineral oil",
+    "dióxido de titanio": "titanium dioxide",
+    "dioxido de titanio": "titanium dioxide",
+    "óxido de zinc": "zinc oxide",
+    "oxido de zinc": "zinc oxide",
+    "extracto de aloe": "aloe vera",
+    "extracto de avena": "avena sativa kernel extract",
+    "extracto de camomila": "chamomile extract",
+    "manteca de karite": "shea butter",
+    "manteca de karité": "shea butter",
+    "manteca de cacao": "cocoa butter",
+    "pro-vitamina b5": "panthenol",
+    "alpha tocopherol": "vitamin e",
+    "dl alpha tocopherol": "vitamin e",
+    "dl-alpha tocopherol": "vitamin e",
+    "tocopheryl acetate": "vitamin e",
+    "vitamin e acetate": "vitamin e",
+    "vit e acetate": "vitamin e",
+    "vitamin e oil": "vitamin e",
+    "alpha tocopherol acetate": "vitamin e",
+    "alpha-tocopherol": "vitamin e",
+    "alpha-tocopherol acetate": "vitamin e",
+    "beta carotene": "beta-carotene",
+    "ß carotene": "beta-carotene",
+    "ß-carotene": "beta-carotene",
+}
+
+SYNONYM_ALIASES: Dict[str, str] = _build_synonym_map(_RAW_SYNONYMS)
+
+
+@lru_cache(maxsize=2048)
+def normalize_ingredient_name(value: Optional[str]) -> str:
+    """Normalize ingredient names for consistent lookups."""
+    normalized = _basic_normalize(value)
+    if not normalized:
+        return ""
+    compact = normalized.replace(" ", "")
+    if compact in _MEASUREMENT_TOKENS or normalized in _MEASUREMENT_TOKENS:
+        return ""
+    tokens = normalized.split()
+    if compact.isdigit() or _looks_like_measurement(tokens, compact):
+        return ""
+    return SYNONYM_ALIASES.get(normalized, normalized)
+
+
+def normalize_ingredient_names(values: Iterable[str]) -> List[str]:
+    """Normalize a collection of ingredient names preserving order."""
+    if not values:
+        return []
+    seen: set[str] = set()
+    result: List[str] = []
+    for raw in values:
+        normalized = normalize_ingredient_name(raw)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    return result
+
+
+async def normalize_ingredient_name_with_ollama(value: Optional[str]) -> str:
+    """
+    Enhanced ingredient normalization using Ollama for better accuracy
+    
+    Args:
+        value: Raw ingredient name to normalize
+        
+    Returns:
+        Normalized ingredient name
+    """
+    if not value or not value.strip():
+        return ""
+    
+    # First try basic normalization
+    basic_normalized = normalize_ingredient_name(value)
+    if not basic_normalized:
+        return ""
+    
+    # If Ollama is available, try to enhance the normalization
+    if OLLAMA_AVAILABLE and ollama_integration.is_available():
+        try:
+            # Create a prompt for ingredient name correction
+            prompt = f"""
+Please correct and normalize this cosmetic ingredient name to its proper INCI (International Nomenclature of Cosmetic Ingredients) name:
+
+Ingredient: {value}
+
+Please provide:
+1. The correct INCI name
+2. If it's already correct, return it as-is
+3. If it's a common misspelling, provide the correct spelling
+4. If it's a brand name, provide the INCI equivalent
+
+Return only the corrected ingredient name, nothing else.
+"""
+            
+            ollama_result = await enhance_ocr_text_with_ollama(prompt)
+            
+            if ollama_result.success and ollama_result.content:
+                # Extract the corrected name from the response
+                corrected_name = _extract_ingredient_from_ollama_response(ollama_result.content)
+                if corrected_name and corrected_name != value:
+                    logger.info(f"Ollama corrected '{value}' to '{corrected_name}'")
+                    # Apply basic normalization to the corrected name
+                    return normalize_ingredient_name(corrected_name)
+                else:
+                    logger.debug(f"Ollama did not suggest changes for '{value}'")
+            else:
+                logger.warning(f"Ollama normalization failed for '{value}': {ollama_result.error}")
+                
+        except Exception as e:
+            logger.error(f"Error in Ollama ingredient normalization: {e}")
+    
+    # Return basic normalization if Ollama is not available or fails
+    return basic_normalized
+
+
+def _extract_ingredient_from_ollama_response(content: str) -> Optional[str]:
+    """
+    Extract ingredient name from Ollama response
+    
+    Args:
+        content: Ollama response content
+        
+    Returns:
+        Extracted ingredient name or None
+    """
+    try:
+        # Clean up the response
+        lines = content.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Skip metadata lines
+            if any(pattern in line.lower() for pattern in [
+                'model=', 'created_at=', 'done=', 'total_duration=',
+                'load_duration=', 'prompt_eval_count=', 'eval_count=',
+                'message=', 'role=', 'content=', 'thinking=',
+                'images=', 'tool_name=', 'tool_calls='
+            ]):
+                continue
+            
+            # Skip common prefixes
+            if line.lower().startswith(('ingredient:', 'corrected:', 'inci name:', 'proper name:')):
+                line = line.split(':', 1)[1].strip()
+            
+            # Remove quotes and extra whitespace
+            line = line.strip('"\'')
+            
+            if line and len(line) > 2:
+                return line
+        
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Error extracting ingredient from Ollama response: {e}")
+        return None
+
+
+async def normalize_ingredient_names_with_ollama(values: Iterable[str]) -> List[str]:
+    """
+    Enhanced normalization of ingredient names using Ollama for better accuracy
+    
+    Args:
+        values: Collection of ingredient names to normalize
+        
+    Returns:
+        List of normalized ingredient names
+    """
+    if not values:
+        return []
+    
+    seen: set[str] = set()
+    result: List[str] = []
+    
+    for raw in values:
+        normalized = await normalize_ingredient_name_with_ollama(raw)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    
+    return result
+
+
+def canonicalize_ingredients(values: Iterable[str]) -> List[str]:
+    """Return display-ready canonical ingredient names without duplicates."""
+    normalized_entries = normalize_ingredient_names(values)
+    canonical: List[str] = []
+    seen: set[str] = set()
+    for normalized in normalized_entries:
+        data = get_ingredient_data(normalized)
+        if data:
+            display = str(data.get("name") or normalized).strip()
+        else:
+            display = " ".join(part.capitalize() for part in normalized.split())
+        key = display.lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        canonical.append(display)
+    return canonical
 
 # Get DATABASE_URL with fallback for Railway deployment
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -50,8 +485,7 @@ if not DATABASE_URL:
 
 # Validate DATABASE_URL
 if not DATABASE_URL:
-    print("⚠️  DATABASE_URL not found. Using SQLite fallback for development.")
-    # Use SQLite as fallback for development
+    logger.warning("DATABASE_URL not found. Falling back to SQLite for development")
     DATABASE_URL = "sqlite:///./dev_sqlite.db"
 else:
     # Check if it's a PostgreSQL URL and if we can connect
@@ -61,22 +495,22 @@ else:
             test_engine = create_engine(DATABASE_URL)
             with test_engine.connect() as conn:
                 pass
-            print("✅ PostgreSQL connection successful")
+            logger.info("PostgreSQL connection successful")
         except Exception as e:
-            print(f"⚠️  PostgreSQL connection failed: {e}")
-            print("🔄 Falling back to SQLite for development")
+            logger.warning("PostgreSQL connection failed: %s", e)
+            logger.warning("Falling back to SQLite for development")
             DATABASE_URL = "sqlite:///./dev_sqlite.db"
 
-print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")  # Log first 50 chars for debugging
+logger.info("Using DATABASE_URL: %s...", DATABASE_URL[:50])
 
 try:
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base = declarative_base()
-    print("✅ Database connection configured successfully")
+    logger.info("Database connection configured successfully")
 except Exception as e:
-    print(f"❌ Database connection failed: {e}")
-    print("⚠️  App will start but database features will be disabled")
+    logger.error("Database connection failed: %s", e)
+    logger.warning("App will start but database features will be disabled")
     # Create a dummy engine to prevent crashes
     engine = None
     SessionLocal = None
@@ -97,6 +531,7 @@ class User(Base):
     google_name = Column(String(128), nullable=True)
     google_picture = Column(String(512), nullable=True)
     auth_provider = Column(String(32), default='local')  # 'local' or 'google'
+    firebase_uid = Column(String(128), unique=True, index=True, nullable=True)  # Firebase UID for dual write
     skin_face = Column(String(64))
     hair_type = Column(String(64))
     goals_face = Column(JSON)
@@ -140,6 +575,8 @@ class Product(Base):
     risk_level = Column(String(64))
     extra_metadata = Column(JSON)
     nemotron_summary = Column(JSON)
+    rating_count = Column(Integer, default=0)
+    rating_average = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -167,6 +604,8 @@ class Recommendation(Base):
     substitute_product_name = Column(String(255))
     reason = Column(Text)
     status = Column(String(32), server_default="draft")
+    rating_count = Column(Integer, default=0)
+    rating_average = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -174,6 +613,7 @@ class Recommendation(Base):
     routine = relationship("Routine")
     original_product = relationship("Product", foreign_keys=[original_product_id], back_populates="recommendations_source")
     substitute_product = relationship("Product", foreign_keys=[substitute_product_id], back_populates="recommendations_substitute")
+    feedbacks = relationship("RecommendationFeedback", back_populates="recommendation", cascade="all, delete-orphan")
 
 
 class Ingredient(Base):
@@ -187,6 +627,21 @@ class Ingredient(Base):
     sources = Column(String)  # e.g., "FDA, EWG, PubChem, IARC, INVIMA, COSING"
     nemotron_enrichment = Column(JSON)
 
+
+class RecommendationFeedback(Base):
+    __tablename__ = "recommendation_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recommendation_id = Column(Integer, ForeignKey("recommendations.id", ondelete="CASCADE"), index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    rating = Column(Float, nullable=False)
+    comment = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    recommendation = relationship("Recommendation", back_populates="feedbacks")
+    user = relationship("User")
+
 def get_db():
     """Get database session with proper error handling."""
     if SessionLocal is None:
@@ -195,8 +650,8 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
-    except Exception as e:
-        print(f"Database session error: {e}")
+    except Exception as exc:
+        logger.exception("Database session error", extra={"phase": "get_db"})
         db.rollback()
         raise
     finally:
@@ -288,17 +743,17 @@ async def update_database(db: Session):
                     else:
                         db.add(db_ing)
                     db.commit()
-                    print(f"Successfully updated ingredient: {name}")
+                    logger.info("Successfully updated ingredient", extra={"ingredient": name})
                 except Exception as e:
-                    print(f"Error updating {name}: {e}")
+                    logger.exception("Error updating ingredient", extra={"ingredient": name})
                     db.rollback()
                     continue
     except Exception as e:
-        print(f"Error in update_database: {e}")
+        logger.exception("Error in update_database")
 
 # Comprehensive local ingredient database
 # Comprehensive local ingredient database
-LOCAL_INGREDIENT_DATABASE = {
+_RAW_LOCAL_INGREDIENT_DATABASE: Dict[str, Dict[str, Any]] = {
     "alpha hydroxy acids": {
         "eco_score": 65.0,
         "risk_level": "riesgo bajo",
@@ -325,6 +780,13 @@ LOCAL_INGREDIENT_DATABASE = {
         "risk_level": "riesgo bajo",
         "benefits": "Exfoliante químico, trata acné, mejora textura",
         "risks_detailed": "Puede causar irritación, evitar durante embarazo",
+        "sources": "Local Database + FDA + CIR"
+    },
+    "beta carotene": {
+        "eco_score": 85.0,
+        "risk_level": "seguro",
+        "benefits": "Antioxidante, apoyo a la síntesis de vitamina A",
+        "risks_detailed": "Generalmente seguro, precaución en fumadores por dosis elevadas",
         "sources": "Local Database + FDA + CIR"
     },
     "ceramides": {
@@ -486,6 +948,13 @@ LOCAL_INGREDIENT_DATABASE = {
         "risk_level": "riesgo bajo",
         "benefits": "Antioxidante, ilumina la piel, estimula colágeno",
         "risks_detailed": "Puede causar irritación, inestable con la luz",
+        "sources": "Local Database + FDA + CIR"
+    },
+    "vitamin e": {
+        "eco_score": 80.0,
+        "risk_level": "seguro",
+        "benefits": "Antioxidante liposoluble, protege contra radicales libres",
+        "risks_detailed": "Generalmente seguro, puede causar irritación leve en pieles sensibles",
         "sources": "Local Database + FDA + CIR"
     },
     "water": {
@@ -842,136 +1311,107 @@ LOCAL_INGREDIENT_DATABASE = {
     }
 }
 
+
+def _prepare_local_database(raw: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    prepared: Dict[str, Dict[str, Any]] = {}
+    for original_name, payload in raw.items():
+        normalized = _basic_normalize(original_name)
+        if not normalized:
+            continue
+        entry = {
+            "name": payload.get("name", original_name),
+            "eco_score": float(payload.get("eco_score", 50.0) or 50.0),
+            "risk_level": payload.get("risk_level", "desconocido"),
+            "benefits": payload.get("benefits", "No disponible"),
+            "risks_detailed": payload.get("risks_detailed", "No disponible"),
+            "sources": payload.get("sources", "Local Database"),
+        }
+        prepared[normalized] = entry
+    for alias_key, canonical_key in SYNONYM_ALIASES.items():
+        if not canonical_key or alias_key == canonical_key:
+            continue
+        canonical_entry = prepared.get(canonical_key)
+        if not canonical_entry:
+            continue
+        if alias_key not in prepared:
+            prepared[alias_key] = dict(canonical_entry)
+    return prepared
+
+
+LOCAL_INGREDIENT_DATABASE = _prepare_local_database(_RAW_LOCAL_INGREDIENT_DATABASE)
+
 def get_all_ingredient_names() -> List[str]:
     """Get all ingredient names from the database for dynamic corrections."""
     try:
         with SessionLocal() as db:
             ingredients = db.query(Ingredient.name).all()
+            if not ingredients:
+                return [entry.get("name", key) for key, entry in LOCAL_INGREDIENT_DATABASE.items()]
             return [ing.name for ing in ingredients]
     except Exception as e:
-        logger.error(f"Error getting ingredient names: {e}")
-        return []
+        logger.error("Error getting ingredient names: %s", e)
+        return [entry.get("name", key) for key, entry in LOCAL_INGREDIENT_DATABASE.items()]
 
-def get_ingredient_data(ingredient_name: str) -> Optional[Dict]:
-    """Get ingredient data from local database with fuzzy matching for garbled OCR text."""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    ingredient_lower = ingredient_name.lower().strip()
-    
-    # 1. Try exact match first
-    if ingredient_lower in LOCAL_INGREDIENT_DATABASE:
-        logger.info(f"Exact match found for: {ingredient_name}")
-        return LOCAL_INGREDIENT_DATABASE[ingredient_lower]
-    
-    # 2. Fuzzy matching with fuzzywuzzy (mejor para texto garbled)
-    try:
-        from fuzzywuzzy import process
-        
-        # Buscar mejor match usando fuzzy matching
-        matches = process.extractOne(ingredient_lower, LOCAL_INGREDIENT_DATABASE.keys())
-        
-        if matches and matches[1] > 75:  # Umbral de similitud optimizado para ingredientes
-            logger.info(f"Fuzzy match found for '{ingredient_name}' -> '{matches[0]}' (similarity: {matches[1]}%)")
-            return LOCAL_INGREDIENT_DATABASE[matches[0]]
+def get_ingredient_data(ingredient_name: str) -> Optional[Dict[str, Any]]:
+    """Return local ingredient data using normalized and fuzzy lookups."""
+    if not ingredient_name:
+        return None
 
-        # Si no hay match con umbral optimizado, buscar con umbral más bajo
-        if matches and matches[1] > 65:  # Umbral más bajo para casos difíciles
-            logger.info(f"Weak fuzzy match found for '{ingredient_name}' -> '{matches[0]}' (similarity: {matches[1]}%)")
-            return LOCAL_INGREDIENT_DATABASE[matches[0]]
-            
-    except ImportError:
-        logger.warning("Fuzzywuzzy not available, using fallback matching")
-    except Exception as e:
-        logger.warning(f"Fuzzy matching failed: {e}")
-    
-    # 3. Fallback: Enhanced partial matching for garbled OCR text
-    best_match = None
-    best_score = 0
-    
-    for key, data in LOCAL_INGREDIENT_DATABASE.items():
-        score = 0
-        
-        # Check if ingredient contains key or vice versa
-        if key in ingredient_lower:
-            score += 10  # High score for substring match
-        elif ingredient_lower in key:
-            score += 8   # Good score for reverse substring match
-        
-        # Check for word-by-word matching (important for garbled text)
-        ingredient_words = ingredient_lower.split()
-        key_words = key.split()
-        
-        # Count matching words
-        matching_words = 0
-        for word in ingredient_words:
-            if len(word) > 2:  # Only consider words longer than 2 characters
-                for key_word in key_words:
-                    if word in key_word or key_word in word:
-                        matching_words += 1
-                        break
-        
-        if matching_words > 0:
-            word_score = (matching_words / len(key_words)) * 15  # Up to 15 points for word matching
-            score += word_score
-        
-        # Check for common cosmetic ingredient patterns
-        cosmetic_patterns = {
-            'acid': ['acid', 'acido'],
-            'alcohol': ['alcohol', 'alcohol'],
-            'oil': ['oil', 'aceite'],
-            'extract': ['extract', 'extracto'],
-            'palmitate': ['palmitate', 'palmitato'],
-            'stearate': ['stearate', 'estearato'],
-            'glycerin': ['glycerin', 'glicerina'],
-            'paraben': ['paraben', 'parabeno'],
-            'sulfate': ['sulfate', 'sulfato'],
-            'oxide': ['oxide', 'oxido']
-        }
-        
-        for pattern, variations in cosmetic_patterns.items():
-            if pattern in key:
-                for variation in variations:
-                    if variation in ingredient_lower:
-                        score += 5  # Bonus for cosmetic pattern match
-        
-        # Check for common variations and OCR errors
-        variations = [
-            ingredient_lower.replace(' ', ''),
-            ingredient_lower.replace(' ', '-'),
-            ingredient_lower.replace(' ', '_'),
-            ingredient_lower.replace('(', '').replace(')', ''),
-            ingredient_lower.replace('extract', ''),
-            ingredient_lower.replace('oil', ''),
-            ingredient_lower.replace('acid', ''),
-            ingredient_lower.replace('alcohol', ''),
-            # Common OCR character substitutions
-            ingredient_lower.replace('0', 'o'),
-            ingredient_lower.replace('1', 'l'),
-            ingredient_lower.replace('5', 's'),
-            ingredient_lower.replace('8', 'b'),
-        ]
-        
-        for variation in variations:
-            if variation in key or key in variation:
-                score += 3  # Lower score for variation match
-        
-        # Update best match
-        if score > best_score:
-            best_score = score
-            best_match = (key, data)
-    
-    # Return best match if score is above threshold
-    if best_match and best_score >= 5:  # Minimum threshold for partial match
-        logger.info(f"Fallback partial match found for '{ingredient_name}' -> '{best_match[0]}' (score: {best_score:.1f})")
-        return best_match[1]
-    
-    logger.info(f"No match found for: {ingredient_name}")
+    normalized = normalize_ingredient_name(ingredient_name)
+    if not normalized:
+        return None
+
+    exact = LOCAL_INGREDIENT_DATABASE.get(normalized)
+    if exact:
+        logger.debug("Exact local ingredient match found for '%s'", ingredient_name)
+        return dict(exact)
+
+    # Substring lookup for common OCR artifacts
+    for key, payload in LOCAL_INGREDIENT_DATABASE.items():
+        if normalized in key or key in normalized:
+            logger.debug("Substring ingredient match '%s' -> '%s'", ingredient_name, payload.get("name", key))
+            return dict(payload)
+
+    candidate_keys = list(LOCAL_INGREDIENT_DATABASE.keys())
+    if candidate_keys:
+        close_matches = get_close_matches(normalized, candidate_keys, n=3, cutoff=0.68)
+        for match in close_matches:
+            payload = LOCAL_INGREDIENT_DATABASE.get(match)
+            if payload:
+                logger.debug("Close match ingredient '%s' -> '%s'", ingredient_name, payload.get("name", match))
+                return dict(payload)
+
+        # Manual best-score fallback for noisy OCR segments
+        best_key = None
+        best_score = 0.0
+        for key in candidate_keys:
+            ratio = SequenceMatcher(None, normalized, key).ratio()
+            if ratio > best_score:
+                best_key = key
+                best_score = ratio
+        if best_key and best_score >= 0.55:
+            logger.debug("Sequence match ingredient '%s' -> '%s' (score %.2f)", ingredient_name, best_key, best_score)
+            return dict(LOCAL_INGREDIENT_DATABASE[best_key])
+
+    logger.debug("Local ingredient not found for '%s'", ingredient_name)
     return None
 
-def get_all_ingredients() -> Dict:
-    """Get all ingredients from local database."""
-    return LOCAL_INGREDIENT_DATABASE
+
+def get_all_ingredients() -> Dict[str, Dict[str, Any]]:
+    """Get all ingredients from local lookup cache keyed by canonical name."""
+    payload: Dict[str, Dict[str, Any]] = {}
+    for entry in LOCAL_INGREDIENT_DATABASE.values():
+        name = entry.get("name") or ""
+        if not name:
+            continue
+        payload[name] = {
+            "eco_score": entry.get("eco_score", 50.0),
+            "risk_level": entry.get("risk_level", "desconocido"),
+            "benefits": entry.get("benefits", "No disponible"),
+            "risks_detailed": entry.get("risks_detailed", "No disponible"),
+            "sources": entry.get("sources", "Local Database"),
+        }
+    return dict(sorted(payload.items(), key=lambda item: item[0]))
 
 async def populate_comprehensive_database():
     """Populate database with comprehensive ingredient data from multiple sources"""
@@ -1337,7 +1777,7 @@ def _upsert_ingredient_record(
 ) -> bool:
     """Insert or update an ingredient entry in the database and local cache."""
 
-    normalized_key = ingredient_name.strip().lower()
+    normalized_key = normalize_ingredient_name(ingredient_name)
     if not normalized_key:
         return False
 
@@ -1386,6 +1826,7 @@ def _upsert_ingredient_record(
 
     if update_local_cache and 'LOCAL_INGREDIENT_DATABASE' in globals():
         LOCAL_INGREDIENT_DATABASE[normalized_key] = {
+            "name": ingredient_name,
             "eco_score": eco_score,
             "risk_level": risk_level,
             "benefits": benefits,
@@ -1407,10 +1848,11 @@ def refresh_local_cache_from_db(db: Session) -> int:
 
     refreshed = 0
     for record in db.query(Ingredient).all():
-        normalized = (record.name or "").strip().lower()
+        normalized = normalize_ingredient_name(record.name)
         if not normalized:
             continue
         LOCAL_INGREDIENT_DATABASE[normalized] = {
+            "name": record.name,
             "eco_score": float(record.eco_score or 50.0),
             "risk_level": record.risk_level or "desconocido",
             "benefits": record.benefits or "No disponible",
@@ -1449,6 +1891,41 @@ def sync_external_databases_command(
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
+
+
+def ensure_recommendation_feedback_schema() -> None:
+    """Ensure new recommendation feedback columns/tables exist for legacy DBs."""
+    if engine is None:
+        return
+
+    try:
+        inspector = inspect(engine)
+        recommendation_columns = {
+            column["name"] for column in inspector.get_columns("recommendations")
+        }
+    except Exception as exc:  # pragma: no cover - inspection failure
+        logger.debug("Recommendation table inspection failed: %s", exc)
+        recommendation_columns = set()
+
+    alterations: List[str] = []
+    if "rating_count" not in recommendation_columns:
+        alterations.append("ADD COLUMN rating_count INTEGER DEFAULT 0")
+    if "rating_average" not in recommendation_columns:
+        alterations.append("ADD COLUMN rating_average FLOAT DEFAULT 0.0")
+
+    if alterations:
+        ddl = f"ALTER TABLE recommendations {', '.join(alterations)}"
+        try:
+            with engine.begin() as connection:
+                connection.execute(text(ddl))
+            logger.info("Applied recommendation rating schema updates")
+        except Exception as exc:  # pragma: no cover - DDL failure path
+            logger.warning("Unable to update recommendations schema: %s", exc)
+
+    try:
+        RecommendationFeedback.__table__.create(bind=engine, checkfirst=True)
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Failed to ensure recommendation_feedback table: %s", exc)
 
 
 if __name__ == "__main__":
