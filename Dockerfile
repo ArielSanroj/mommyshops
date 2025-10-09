@@ -74,4 +74,4 @@ EXPOSE 8001
 ENV PORT=8001
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["python", "test_minimal.py"]
