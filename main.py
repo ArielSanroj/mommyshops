@@ -2949,8 +2949,14 @@ async def debug_env():
         "GOOGLE_REDIRECT_URI": os.getenv("GOOGLE_REDIRECT_URI", "NOT_SET"),
         "FIREBASE_CREDENTIALS": "SET" if os.getenv("FIREBASE_CREDENTIALS") else "NOT_SET",
         "GOOGLE_VISION_API_KEY": "SET" if os.getenv("GOOGLE_VISION_API_KEY") else "NOT_SET",
-        "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT", "NOT_SET")
+        "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT", "NOT_SET"),
+        "DATABASE_URL": "SET" if os.getenv("DATABASE_URL") else "NOT_SET"
     }
+
+@app.get("/debug/simple")
+async def debug_simple():
+    """Simple debug endpoint without external dependencies."""
+    return {"message": "Simple debug endpoint working", "timestamp": "2024-01-01"}
 
 @app.get("/debug/tesseract")
 async def debug_tesseract():
