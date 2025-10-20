@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mommyshops-frontend
+  
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+vaadin:
+  production-mode: false
+  close-idle-sessions: true
+  heartbeat-interval: 300
+  whitelisted-packages: com.mommyshops
+  allowed-packages: com.mommyshops
+
+analysis:
+  backend:
+    base-url: http://localhost:8080

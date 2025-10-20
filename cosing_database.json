@@ -1,0 +1,82 @@
+{
+  "sodium laureth sulfate": {
+    "INCI": "Sodium Laureth Sulfate",
+    "CAS": "9004-82-4",
+    "Function": "Surfactant",
+    "Restrictions": "Maximum 1% in leave-on products",
+    "Annex": "Annex III",
+    "Status": "Approved"
+  },
+  "phenoxyethanol": {
+    "INCI": "Phenoxyethanol",
+    "CAS": "122-99-6",
+    "Function": "Preservative",
+    "Restrictions": "Maximum 1% in all products",
+    "Annex": "Annex V",
+    "Status": "Approved"
+  },
+  "benzyl alcohol": {
+    "INCI": "Benzyl Alcohol",
+    "CAS": "100-51-6",
+    "Function": "Solvent, Preservative",
+    "Restrictions": "Maximum 1% in leave-on products",
+    "Annex": "Annex V",
+    "Status": "Approved"
+  },
+  "aloe barbadensis leaf juice": {
+    "INCI": "Aloe Barbadensis Leaf Juice",
+    "CAS": "94349-62-9",
+    "Function": "Skin conditioning",
+    "Restrictions": "None",
+    "Annex": "None",
+    "Status": "Approved"
+  },
+  "aqua": {
+    "INCI": "Aqua",
+    "CAS": "7732-18-5",
+    "Function": "Solvent",
+    "Restrictions": "None",
+    "Annex": "None",
+    "Status": "Approved"
+  },
+  "propylene glycol": {
+    "INCI": "Propylene Glycol",
+    "CAS": "57-55-6",
+    "Function": "Humectant, Solvent",
+    "Restrictions": "Maximum 5% in leave-on products",
+    "Annex": "Annex III",
+    "Status": "Approved"
+  },
+  "parfum": {
+    "INCI": "Parfum",
+    "CAS": "N/A",
+    "Function": "Fragrance",
+    "Restrictions": "Must comply with IFRA standards",
+    "Annex": "Annex III",
+    "Status": "Approved"
+  },
+  "sodium chloride": {
+    "INCI": "Sodium Chloride",
+    "CAS": "7647-14-5",
+    "Function": "Viscosity controlling",
+    "Restrictions": "None",
+    "Annex": "None",
+    "Status": "Approved"
+  },
+  "ethylhexylglycerin": {
+    "INCI": "Ethylhexylglycerin",
+    "CAS": "70445-33-9",
+    "Function": "Preservative",
+    "Restrictions": "Maximum 0.5% in all products",
+    "Annex": "Annex V",
+    "Status": "Approved"
+  },
+  "melaleuca alternifolia leaf oil": {
+    "INCI": "Melaleuca Alternifolia Leaf Oil",
+    "CAS": "68647-73-4",
+    "Function": "Fragrance, Antimicrobial",
+    "Restrictions": "Maximum 0.1% in leave-on products",
+    "Annex": "Annex III",
+    "Status": "Approved"
+  }
+}

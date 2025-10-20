@@ -1,0 +1,230 @@
+{
+  "aqua": {
+    "hazard_score": 0,
+    "description": "Water - Safe"
+  },
+  "water": {
+    "hazard_score": 0,
+    "description": "Water - Safe"
+  },
+  "sodium chloride": {
+    "hazard_score": 0,
+    "description": "Salt - Safe"
+  },
+  "glycerin": {
+    "hazard_score": 0,
+    "description": "Humectant - Safe"
+  },
+  "aloe barbadensis leaf juice": {
+    "hazard_score": 0,
+    "description": "Aloe Vera - Safe"
+  },
+  "cocos nucifera oil": {
+    "hazard_score": 0,
+    "description": "Coconut Oil - Safe"
+  },
+  "olea europaea fruit oil": {
+    "hazard_score": 0,
+    "description": "Olive Oil - Safe"
+  },
+  "simmondsia chinensis seed oil": {
+    "hazard_score": 0,
+    "description": "Jojoba Oil - Safe"
+  },
+  "helianthus annuus seed oil": {
+    "hazard_score": 0,
+    "description": "Sunflower Oil - Safe"
+  },
+  "prunus amygdalus dulcis oil": {
+    "hazard_score": 0,
+    "description": "Sweet Almond Oil - Safe"
+  },
+  "sodium laureth sulfate": {
+    "hazard_score": 2,
+    "description": "Surfactant - Moderate hazard"
+  },
+  "sodium lauryl sulfate": {
+    "hazard_score": 3,
+    "description": "Surfactant - High hazard"
+  },
+  "cocamidopropyl betaine": {
+    "hazard_score": 1,
+    "description": "Surfactant - Low hazard"
+  },
+  "decyl glucoside": {
+    "hazard_score": 0,
+    "description": "Surfactant - Safe"
+  },
+  "sodium coco sulfate": {
+    "hazard_score": 1,
+    "description": "Surfactant - Low hazard"
+  },
+  "phenoxyethanol": {
+    "hazard_score": 2,
+    "description": "Preservative - Moderate hazard"
+  },
+  "benzyl alcohol": {
+    "hazard_score": 2,
+    "description": "Preservative - Moderate hazard"
+  },
+  "ethylhexylglycerin": {
+    "hazard_score": 1,
+    "description": "Preservative - Low hazard"
+  },
+  "potassium sorbate": {
+    "hazard_score": 1,
+    "description": "Preservative - Low hazard"
+  },
+  "sodium benzoate": {
+    "hazard_score": 1,
+    "description": "Preservative - Low hazard"
+  },
+  "propylene glycol": {
+    "hazard_score": 2,
+    "description": "Humectant - Moderate hazard"
+  },
+  "butylene glycol": {
+    "hazard_score": 1,
+    "description": "Humectant - Low hazard"
+  },
+  "hyaluronic acid": {
+    "hazard_score": 0,
+    "description": "Humectant - Safe"
+  },
+  "sodium hyaluronate": {
+    "hazard_score": 0,
+    "description": "Humectant - Safe"
+  },
+  "parfum": {
+    "hazard_score": 3,
+    "description": "Fragrance - High hazard"
+  },
+  "fragrance": {
+    "hazard_score": 3,
+    "description": "Fragrance - High hazard"
+  },
+  "limonene": {
+    "hazard_score": 2,
+    "description": "Fragrance - Moderate hazard"
+  },
+  "linalool": {
+    "hazard_score": 2,
+    "description": "Fragrance - Moderate hazard"
+  },
+  "citronellol": {
+    "hazard_score": 2,
+    "description": "Fragrance - Moderate hazard"
+  },
+  "titanium dioxide": {
+    "hazard_score": 1,
+    "description": "UV Filter - Low hazard"
+  },
+  "zinc oxide": {
+    "hazard_score": 0,
+    "description": "UV Filter - Safe"
+  },
+  "avobenzone": {
+    "hazard_score": 2,
+    "description": "UV Filter - Moderate hazard"
+  },
+  "octinoxate": {
+    "hazard_score": 2,
+    "description": "UV Filter - Moderate hazard"
+  },
+  "retinol": {
+    "hazard_score": 3,
+    "description": "Anti-aging - High hazard"
+  },
+  "retinyl palmitate": {
+    "hazard_score": 2,
+    "description": "Anti-aging - Moderate hazard"
+  },
+  "alpha hydroxy acids": {
+    "hazard_score": 3,
+    "description": "Exfoliant - High hazard"
+  },
+  "salicylic acid": {
+    "hazard_score": 2,
+    "description": "Exfoliant - Moderate hazard"
+  },
+  "formaldehyde": {
+    "hazard_score": 4,
+    "description": "Preservative - Dangerous"
+  },
+  "triclosan": {
+    "hazard_score": 4,
+    "description": "Antimicrobial - Dangerous"
+  },
+  "hydroquinone": {
+    "hazard_score": 4,
+    "description": "Skin lightening - Dangerous"
+  },
+  "mercury": {
+    "hazard_score": 4,
+    "description": "Heavy metal - Dangerous"
+  },
+  "lead": {
+    "hazard_score": 4,
+    "description": "Heavy metal - Dangerous"
+  },
+  "melaleuca alternifolia leaf oil": {
+    "hazard_score": 2,
+    "description": "Essential Oil - Moderate hazard"
+  },
+  "lavandula angustifolia oil": {
+    "hazard_score": 1,
+    "description": "Essential Oil - Low hazard"
+  },
+  "mentha piperita oil": {
+    "hazard_score": 2,
+    "description": "Essential Oil - Moderate hazard"
+  },
+  "eucalyptus globulus oil": {
+    "hazard_score": 2,
+    "description": "Essential Oil - Moderate hazard"
+  },
+  "dimethicone": {
+    "hazard_score": 1,
+    "description": "Silicone - Low hazard"
+  },
+  "cyclomethicone": {
+    "hazard_score": 1,
+    "description": "Silicone - Low hazard"
+  },
+  "phenyl trimethicone": {
+    "hazard_score": 1,
+    "description": "Silicone - Low hazard"
+  },
+  "cetearyl alcohol": {
+    "hazard_score": 0,
+    "description": "Emulsifier - Safe"
+  },
+  "cetyl alcohol": {
+    "hazard_score": 0,
+    "description": "Emulsifier - Safe"
+  },
+  "stearyl alcohol": {
+    "hazard_score": 0,
+    "description": "Emulsifier - Safe"
+  },
+  "glyceryl stearate": {
+    "hazard_score": 0,
+    "description": "Emulsifier - Safe"
+  },
+  "tocopherol": {
+    "hazard_score": 0,
+    "description": "Antioxidant - Safe"
+  },
+  "ascorbic acid": {
+    "hazard_score": 1,
+    "description": "Antioxidant - Low hazard"
+  },
+  "niacinamide": {
+    "hazard_score": 0,
+    "description": "Vitamin B3 - Safe"
+  },
+  "panthenol": {
+    "hazard_score": 0,
+    "description": "Vitamin B5 - Safe"
+  }
+}
