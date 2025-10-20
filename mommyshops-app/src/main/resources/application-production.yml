@@ -1,0 +1,204 @@
+# Production configuration for MommyShops
+spring:
+  profiles:
+    active: production
+  
+  # Database configuration
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/mommyshops_prod}
+    username: ${DATABASE_USERNAME:mommyshops}
+    password: ${DATABASE_PASSWORD:your_secure_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+  
+  # JPA/Hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+        connection:
+          provider_disables_autocommit: true
+        format_sql: false
+        use_sql_comments: false
+        jdbc:
+          time_zone: UTC
+  
+  # Redis configuration
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: 2000ms
+  
+  # Security configuration
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your_google_client_id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your_google_client_secret}
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: id
+
+# Application configuration
+app:
+  # API configuration
+  api:
+    fda-key: ${FDA_API_KEY:}
+    ewg-key: ${EWG_API_KEY:}
+    inci-beauty-key: ${INCI_BEAUTY_API_KEY:}
+    cosing-key: ${COSING_API_KEY:}
+    entrez-email: ${ENTREZ_EMAIL:your.email@example.com}
+    apify-key: ${APIFY_API_KEY:}
+  
+  # Ollama configuration
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:llama3.1}
+    vision-model: ${OLLAMA_VISION_MODEL:llava}
+    timeout: 30000
+    max-retries: 3
+  
+  # Logging configuration
+  logging:
+    level: ${LOG_LEVEL:INFO}
+    backend-path: ${BACKEND_LOG_PATH:logs/backend.log}
+    max-file-size: ${LOG_MAX_FILE_SIZE:10MB}
+    max-files: ${LOG_MAX_FILES:10}
+  
+  # Performance configuration
+  performance:
+    thread-pool:
+      core-size: 10
+      max-size: 50
+      queue-capacity: 100
+      keep-alive: 60s
+    cache:
+      ttl: 3600s
+      max-size: 10000
+    rate-limiting:
+      enabled: true
+      requests-per-minute: 100
+      requests-per-hour: 1000
+  
+  # Security configuration
+  security:
+    jwt:
+      secret: ${JWT_SECRET:your_jwt_secret_key_here}
+      expiration: ${JWT_EXPIRATION:86400000}
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+# Server configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  tomcat:
+    max-connections: 8192
+    max-threads: 200
+    min-spare-threads: 10
+    connection-timeout: 20000
+    max-http-post-size: 2MB
+    max-swallow-size: 2MB
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      show-components: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+
+# Logging configuration
+logging:
+  level:
+    com.mommyshops: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE_PATH:logs/mommyshops.log}
+    max-size: ${LOG_MAX_FILE_SIZE:10MB}
+    max-history: ${LOG_MAX_FILES:10}
+    total-size-cap: ${LOG_TOTAL_SIZE_CAP:100MB}
+
+# Vaadin configuration
+vaadin:
+  productionMode: true
+  closeIdleSessions: true
+  heartbeatInterval: 300
+  webComponent:
+    enabled: true
+  frontend:
+    hotdeploy: false
+    bundle:
+      enabled: true
+      hash: true
+      version: true
+
+# Testcontainers configuration (disabled in production)
+testcontainers:
+  enabled: false
+
+# Spring Boot Actuator configuration
+spring:
+  application:
+    name: mommyshops
+  boot:
+    admin:
+      client:
+        enabled: false

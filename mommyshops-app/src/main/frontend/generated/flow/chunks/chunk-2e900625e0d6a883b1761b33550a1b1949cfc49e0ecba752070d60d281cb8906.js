@@ -1,0 +1,10 @@
+import '@vaadin/polymer-legacy-adapter/style-modules.js';
+import '@vaadin/vertical-layout/src/vaadin-vertical-layout.js';
+import '@vaadin/text-field/src/vaadin-text-field.js';
+import '@vaadin/tooltip/src/vaadin-tooltip.js';
+import '@vaadin/upload/src/vaadin-upload.js';
+import '@vaadin/button/src/vaadin-button.js';
+import 'Frontend/generated/jar-resources/disableOnClickFunctions.js';
+import '@vaadin/horizontal-layout/src/vaadin-horizontal-layout.js';
+import '@vaadin/notification/src/vaadin-notification.js';
+import 'Frontend/generated/jar-resources/flow-component-renderer.js';

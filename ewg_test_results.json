@@ -1,0 +1,69 @@
+{
+  "Sodium Laureth Sulfate": {
+    "ingredient": "Sodium Laureth Sulfate",
+    "hazardScore": 3,
+    "concerns": [],
+    "ewgRating": "Unknown",
+    "dataAvailability": {
+      "studiesAvailable": false,
+      "regulatoryData": false,
+      "industryData": false
+    },
+    "dataSource": "EWG Skin Deep Database",
+    "status": "SUCCESS"
+  },
+  "Phenoxyethanol": {
+    "ingredient": "Phenoxyethanol",
+    "hazardScore": 4,
+    "concerns": [],
+    "ewgRating": "Unknown",
+    "dataAvailability": {
+      "studiesAvailable": false,
+      "regulatoryData": false,
+      "industryData": false
+    },
+    "dataSource": "EWG Skin Deep Database",
+    "status": "SUCCESS"
+  },
+  "Benzyl Alcohol": {
+    "ingredient": "Benzyl Alcohol",
+    "hazardScore": 4,
+    "concerns": [],
+    "ewgRating": "Unknown",
+    "dataAvailability": {
+      "studiesAvailable": false,
+      "regulatoryData": false,
+      "industryData": false
+    },
+    "dataSource": "EWG Skin Deep Database",
+    "status": "SUCCESS"
+  },
+  "Aloe Vera": {
+    "ingredient": "Aloe Vera",
+    "hazardScore": "Not found",
+    "concerns": [
+      "organ"
+    ],
+    "ewgRating": "Unknown",
+    "dataAvailability": {
+      "studiesAvailable": false,
+      "regulatoryData": false,
+      "industryData": false
+    },
+    "dataSource": "EWG Skin Deep Database",
+    "status": "SUCCESS"
+  },
+  "Water": {
+    "ingredient": "Water",
+    "hazardScore": 1,
+    "concerns": [],
+    "ewgRating": "Unknown",
+    "dataAvailability": {
+      "studiesAvailable": false,
+      "regulatoryData": false,
+      "industryData": false
+    },
+    "dataSource": "EWG Skin Deep Database",
+    "status": "SUCCESS"
+  }
+}
