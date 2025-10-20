@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - enhanced security rules for 2025
+    match /users/{userId} {
+      // Users can only access their own document
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can only write to their own document with validation
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && validateUserData(request.resource.data);
+      
+      // Users can update their own document with proper validation
+      allow update: if request.auth != null 
+                    && request.auth.uid == userId
+                    && validateUserUpdate(request.resource.data, resource.data);
+    }
+    
+    // Helper functions for validation
+    function validateUserData(data) {
+      return data.keys().hasAll(['uid', 'email', 'created_at', 'updated_at'])
+             && data.uid is string
+             && data.email is string
+             && data.created_at is timestamp
+             && data.updated_at is timestamp
+             && data.uid == request.auth.uid;
+    }
+    
+    function validateUserUpdate(newData, oldData) {
+      // Ensure updated_at is present and newer
+      return newData.updated_at is timestamp
+             && newData.updated_at > oldData.updated_at
+             // Ensure core fields are not modified
+             && newData.uid == oldData.uid
+             && newData.email == oldData.email
+             && newData.created_at == oldData.created_at
+             // Ensure only allowed fields are being updated
+             && validateAllowedFields(newData);
+    }
+    
+    function validateAllowedFields(data) {
+      let allowedFields = ['name', 'skin_face', 'hair_type', 'goals_face', 
+                          'climate', 'skin_body', 'goals_body', 'hair_porosity',
+                          'goals_hair', 'hair_thickness_scalp', 'conditions',
+                          'updated_at'];
+      
+      return data.keys().hasAll(['uid', 'email', 'created_at', 'updated_at'])
+             && data.keys().hasOnly(allowedFields);
+    }
+    
+    // Routines collection - users can manage their own routines
+    match /routines/{routineId} {
+      allow read, write: if request.auth != null 
+                          && resource.data.user_id == request.auth.uid;
+      
+      allow create: if request.auth != null 
+                     && request.resource.data.user_id == request.auth.uid;
+    }
+    
+    // Recommendations collection - users can manage their own recommendations
+    match /recommendations/{recommendationId} {
+      allow read, write: if request.auth != null 
+                          && resource.data.user_id == request.auth.uid;
+      
+      allow create: if request.auth != null 
+                     && request.resource.data.user_id == request.auth.uid;
+    }
+    
+    // Products collection - read-only for all authenticated users
+    match /products/{productId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only admins can write (handled by backend)
+    }
+    
+    // Ingredients collection - read-only for all authenticated users
+    match /ingredients/{ingredientId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only admins can write (handled by backend)
+    }
+    
+    // Admin collection - only for admin users
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null 
+                          && request.auth.token.role == 'admin';
+    }
+    
+    // Analytics collection - write-only for authenticated users
+    match /analytics/{document=**} {
+      allow write: if request.auth != null;
+      allow read: if false; // Only admins can read analytics
+    }
+  }
+}
