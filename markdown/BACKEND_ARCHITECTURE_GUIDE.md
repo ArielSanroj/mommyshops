@@ -42,8 +42,8 @@ mommyshops/
 ├── main.py                          # Aplicación principal FastAPI
 ├── database.py                      # Modelos y conexión DB
 ├── api_utils_production.py          # Utilidades para APIs externas
-├── llm_utils.py                     # Integración con OpenAI
-├── nemotron_integration.py          # Integración con NVIDIA Nemotron
+├── ollama_integration.py            # Cliente centralizado de Ollama
+├── ollama_enrichment.py             # Enriquecimiento estructurado vía Ollama
 ├── apify_enhanced_scraper.py        # Web scraping avanzado
 ├── requirements.txt                 # Dependencias Python
 ├── .env                            # Variables de entorno
@@ -225,22 +225,13 @@ def save_cache(cache_file: str, data: Dict):
 
 ## 🤖 **Integración con LLMs**
 
-### **OpenAI Integration (llm_utils.py)**
+### **Motor único con Ollama**
 ```python
-async def extract_ingredients_from_text_openai(text: str) -> List[str]:
-    """Extract ingredients using OpenAI GPT."""
-    
-async def enrich_ingredient_data(data: Dict, user_need: str) -> Dict:
-    """Enrich ingredient data with OpenAI analysis."""
+async def enrich_ingredient_with_ollama(ingredient: str, user_conditions: List[str]) -> Dict:
+    """Genera resumen, riesgos y alternativas usando modelos locales Ollama."""
 ```
 
-### **NVIDIA Nemotron Integration**
-```python
-async def analyze_with_nemotron(ingredient: str, image_data: Optional[bytes], user_need: str) -> Dict:
-    """Analyze ingredient using NVIDIA Nemotron multimodal AI."""
-```
-
----
+--- 
 
 ## 🔍 **Procesamiento de Imágenes**
 

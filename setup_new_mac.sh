@@ -56,7 +56,6 @@ NVIDIA_API_KEY=your_nvidia_api_key_here
 MCP_ACCESS_TOKEN=your_mcp_access_token_here
 
 # External API Keys (Add your keys)
-OPENAI_API_KEY=your_openai_api_key_here
 ENTREZ_EMAIL=your_email@example.com
 APIFY_API_KEY=your_apify_api_key_here
 ENVEOF

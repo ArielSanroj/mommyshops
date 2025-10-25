@@ -29,7 +29,7 @@ MommyShops es un sistema de análisis de ingredientes cosméticos que combina **
 - 📝 **Análisis de texto** de listas de ingredientes
 - 🌐 **Análisis de URLs** de productos en línea
 - 🧪 **Análisis de seguridad** con múltiples fuentes de datos
-- 🤖 **Integración con LLMs** (OpenAI, NVIDIA Nemotron)
+- 🤖 **Integración con LLMs** (Ollama autoservida)
 - 📊 **Scoring ecológico** y recomendaciones personalizadas
 
 ---
@@ -85,7 +85,7 @@ Imagen/Texto/URL → Preprocesamiento → OCR/Extracción → Análisis → Reco
 - **Bioinformática**: BioPython 1.81
 
 ### **LLMs e IA**
-- **OpenAI**: API oficial
+- **Ollama**: Modelos locales / autoservidos
 - **NVIDIA**: Nemotron integration
 - **MCP**: Model Context Protocol
 
@@ -104,8 +104,8 @@ mommyshops/
 ├── main.py                          # 🚀 Aplicación principal FastAPI
 ├── database.py                      # 🗄️ Modelos y conexión DB
 ├── api_utils_production.py          # 🌐 Utilidades para APIs externas
-├── llm_utils.py                     # 🤖 Integración con OpenAI
-├── nemotron_integration.py          # 🧠 Integración con NVIDIA Nemotron
+├── ollama_integration.py            # 🤖 Cliente centralizado de Ollama
+├── ollama_enrichment.py             # 🧠 Enriquecimiento estructurado vía Ollama
 ├── apify_enhanced_scraper.py        # 🕷️ Web scraping avanzado
 ├── requirements.txt                 # 📦 Dependencias Python
 ├── .env                            # ⚙️ Variables de entorno
@@ -651,7 +651,7 @@ La combinación de **FastAPI**, **procesamiento asíncrono**, **múltiples fuent
 ### **Características Únicas**
 - 🌍 **OCR Universal**: Se adapta automáticamente a cualquier tipo de imagen
 - 🚀 **Procesamiento Asíncrono**: Máxima eficiencia y rendimiento
-- 🧠 **IA Integrada**: OpenAI + NVIDIA Nemotron para análisis avanzado
+- 🧠 **IA Integrada**: Ollama para análisis avanzado
 - 📊 **Múltiples Fuentes**: 7+ APIs externas para datos completos
 - ⚡ **Optimizado**: Timeouts adaptativos y caché inteligente
 

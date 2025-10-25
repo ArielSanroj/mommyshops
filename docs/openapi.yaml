@@ -1,0 +1,629 @@
+openapi: 3.0.3
+info:
+  title: MommyShops API
+  version: 3.0.1
+  description: |
+    # MommyShops API Documentation
+    
+    ## Overview
+    The MommyShops API provides comprehensive ingredient analysis and product safety evaluation services.
+    This API is designed to help users make informed decisions about cosmetic and personal care products.
+    
+    ## Key Features
+    - **Product Analysis**: Comprehensive analysis of cosmetic products
+    - **Ingredient Safety**: Detailed safety evaluation using multiple databases
+    - **AI Recommendations**: AI-powered ingredient alternatives and suggestions
+    - **User Management**: Secure authentication and user profile management
+    - **Integration**: Seamless integration with Python AI services
+    
+    ## Authentication
+    The API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limiting
+    - **Standard**: 60 requests per minute
+    - **Analysis**: 5 requests per minute (slower due to AI processing)
+    - **Burst**: 10 requests per minute
+    
+    ## Error Handling
+    All endpoints return standardized error responses:
+    ```json
+    {
+        "success": false,
+        "error": "Error message",
+        "error_code": "ERROR_CODE",
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
+    ```
+  contact:
+    name: MommyShops Support
+    email: support@mommyshops.com
+    url: https://mommyshops.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://mommyshops.com/terms
+
+servers:
+  - url: http://localhost:8000
+    description: Python Backend (Development)
+  - url: http://localhost:8080
+    description: Java Backend (Development)
+  - url: https://api.mommyshops.com
+    description: Production Server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Analysis
+    description: Product and ingredient analysis endpoints
+  - name: Substitution
+    description: Ingredient substitution and alternatives
+  - name: Health
+    description: System health and monitoring endpoints
+  - name: Integration
+    description: External API integration endpoints
+  - name: Ollama AI
+    description: AI model endpoints using Ollama
+
+paths:
+  # Python Backend Endpoints
+  /analyze-image:
+    post:
+      tags:
+        - Analysis
+      summary: Analyze product from image
+      description: |
+        Analyze a product's ingredients from an uploaded image using OCR technology.
+        
+        This endpoint:
+        1. Extracts text from the uploaded image using OCR
+        2. Identifies ingredients from the extracted text
+        3. Analyzes each ingredient for safety and eco-friendliness
+        4. Provides personalized recommendations based on user needs
+        
+        **Supported image formats**: JPG, PNG, WebP
+        **Maximum file size**: 5MB
+        **Processing time**: 5-30 seconds depending on image complexity
+      operationId: analyzeImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Product image file
+                user_need:
+                  type: string
+                  description: User's skin type or concern
+                  enum: [sensitive skin, acne-prone, anti-aging, general safety]
+                  default: general safety
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAnalysisResponse'
+              examples:
+                success:
+                  summary: Successful analysis
+                  value:
+                    success: true
+                    product_name: "Anti-Aging Serum"
+                    ingredients_details:
+                      - name: "Hyaluronic Acid"
+                        risk_level: "low"
+                        eco_score: 85.0
+                        benefits: "Hydrating, plumping"
+                        risks_detailed: "None known"
+                        sources: "EWG, FDA"
+                    avg_eco_score: 85.0
+                    suitability: "excellent"
+                    recommendations: "This product is excellent for sensitive skin"
+                    analysis_id: "analysis_123"
+                    processing_time_ms: 1500
+        '400':
+          description: Invalid image file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_image:
+                  summary: Invalid image format
+                  value:
+                    success: false
+                    error: "Invalid image file format"
+                    error_code: "INVALID_IMAGE"
+                    timestamp: "2024-01-01T00:00:00Z"
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                file_too_large:
+                  summary: File size exceeds limit
+                  value:
+                    success: false
+                    error: "File size exceeds maximum limit of 5MB"
+                    error_code: "FILE_TOO_LARGE"
+                    timestamp: "2024-01-01T00:00:00Z"
+
+  /analyze-text:
+    post:
+      tags:
+        - Analysis
+      summary: Analyze product from text
+      description: |
+        Analyze a product's ingredients from text input.
+        
+        This endpoint:
+        1. Parses the ingredient text to identify individual ingredients
+        2. Analyzes each ingredient for safety and eco-friendliness
+        3. Provides personalized recommendations based on user needs
+        
+        **Processing time**: 2-10 seconds depending on ingredient count
+        **Rate limiting**: 60 requests per minute
+      operationId: analyzeText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductAnalysisRequest'
+            examples:
+              sensitive_skin:
+                summary: Sensitive skin analysis
+                value:
+                  text: "Aqua, Glycerin, Hyaluronic Acid, Niacinamide"
+                  user_need: "sensitive skin"
+              anti_aging:
+                summary: Anti-aging analysis
+                value:
+                  text: "Aqua, Glycerin, Retinol, Vitamin C, Peptides"
+                  user_need: "anti-aging"
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAnalysisResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ingredients/analyze:
+    post:
+      tags:
+        - Analysis
+      summary: Analyze specific ingredients
+      description: |
+        Analyze a list of specific ingredients for safety and eco-friendliness.
+        
+        This endpoint is optimized for analyzing known ingredient lists and provides
+        detailed analysis for each ingredient.
+        
+        **Processing time**: 1-5 seconds depending on ingredient count
+        **Rate limiting**: 60 requests per minute
+      operationId: analyzeIngredients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ingredients:
+                  type: array
+                  items:
+                    type: string
+                  description: List of ingredients to analyze
+                  example: ["Hyaluronic Acid", "Niacinamide", "Retinol"]
+                user_need:
+                  type: string
+                  description: User's skin type or concern
+                  enum: [sensitive skin, acne-prone, anti-aging, general safety]
+                  default: general safety
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAnalysisResponse'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: System health check
+      description: Check the overall health of the system
+      operationId: getHealth
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: System is healthy
+                  value:
+                    status: "healthy"
+                    timestamp: "2024-01-01T00:00:00Z"
+                    service: "python-backend"
+                    version: "3.0.1"
+                    components:
+                      database: "healthy"
+                      ollama: "healthy"
+                      external_apis: "healthy"
+
+  # Java Backend Endpoints
+  /api/analysis/analyze-product:
+    post:
+      tags:
+        - Analysis
+      summary: Analyze product from text (Java)
+      description: |
+        Analyze a product's ingredients from text input through the Java backend.
+        This endpoint calls the Python backend for analysis and provides additional
+        business logic and user management features.
+      operationId: analyzeProductJava
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductAnalysisRequest'
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAnalysisResponse'
+
+  /api/analysis/analyze-image:
+    post:
+      tags:
+        - Analysis
+      summary: Analyze product from image (Java)
+      description: |
+        Analyze a product's ingredients from an uploaded image through the Java backend.
+        This endpoint calls the Python backend for OCR processing and provides additional
+        business logic and user management features.
+      operationId: analyzeImageJava
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Product image file
+                user_need:
+                  type: string
+                  description: User's skin type or concern
+                  enum: [sensitive skin, acne-prone, anti-aging, general safety]
+                  default: general safety
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAnalysisResponse'
+
+  /api/substitution/alternatives:
+    post:
+      tags:
+        - Substitution
+      summary: Get ingredient alternatives
+      description: |
+        Get AI-powered alternatives for problematic ingredients.
+        
+        This endpoint uses AI to suggest safer alternatives based on the user's
+        specific conditions and preferences.
+      operationId: getAlternatives
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                problematic_ingredients:
+                  type: array
+                  items:
+                    type: string
+                  description: List of problematic ingredients
+                  example: ["Sodium Lauryl Sulfate", "Parabens"]
+                user_conditions:
+                  type: array
+                  items:
+                    type: string
+                  description: User's skin conditions
+                  example: ["sensitive skin", "eczema"]
+      responses:
+        '200':
+          description: Alternatives retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example: ["Sodium Lauryl Sulfoacetate", "Cocamidopropyl Betaine", "Decyl Glucoside"]
+
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Comprehensive system health check
+      description: |
+        Get comprehensive health status of the Java backend and all integrated services.
+        This includes database, Python backend, Redis, and external API health.
+      operationId: getHealthJava
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: System is healthy
+                  value:
+                    status: "healthy"
+                    timestamp: "2024-01-01T00:00:00Z"
+                    service: "java-backend"
+                    version: "3.0.1"
+                    components:
+                      database: "healthy"
+                      python_backend: "healthy"
+                      redis: "healthy"
+                      external_apis: "healthy"
+                    metrics:
+                      uptime: "7d 12h 30m"
+                      memory_usage: "45%"
+                      cpu_usage: "23%"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for service-to-service communication
+
+  schemas:
+    ProductAnalysisRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Product ingredients text to analyze
+          example: "Aqua, Glycerin, Hyaluronic Acid, Niacinamide"
+          minLength: 1
+          maxLength: 10000
+        user_need:
+          type: string
+          description: User's skin type or concern
+          example: "sensitive skin"
+          enum: [sensitive skin, acne-prone, anti-aging, general safety]
+          default: general safety
+      example:
+        text: "Aqua, Glycerin, Hyaluronic Acid, Niacinamide"
+        user_need: "sensitive skin"
+
+    IngredientAnalysis:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Ingredient name
+          example: "Hyaluronic Acid"
+        risk_level:
+          type: string
+          description: Risk level of the ingredient
+          enum: [low, medium, high, unknown]
+          example: "low"
+        eco_score:
+          type: number
+          description: Eco score of the ingredient (0-100)
+          minimum: 0
+          maximum: 100
+          example: 85.0
+        benefits:
+          type: string
+          description: Benefits of the ingredient
+          example: "Hydrating, plumping, anti-aging"
+        risks_detailed:
+          type: string
+          description: Detailed risk information
+          example: "None known"
+        sources:
+          type: string
+          description: Data sources used for analysis
+          example: "EWG, FDA, COSING"
+
+    ProductAnalysisResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the analysis was successful
+          example: true
+        product_name:
+          type: string
+          description: Name of the analyzed product
+          example: "Anti-Aging Serum"
+        ingredients_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientAnalysis'
+          description: Detailed analysis of each ingredient
+        avg_eco_score:
+          type: number
+          description: Average eco score of the product
+          minimum: 0
+          maximum: 100
+          example: 85.0
+        suitability:
+          type: string
+          description: Overall suitability for the user
+          enum: [excellent, good, fair, poor, not recommended]
+          example: "excellent"
+        recommendations:
+          type: string
+          description: Personalized recommendations
+          example: "This product is excellent for sensitive skin"
+        analysis_id:
+          type: string
+          description: Unique identifier for this analysis
+          example: "analysis_123"
+        processing_time_ms:
+          type: integer
+          description: Processing time in milliseconds
+          example: 1500
+        error:
+          type: string
+          description: Error message if analysis failed
+          example: "Invalid input data"
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Overall system status
+          enum: [healthy, unhealthy, degraded]
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+          example: "2024-01-01T00:00:00Z"
+        service:
+          type: string
+          description: Service name
+          example: "python-backend"
+        version:
+          type: string
+          description: Service version
+          example: "3.0.1"
+        components:
+          type: object
+          description: Individual component health status
+          properties:
+            database:
+              type: string
+              enum: [healthy, unhealthy, degraded]
+            ollama:
+              type: string
+              enum: [healthy, unhealthy, degraded]
+            external_apis:
+              type: string
+              enum: [healthy, unhealthy, degraded]
+        metrics:
+          type: object
+          description: System metrics
+          properties:
+            uptime:
+              type: string
+              description: System uptime
+              example: "7d 12h 30m"
+            memory_usage:
+              type: string
+              description: Memory usage percentage
+              example: "45%"
+            cpu_usage:
+              type: string
+              description: CPU usage percentage
+              example: "23%"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Always false for errors
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Invalid input data"
+        error_code:
+          type: string
+          description: Error code
+          example: "INVALID_INPUT"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2024-01-01T00:00:00Z"
+
+  examples:
+    ProductAnalysisRequest:
+      summary: Product Analysis Request
+      description: Example request for product analysis
+      value:
+        text: "Aqua, Glycerin, Hyaluronic Acid, Niacinamide, Retinol"
+        user_need: "sensitive skin"
+
+    ProductAnalysisResponse:
+      summary: Product Analysis Response
+      description: Example response for product analysis
+      value:
+        success: true
+        product_name: "Anti-Aging Serum"
+        ingredients_details:
+          - name: "Hyaluronic Acid"
+            risk_level: "low"
+            eco_score: 85.0
+            benefits: "Hydrating, plumping"
+            risks_detailed: "None known"
+            sources: "EWG, FDA"
+        avg_eco_score: 85.0
+        suitability: "excellent"
+        recommendations: "This product is excellent for sensitive skin"
+        analysis_id: "analysis_123"
+        processing_time_ms: 1500
+
+    ErrorResponse:
+      summary: Error Response
+      description: Example error response
+      value:
+        success: false
+        error: "Invalid input data"
+        error_code: "INVALID_INPUT"
+        timestamp: "2024-01-01T00:00:00Z"
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []

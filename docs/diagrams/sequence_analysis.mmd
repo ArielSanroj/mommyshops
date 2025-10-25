@@ -1,0 +1,65 @@
+sequenceDiagram
+    participant U as User
+    participant V as Vaadin UI
+    participant J as Java Backend
+    participant P as Python Backend
+    participant O as Ollama AI
+    participant E as External APIs
+    participant D as Database
+    participant C as Cache
+
+    U->>V: Upload product image
+    V->>J: POST /api/analysis/analyze-product
+    
+    Note over J: Authentication & Validation
+    J->>J: Validate JWT token
+    J->>J: Check rate limits
+    J->>J: Validate file type/size
+    
+    Note over J: Call Python Backend
+    J->>P: POST /java-integration/analyze-image
+    Note over P: Image Processing
+    P->>P: OCR (Tesseract/Google Vision)
+    P->>P: Extract ingredients list
+    
+    Note over P: External API Calls (Parallel)
+    par FDA Query
+        P->>E: Query FDA API
+        E-->>P: FDA data
+    and EWG Query
+        P->>E: Query EWG Database
+        E-->>P: EWG scores
+    and PubChem Query
+        P->>E: Query PubChem
+        E-->>P: Chemical data
+    end
+    
+    Note over P: AI Analysis
+    P->>O: Analyze with Ollama
+    O-->>P: Risk assessment & recommendations
+    
+    Note over P: Cache Results
+    P->>C: Store in Redis (L2)
+    
+    Note over P: Format Response
+    P-->>J: ProductAnalysisResponse
+    
+    Note over J: Business Logic
+    J->>D: Store analysis in PostgreSQL
+    J->>C: Store in Caffeine cache (L1)
+    J->>J: Format final response
+    
+    J-->>V: Analysis results
+    V-->>U: Display results with recommendations
+    
+    Note over J,P: Error Handling
+    alt Python Backend Error
+        P-->>J: Error response
+        J->>J: Circuit breaker
+        J-->>V: Fallback response
+    end
+    
+    Note over J,P: Rate Limiting
+    alt Rate Limit Exceeded
+        J-->>V: 429 Too Many Requests
+    end

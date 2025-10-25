@@ -1,0 +1,71 @@
+graph TB
+    subgraph "Frontend Layer"
+        UI[Vaadin UI<br/>Port 8080]
+    end
+    
+    subgraph "Java Backend - Business Logic"
+        JAPI[Java API Gateway<br/>Spring Boot]
+        JAUTH[JWT Authentication]
+        JRATE[Rate Limiting]
+        JCACHE[Cache L1<br/>Caffeine]
+        JDB[(PostgreSQL<br/>Primary DB)]
+    end
+    
+    subgraph "Python Backend - AI/ML"
+        PAPI[Python API<br/>FastAPI]
+        POCR[OCR Service<br/>Tesseract + Google Vision]
+        PAI[AI Analysis<br/>Ollama + Nemotron]
+        PEXT[External APIs<br/>FDA, EWG, PubChem]
+        PCACHE[Cache L2<br/>Redis]
+    end
+    
+    subgraph "External Services"
+        FDA[FDA API]
+        EWG[EWG Database]
+        PUB[PubChem]
+        COS[COSING]
+        FIRE[Firebase<br/>Auth + Firestore]
+    end
+    
+    subgraph "Infrastructure"
+        NGINX[Nginx<br/>Reverse Proxy]
+        PROM[Prometheus<br/>Metrics]
+        GRAF[Grafana<br/>Dashboards]
+    end
+    
+    %% Connections
+    UI --> NGINX
+    NGINX --> JAPI
+    JAPI --> JAUTH
+    JAPI --> JRATE
+    JAPI --> JCACHE
+    JAPI --> JDB
+    JAPI --> PAPI
+    
+    PAPI --> POCR
+    PAPI --> PAI
+    PAPI --> PEXT
+    PAPI --> PCACHE
+    PAPI --> FIRE
+    
+    PEXT --> FDA
+    PEXT --> EWG
+    PEXT --> PUB
+    PEXT --> COS
+    
+    JAPI --> PROM
+    PAPI --> PROM
+    PROM --> GRAF
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe
+    classDef java fill:#f3e5f5
+    classDef python fill:#e8f5e8
+    classDef external fill:#fff3e0
+    classDef infra fill:#fce4ec
+    
+    class UI frontend
+    class JAPI,JAUTH,JRATE,JCACHE,JDB java
+    class PAPI,POCR,PAI,PEXT,PCACHE python
+    class FDA,EWG,PUB,COS,FIRE external
+    class NGINX,PROM,GRAF infra

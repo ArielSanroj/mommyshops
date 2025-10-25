@@ -11,7 +11,7 @@ mommyshops/
 ├── main.py                          # 🚀 Optimized main application (consolidated)
 ├── database.py                      # 🗄️ Consolidated database + local data
 ├── api_utils_production.py          # 🔌 All API integrations (10+ sources)
-├── llm_utils.py                     # 🤖 NVIDIA AI integration
+├── ollama_enrichment.py             # 🤖 Enriquecimiento vía Ollama
 ├── frontend.py                      # 🎨 Streamlit frontend
 ├── config.yaml                      # ⚙️ Configuration
 ├── requirements.txt                 # 📦 Dependencies
