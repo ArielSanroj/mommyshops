@@ -93,6 +93,28 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = Field(default=True, env="RATE_LIMIT_ENABLED")
     RATE_LIMIT_PER_MINUTE: int = Field(default=60, env="RATE_LIMIT_PER_MINUTE")
     RATE_LIMIT_BURST: int = Field(default=10, env="RATE_LIMIT_BURST")
+    
+    # Java Backend Integration
+    JAVA_BACKEND_URL: str = Field(default="http://localhost:8080", env="JAVA_BACKEND_URL")
+    JAVA_INTEGRATION_ENABLED: bool = Field(default=True, env="JAVA_INTEGRATION_ENABLED")
+    JAVA_REQUEST_TIMEOUT: int = Field(default=30, env="JAVA_REQUEST_TIMEOUT")
+    JAVA_HEALTH_CHECK_INTERVAL: int = Field(default=30, env="JAVA_HEALTH_CHECK_INTERVAL")
+    
+    # Circuit Breaker Configuration
+    CIRCUIT_BREAKER_ENABLED: bool = Field(default=True, env="CIRCUIT_BREAKER_ENABLED")
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = Field(default=5, env="CIRCUIT_BREAKER_FAILURE_THRESHOLD")
+    CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = Field(default=30, env="CIRCUIT_BREAKER_RECOVERY_TIMEOUT")
+    
+    # Firebase Configuration
+    FIREBASE_PROJECT_ID: Optional[str] = Field(default=None, env="FIREBASE_PROJECT_ID")
+    FIREBASE_PRIVATE_KEY: Optional[str] = Field(default=None, env="FIREBASE_PRIVATE_KEY")
+    FIREBASE_CLIENT_EMAIL: Optional[str] = Field(default=None, env="FIREBASE_CLIENT_EMAIL")
+    FIREBASE_DATABASE_URL: Optional[str] = Field(default=None, env="FIREBASE_DATABASE_URL")
+    
+    # Environment
+    ENVIRONMENT: str = Field(default="development", env="ENVIRONMENT")
+    DEBUG: bool = Field(default=False, env="DEBUG")
+    REQUIRE_HTTPS: bool = Field(default=False, env="REQUIRE_HTTPS")
 
 # Global settings instance
 _settings: Optional[Settings] = None

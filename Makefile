@@ -27,23 +27,22 @@ install: install-python install-java
 install-python:
 	@echo "Installing Python dependencies..."
 	python3 -m venv venv
-	. venv/bin/activate && pip install -r requirements.txt
-	. venv/bin/activate && pip install -r tests/requirements.txt
+	. venv/bin/activate && pip install -r backend-python/requirements.txt
 
 install-java:
 	@echo "Installing Java dependencies..."
-	cd mommyshops-app && mvn clean install -DskipTests
+	cd backend-java && mvn clean install -DskipTests
 
 # Testing
 test: test-python test-java
 
 test-python:
 	@echo "Running Python tests..."
-	. venv/bin/activate && pytest --cov=backend --cov-report=html --cov-report=term
+	. venv/bin/activate && pytest --cov=backend-python/app --cov-report=html --cov-report=term
 
 test-java:
 	@echo "Running Java tests..."
-	cd mommyshops-app && mvn test
+	cd backend-java && mvn test
 
 test-integration:
 	@echo "Running integration tests..."
@@ -54,26 +53,26 @@ lint: lint-python lint-java
 
 lint-python:
 	@echo "Running Python linters..."
-	. venv/bin/activate && flake8 backend/
-	. venv/bin/activate && pylint backend/
-	. venv/bin/activate && mypy backend/
-	. venv/bin/activate && bandit -r backend/
+	. venv/bin/activate && flake8 backend-python/app/
+	. venv/bin/activate && pylint backend-python/app/
+	. venv/bin/activate && mypy backend-python/app/
+	. venv/bin/activate && bandit -r backend-python/app/
 
 lint-java:
 	@echo "Running Java linters..."
-	cd mommyshops-app && mvn checkstyle:check
+	cd backend-java && mvn checkstyle:check
 
 # Formatting
 format: format-python format-java
 
 format-python:
 	@echo "Formatting Python code..."
-	. venv/bin/activate && black backend/ tests/
-	. venv/bin/activate && isort backend/ tests/
+	. venv/bin/activate && black backend-python/app/
+	. venv/bin/activate && isort backend-python/app/
 
 format-java:
 	@echo "Formatting Java code..."
-	cd mommyshops-app && mvn fmt:format
+	cd backend-java && mvn fmt:format
 
 # Pre-commit
 precommit-install:
@@ -88,11 +87,11 @@ precommit-run:
 # Run services
 run-python:
 	@echo "Starting Python backend on port 8000..."
-	. venv/bin/activate && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+	. venv/bin/activate && uvicorn backend-python.app.main:app --host 0.0.0.0 --port 8000 --reload
 
 run-java:
 	@echo "Starting Java backend on port 8080..."
-	cd mommyshops-app && mvn spring-boot:run
+	cd backend-java && mvn spring-boot:run
 
 # Docker
 docker-build:
@@ -133,7 +132,7 @@ clean:
 	find . -type f -name "*.pyo" -delete
 	rm -rf htmlcov/
 	rm -rf .coverage
-	cd mommyshops-app && mvn clean
+	cd backend-java && mvn clean
 
 clean-all: clean
 	@echo "Cleaning all artifacts including venv..."
@@ -157,15 +156,15 @@ coverage-python:
 
 coverage-java:
 	@echo "Generating Java coverage report..."
-	cd mommyshops-app && mvn clean test jacoco:report
-	@echo "Coverage report: mommyshops-app/target/site/jacoco/index.html"
+	cd backend-java && mvn clean test jacoco:report
+	@echo "Coverage report: backend-java/target/site/jacoco/index.html"
 
 # Security scan
 security-scan:
 	@echo "Running security scans..."
-	. venv/bin/activate && bandit -r backend/ -f json -o security-report.json
+	. venv/bin/activate && bandit -r backend-python/app/ -f json -o security-report.json
 	. venv/bin/activate && safety check --json
-	cd mommyshops-app && mvn dependency-check:check
+	cd backend-java && mvn dependency-check:check
 
 # Performance
 benchmark:

@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import logging
 
-from database import get_db, User
+from app.database.session import get_db
+from app.database.models import User
 from core.config import get_settings
-from core.security import get_current_user, get_current_user_optional
+from app.security.auth import get_current_user, get_current_user_optional
 
 logger = logging.getLogger(__name__)
 

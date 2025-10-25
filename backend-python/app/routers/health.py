@@ -12,7 +12,9 @@ import psutil
 import os
 
 from app.dependencies import get_database
-from core.config import get_settings
+from app.core.config import get_settings
+from app.services.external_apis import health_check as external_api_health_check
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,17 @@ async def detailed_health_check(
         except Exception as e:
             db_status = f"unhealthy: {str(e)}"
         
+        # Check Redis connectivity
+        redis_status = "healthy"
+        try:
+            r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD)
+            r.ping()
+        except Exception as e:
+            redis_status = f"unhealthy: {str(e)}"
+        
+        # Check external APIs
+        external_api_status = await external_api_health_check()
+        
         # Get system metrics
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
@@ -55,8 +68,8 @@ async def detailed_health_check(
             "version": "1.0.0",
             "components": {
                 "database": db_status,
-                "redis": "not_checked",  # TODO: Add Redis health check
-                "external_apis": "not_checked"  # TODO: Add external API health checks
+                "redis": redis_status,
+                "external_apis": external_api_status
             },
             "system_metrics": {
                 "cpu_percent": cpu_percent,
@@ -108,3 +121,40 @@ async def liveness_check():
         "status": "alive",
         "timestamp": time.time()
     }
+
+@router.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    try:
+        # Get system metrics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # Format as Prometheus metrics
+        metrics_data = f"""# HELP system_cpu_percent CPU usage percentage
+# TYPE system_cpu_percent gauge
+system_cpu_percent {cpu_percent}
+
+# HELP system_memory_percent Memory usage percentage
+# TYPE system_memory_percent gauge
+system_memory_percent {memory.percent}
+
+# HELP system_memory_available_gb Memory available in GB
+# TYPE system_memory_available_gb gauge
+system_memory_available_gb {round(memory.available / (1024**3), 2)}
+
+# HELP system_disk_percent Disk usage percentage
+# TYPE system_disk_percent gauge
+system_disk_percent {disk.percent}
+
+# HELP system_disk_free_gb Disk free space in GB
+# TYPE system_disk_free_gb gauge
+system_disk_free_gb {round(disk.free / (1024**3), 2)}
+"""
+        
+        return metrics_data
+        
+    except Exception as e:
+        logger.error(f"Metrics collection failed: {e}")
+        return f"# Error collecting metrics: {str(e)}"
