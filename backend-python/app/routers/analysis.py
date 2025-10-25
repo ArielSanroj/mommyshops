@@ -10,11 +10,13 @@ import logging
 import time
 
 from app.dependencies import get_database, require_auth, optional_auth
-from database import User, Product, Ingredient
-from services.analysis_service import AnalysisService
-from services.ocr_service import OCRService
-from services.ingredient_service import IngredientService
-from pydantic import BaseModel
+from app.database.models import User, Product, Ingredient
+from app.services.analysis_service import AnalysisService
+from app.services.ocr_service import OCRService
+from app.services.ingredient_service import IngredientService
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +24,27 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 # Pydantic models
 class AnalysisRequest(BaseModel):
-    text: str
-    user_need: Optional[str] = None
-    notes: Optional[str] = None
+    text: str = Field(..., min_length=1, max_length=10000, description="Text to analyze")
+    user_need: Optional[str] = Field(None, max_length=500, description="User's specific needs")
+    notes: Optional[str] = Field(None, max_length=1000, description="Additional notes")
+    
+    @validator('text')
+    def validate_text(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Text cannot be empty')
+        # Remove potentially harmful content
+        v = re.sub(r'<script.*?</script>', '', v, flags=re.IGNORECASE | re.DOTALL)
+        v = re.sub(r'<[^>]+>', '', v)  # Remove HTML tags
+        return v.strip()
+    
+    @validator('user_need', 'notes')
+    def validate_optional_fields(cls, v):
+        if v is not None:
+            # Remove potentially harmful content
+            v = re.sub(r'<script.*?</script>', '', v, flags=re.IGNORECASE | re.DOTALL)
+            v = re.sub(r'<[^>]+>', '', v)  # Remove HTML tags
+            return v.strip()
+        return v
 
 class AnalysisResponse(BaseModel):
     success: bool
@@ -36,8 +56,41 @@ class AnalysisResponse(BaseModel):
     processing_time: float
 
 class IngredientAnalysisRequest(BaseModel):
-    ingredients: List[str]
-    user_concerns: Optional[List[str]] = None
+    ingredients: List[str] = Field(..., min_items=1, max_items=50, description="List of ingredients to analyze")
+    user_concerns: Optional[List[str]] = Field(None, max_items=10, description="User's specific concerns")
+    
+    @validator('ingredients')
+    def validate_ingredients(cls, v):
+        if not v:
+            raise ValueError('At least one ingredient is required')
+        
+        # Validate each ingredient
+        validated_ingredients = []
+        for ingredient in v:
+            if not ingredient or not ingredient.strip():
+                continue
+            # Sanitize ingredient name
+            ingredient = re.sub(r'<[^>]+>', '', ingredient.strip())
+            if ingredient and len(ingredient) <= 200:  # Reasonable length limit
+                validated_ingredients.append(ingredient)
+        
+        if not validated_ingredients:
+            raise ValueError('No valid ingredients provided')
+        
+        return validated_ingredients
+    
+    @validator('user_concerns')
+    def validate_user_concerns(cls, v):
+        if v is not None:
+            validated_concerns = []
+            for concern in v:
+                if concern and concern.strip():
+                    # Sanitize concern
+                    concern = re.sub(r'<[^>]+>', '', concern.strip())
+                    if concern and len(concern) <= 100:
+                        validated_concerns.append(concern)
+            return validated_concerns
+        return v
 
 class IngredientAnalysisResponse(BaseModel):
     success: bool
@@ -105,8 +158,34 @@ async def analyze_image(
                 detail="File must be an image"
             )
         
+        # Validate file size (5MB limit)
+        MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+        if file.size and file.size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File too large. Maximum size is 5MB"
+            )
+        
+        # Validate file extension
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
+        file_extension = None
+        if file.filename:
+            file_extension = '.' + file.filename.split('.')[-1].lower()
+            if file_extension not in allowed_extensions:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
+                )
+        
         # Read file content
         file_content = await file.read()
+        
+        # Validate file content size
+        if len(file_content) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File too large. Maximum size is 5MB"
+            )
         
         # Use OCR service to extract text
         ocr_service = OCRService()

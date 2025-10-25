@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
+import os
 import time
 from typing import Dict, Any
 
@@ -26,11 +27,9 @@ from app.middleware import (
 from app.dependencies import get_app_settings
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+from app.core.logging import setup_logging, get_logger
+setup_logging(os.getenv("ENVIRONMENT", "development"))
+logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

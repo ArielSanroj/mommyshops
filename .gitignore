@@ -49,11 +49,13 @@ htmlcov/
 *.log
 logs/
 *.pid
+backend-python/backend.log
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+dev_sqlite.db
 
 # Environment variables
 .env
@@ -121,6 +123,10 @@ image_base64.txt
 cir_cache.json
 iccr_cache.json
 sccs_cache.json
+__pycache__/
+.pytest_cache/
+htmlcov/
+.coverage
 
 # Test results
 test_results/

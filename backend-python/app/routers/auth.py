@@ -11,10 +11,12 @@ from datetime import datetime, timedelta
 import logging
 
 from app.dependencies import get_database, require_auth, optional_auth
-from core.config import get_settings
-from core.security import create_access_token, verify_password, get_password_hash
-from database import User
-from pydantic import BaseModel, EmailStr
+from app.core.config import get_settings
+from app.security.jwt import create_access_token
+from app.security.password import verify_password, hash_password
+from app.database.models import User
+from pydantic import BaseModel, EmailStr, Field, validator
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +24,37 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 
 # Pydantic models
 class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    full_name: Optional[str] = None
+    username: str = Field(..., min_length=3, max_length=50, description="Username")
+    email: EmailStr = Field(..., description="Email address")
+    password: str = Field(..., min_length=8, max_length=128, description="Password")
+    full_name: Optional[str] = Field(None, max_length=100, description="Full name")
+    
+    @validator('username')
+    def validate_username(cls, v):
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError('Username can only contain letters, numbers, underscores, and hyphens')
+        return v.lower()
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain at least one number')
+        return v
+    
+    @validator('full_name')
+    def validate_full_name(cls, v):
+        if v is not None:
+            # Remove potentially harmful content
+            v = re.sub(r'<[^>]+>', '', v.strip())
+            if not v:
+                return None
+        return v
 
 class UserResponse(BaseModel):
     id: str
