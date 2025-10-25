@@ -1,0 +1,132 @@
+graph TB
+    subgraph "Load Balancer"
+        LB[Nginx Load Balancer<br/>SSL Termination]
+    end
+    
+    subgraph "Application Tier"
+        subgraph "Java Backend Cluster"
+            J1[Java App 1<br/>Port 8080]
+            J2[Java App 2<br/>Port 8080]
+            J3[Java App 3<br/>Port 8080]
+        end
+        
+        subgraph "Python Backend Cluster"
+            P1[Python App 1<br/>Port 8000]
+            P2[Python App 2<br/>Port 8000]
+            P3[Python App 3<br/>Port 8000]
+        end
+    end
+    
+    subgraph "Data Tier"
+        subgraph "Primary Database"
+            PG1[(PostgreSQL Master<br/>Write Operations)]
+            PG2[(PostgreSQL Replica<br/>Read Operations)]
+        end
+        
+        subgraph "Cache Layer"
+            R1[(Redis Master<br/>L2 Cache)]
+            R2[(Redis Replica<br/>L2 Cache)]
+        end
+        
+        subgraph "External Storage"
+            FB[(Firebase Firestore<br/>Real-time Data)]
+        end
+    end
+    
+    subgraph "AI/ML Services"
+        OLLAMA[Ollama AI<br/>Local LLM]
+        NEMO[NVIDIA Nemotron<br/>Cloud AI]
+    end
+    
+    subgraph "External APIs"
+        FDA[FDA API]
+        EWG[EWG Database]
+        PUB[PubChem API]
+        COS[COSING API]
+    end
+    
+    subgraph "Monitoring"
+        PROM[Prometheus<br/>Metrics Collection]
+        GRAF[Grafana<br/>Dashboards]
+        ALERT[AlertManager<br/>Notifications]
+    end
+    
+    subgraph "Infrastructure"
+        K8S[Kubernetes Cluster]
+        DOCKER[Docker Containers]
+        SECRETS[Secret Management]
+    end
+    
+    %% Connections
+    LB --> J1
+    LB --> J2
+    LB --> J3
+    
+    J1 --> P1
+    J1 --> P2
+    J1 --> P3
+    J2 --> P1
+    J2 --> P2
+    J2 --> P3
+    J3 --> P1
+    J3 --> P2
+    J3 --> P3
+    
+    J1 --> PG1
+    J2 --> PG1
+    J3 --> PG1
+    J1 --> PG2
+    J2 --> PG2
+    J3 --> PG2
+    
+    J1 --> R1
+    J2 --> R1
+    J3 --> R1
+    P1 --> R1
+    P2 --> R1
+    P3 --> R1
+    
+    P1 --> FB
+    P2 --> FB
+    P3 --> FB
+    
+    P1 --> OLLAMA
+    P2 --> OLLAMA
+    P3 --> OLLAMA
+    P1 --> NEMO
+    P2 --> NEMO
+    P3 --> NEMO
+    
+    P1 --> FDA
+    P1 --> EWG
+    P1 --> PUB
+    P1 --> COS
+    
+    J1 --> PROM
+    J2 --> PROM
+    J3 --> PROM
+    P1 --> PROM
+    P2 --> PROM
+    P3 --> PROM
+    
+    PROM --> GRAF
+    PROM --> ALERT
+    
+    %% Styling
+    classDef loadbalancer fill:#ffeb3b
+    classDef java fill:#f3e5f5
+    classDef python fill:#e8f5e8
+    classDef database fill:#e3f2fd
+    classDef cache fill:#fff3e0
+    classDef external fill:#fce4ec
+    classDef monitoring fill:#f1f8e9
+    classDef infra fill:#fafafa
+    
+    class LB loadbalancer
+    class J1,J2,J3 java
+    class P1,P2,P3 python
+    class PG1,PG2,FB database
+    class R1,R2 cache
+    class FDA,EWG,PUB,COS,OLLAMA,NEMO external
+    class PROM,GRAF,ALERT monitoring
+    class K8S,DOCKER,SECRETS infra

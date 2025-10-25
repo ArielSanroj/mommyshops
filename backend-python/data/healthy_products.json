@@ -1,0 +1,944 @@
+[
+  {
+    "id": "cerave_hydrating_cleanser",
+    "name": "CeraVe Crema Limpiadora Hidratante",
+    "brand": "CeraVe",
+    "category": "limpiador facial",
+    "description": "Limpia sin tensioactivos agresivos y repone la barrera con ceramidas y acido hialuronico.",
+    "highlights": [
+      "Sin fragancia",
+      "Ceramidas + acido hialuronico",
+      "Avalado por dermatologos"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "National Eczema Association"
+    ],
+    "attributes": {
+      "skin_face": [
+        "seca",
+        "sensible",
+        "normal"
+      ],
+      "goals_face": [
+        "hidratar_profundamente",
+        "calmar_sensibilidad"
+      ],
+      "climate": [
+        "seco",
+        "templado",
+        "frio_extremo"
+      ],
+      "conditions": [
+        "dermatitis",
+        "embarazo"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos",
+        "sin_parabenos",
+        "sin_alcoholes_secantes"
+      ],
+      "budget_level": [
+        "accesible"
+      ]
+    },
+    "sources": [
+      "https://www.ewg.org/skindeep/products/601931-CeraVe_Hydrating_Facial_Cleanser/",
+      "https://www.cerave.com/our-products/cleansers/hydrating-facial-cleanser"
+    ]
+  },
+  {
+    "id": "la_roche_posay_effaclar_mat",
+    "name": "La Roche-Posay Effaclar Mat",
+    "brand": "La Roche-Posay",
+    "category": "hidratante facial oil-free",
+    "description": "Gel hidratante oil-free que reduce brillo, afina poros y mantiene la piel mate.",
+    "highlights": [
+      "Control de sebo con zinc",
+      "Textura no comedogenica",
+      "Ideal para climas calidos"
+    ],
+    "ewg_score": "2",
+    "certifications": [],
+    "attributes": {
+      "skin_face": [
+        "grasa",
+        "mixta"
+      ],
+      "goals_face": [
+        "controlar_brillo",
+        "mejorar_textura"
+      ],
+      "climate": [
+        "humedo",
+        "cambiante",
+        "altas_temperaturas"
+      ],
+      "conditions": [
+        "acne"
+      ],
+      "fragrance_preference": [
+        "aroma_citrico"
+      ],
+      "ingredient_preferences": [
+        "sin_parabenos"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.laroche-posay.us/effaclar-mat-oily-skin-moisturizer-3337872413027.html"
+    ]
+  },
+  {
+    "id": "cosrx_advanced_snail_essence",
+    "name": "COSRX Advanced Snail 96 Mucin Essence",
+    "brand": "COSRX",
+    "category": "esencia facial",
+    "description": "Esencia ligera con mucina de caracol que repara, hidrata y mejora manchas sin irritar.",
+    "highlights": [
+      "96% mucina reparadora",
+      "Cruelty free",
+      "Absorcion rapida"
+    ],
+    "ewg_score": "1-2",
+    "certifications": [],
+    "attributes": {
+      "skin_face": [
+        "mixta",
+        "normal",
+        "sensible"
+      ],
+      "goals_face": [
+        "hidratar_profundamente",
+        "tratar_manchas",
+        "prevenir_arrugas"
+      ],
+      "climate": [
+        "templado",
+        "cambiante"
+      ],
+      "conditions": [
+        "melasma",
+        "ninguna"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "ingredient_preferences": [
+        "cruelty_free",
+        "sin_alcoholes_secantes"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.cosrx.com/products/advanced-snail-96-mucin-power-essence"
+    ]
+  },
+  {
+    "id": "biossance_squalane_copper_serum",
+    "name": "Biossance Squalane + Copper Peptide Rapid Plumping Serum",
+    "brand": "Biossance",
+    "category": "serum facial",
+    "description": "Serum vegano con esqualano, peptidos y acido hialuronico para rellenar e hidratar piel madura o seca.",
+    "highlights": [
+      "Formula vegana sin siliconas",
+      "Peptidos pro-colageno",
+      "Textura ligera de rapida absorcion"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "ECOCERT",
+      "PETA"
+    ],
+    "attributes": {
+      "skin_face": [
+        "seca",
+        "madura"
+      ],
+      "goals_face": [
+        "hidratar_profundamente",
+        "prevenir_arrugas"
+      ],
+      "climate": [
+        "seco",
+        "frio_extremo"
+      ],
+      "conditions": [
+        "embarazo"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_siliconas",
+        "sin_parabenos"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://www.biossance.com/products/squalane-copper-peptide-rapid-plumping-serum"
+    ]
+  },
+  {
+    "id": "paulas_choice_calm_toner",
+    "name": "Paula's Choice Calm Nourishing Toner",
+    "brand": "Paula's Choice",
+    "category": "tonico facial",
+    "description": "Tonico calmante con avena y beta glucanos para piel sensible propensa a enrojecimiento.",
+    "highlights": [
+      "Sin fragancia ni alcohol",
+      "Alivia enrojecimiento",
+      "Textura lechosa nutritiva"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "Leaping Bunny"
+    ],
+    "attributes": {
+      "skin_face": [
+        "sensible",
+        "mixta"
+      ],
+      "goals_face": [
+        "calmar_sensibilidad",
+        "mejorar_textura"
+      ],
+      "climate": [
+        "templado",
+        "cambiante"
+      ],
+      "conditions": [
+        "rosacea",
+        "alergias"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos",
+        "sin_alcoholes_secantes"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.paulaschoice.com/calm-restoring-moisturizer-normal-to-oily-skin/461.html"
+    ]
+  },
+  {
+    "id": "vichy_liftactiv_supreme",
+    "name": "Vichy Liftactiv Supreme",
+    "brand": "Vichy",
+    "category": "crema facial antiedad",
+    "description": "Crema con ramnose, vitamina C y agua termal que reafirma y mejora arrugas marcadas.",
+    "highlights": [
+      "Reafirma piel madura",
+      "Textura nutritiva",
+      "Con agua termal mineralizante"
+    ],
+    "ewg_score": "2",
+    "certifications": [],
+    "attributes": {
+      "skin_face": [
+        "madura",
+        "seca"
+      ],
+      "goals_face": [
+        "prevenir_arrugas",
+        "hidratar_profundamente"
+      ],
+      "climate": [
+        "frio_extremo"
+      ],
+      "conditions": [
+        "psoriasis"
+      ],
+      "fragrance_preference": [
+        "aroma_floral"
+      ],
+      "ingredient_preferences": [
+        "sin_parabenos"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://www.vichyusa.com/liftactiv-supreme"
+    ]
+  },
+  {
+    "id": "cerave_sa_body_lotion",
+    "name": "CeraVe Locion SA para Piel Rugosa",
+    "brand": "CeraVe",
+    "category": "locion corporal exfoliante",
+    "description": "Locion corporal con acido salicilico y ceramidas que suaviza textura y evita resequedad.",
+    "highlights": [
+      "Exfoliacion suave diaria",
+      "Ceramidas restauradoras",
+      "Sin perfume"
+    ],
+    "ewg_score": "2",
+    "certifications": [
+      "National Eczema Association"
+    ],
+    "attributes": {
+      "skin_body": [
+        "tendencia_a_manchas",
+        "sensibilidad",
+        "seca"
+      ],
+      "goals_body": [
+        "exfoliacion_suave",
+        "aliviar_sensibilidad",
+        "hidratacion_intensiva",
+        "reducir_manchas",
+        "atenuar_estrias_o_cicatrices"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "ingredient_preferences": [
+        "sin_parabenos",
+        "sin_sulfatos"
+      ],
+      "budget_level": [
+        "accesible"
+      ]
+    },
+    "sources": [
+      "https://www.cerave.com/our-products/moisturizers/sa-lotion-for-rough-and-bumpy-skin"
+    ]
+  },
+  {
+    "id": "weleda_skin_food_body_butter",
+    "name": "Weleda Skin Food Body Butter",
+    "brand": "Weleda",
+    "category": "manteca corporal nutritiva",
+    "description": "Manteca untuosa con manteca de karite y cacao para piel muy seca y sensible.",
+    "highlights": [
+      "Formula vegana",
+      "Nutricion intensa sin siliconas",
+      "Aroma botanico suave"
+    ],
+    "ewg_score": "2",
+    "certifications": [
+      "NATRUE",
+      "Cruelty Free International"
+    ],
+    "attributes": {
+      "skin_body": [
+        "muy_seca",
+        "sensibilidad"
+      ],
+      "goals_body": [
+        "hidratacion_intensiva",
+        "aliviar_sensibilidad"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.weleda.com/product/skin-food-body-butter"
+    ]
+  },
+  {
+    "id": "bio_oil_skincare_oil",
+    "name": "Bio-Oil Skincare Oil",
+    "brand": "Bio-Oil",
+    "category": "aceite corporal",
+    "description": "Aceite ligero con vitamina E y aceites vegetales que mejora tono y elasticidad.",
+    "highlights": [
+      "Apoya elasticidad",
+      "Textura de rapida absorcion",
+      "Ideal para embarazadas"
+    ],
+    "ewg_score": "3",
+    "certifications": [],
+    "attributes": {
+      "skin_body": [
+        "normal",
+        "muy_seca"
+      ],
+      "goals_body": [
+        "atenuar_estrias_o_cicatrices",
+        "mejorar_firmeza"
+      ],
+      "fragrance_preference": [
+        "aroma_floral"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.bio-oil.com/product/skincare-oil"
+    ]
+  },
+  {
+    "id": "eucerin_urea_repair_plus",
+    "name": "Eucerin UreaRepair PLUS 10% Urea Lotion",
+    "brand": "Eucerin",
+    "category": "locion corporal reparadora",
+    "description": "Locion con urea y ceramidas que aporta hidratacion intensa por 48 horas.",
+    "highlights": [
+      "Alivio inmediato de picazon",
+      "Sin fragancia",
+      "Apta para piel diabetica"
+    ],
+    "ewg_score": "2",
+    "certifications": [],
+    "attributes": {
+      "skin_body": [
+        "muy_seca",
+        "seca"
+      ],
+      "goals_body": [
+        "hidratacion_intensiva",
+        "aliviar_sensibilidad"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "ingredient_preferences": [
+        "sin_parabenos"
+      ],
+      "budget_level": [
+        "intermedio"
+      ]
+    },
+    "sources": [
+      "https://www.eucerin.com/products/urea-repair-plus/urea-repair-plus-lotion-10"
+    ]
+  },
+  {
+    "id": "ren_aha_smart_renewal_body_serum",
+    "name": "REN AHA Smart Renewal Body Serum",
+    "brand": "REN Clean Skincare",
+    "category": "serum corporal",
+    "description": "Serum corporal con AHA que ilumina tono, suaviza manchas y deja acabado satinado.",
+    "highlights": [
+      "AHA de origen natural",
+      "Formula vegana",
+      "Sin siliconas"
+    ],
+    "ewg_score": "3",
+    "certifications": [
+      "Cruelty Free International",
+      "Vegan Society"
+    ],
+    "attributes": {
+      "skin_body": [
+        "tendencia_a_manchas",
+        "normal"
+      ],
+      "goals_body": [
+        "reducir_manchas",
+        "exfoliacion_suave"
+      ],
+      "fragrance_preference": [
+        "aroma_floral"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_siliconas"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://www.renskincare.com/products/aha-smart-renewal-body-serum"
+    ]
+  },
+  {
+    "id": "innersense_hydrating_cream_hairbath",
+    "name": "Innersense Hydrating Cream Hairbath",
+    "brand": "Innersense Organic Beauty",
+    "category": "shampoo hidratante",
+    "description": "Shampoo botanico con aloe y aceites nutritivos que hidrata rizos y ondas sin sulfatos.",
+    "highlights": [
+      "Certificado organico",
+      "Sin siliconas ni sulfatos",
+      "Aroma herbal suave"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "USDA Organic",
+      "Cruelty Free International"
+    ],
+    "attributes": {
+      "hair_type": [
+        "ondulado",
+        "rizado",
+        "afro"
+      ],
+      "goals_hair": [
+        "hidratar_y_sellar",
+        "definir_rizos_ondas",
+        "control_de_frizz"
+      ],
+      "hair_porosity": [
+        "media",
+        "alta"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_seco"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos",
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://innersensebeauty.com/products/hydrating-cream-hairbath"
+    ]
+  },
+  {
+    "id": "briogeo_dont_despair_repair_mask",
+    "name": "Briogeo Don't Despair, Repair! Deep Conditioning Mask",
+    "brand": "Briogeo",
+    "category": "mascarilla capilar",
+    "description": "Mascarilla con algas, B-vitaminas y aceite de rosa mosqueta que repara dano y fortalece fibras.",
+    "highlights": [
+      "97% ingredientes naturales",
+      "Libre de siliconas y sulfatos",
+      "Aporta brillo y elasticidad"
+    ],
+    "ewg_score": "2",
+    "certifications": [
+      "Leaping Bunny"
+    ],
+    "attributes": {
+      "hair_type": [
+        "ondulado",
+        "rizado",
+        "tratado_quimicamente"
+      ],
+      "goals_hair": [
+        "reparar_dano_quimico",
+        "fortalecer_la_fibra"
+      ],
+      "hair_porosity": [
+        "alta"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_seco"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos",
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://briogeohair.com/products/dont-despair-repair-deep-conditioning-mask"
+    ]
+  },
+  {
+    "id": "k18_leave_in_molecular_repair",
+    "name": "K18 Leave-In Molecular Repair Hair Mask",
+    "brand": "K18",
+    "category": "tratamiento capilar leave-in",
+    "description": "Tratamiento con peptidos bioactivos que repara enlaces tras decoloracion o calor.",
+    "highlights": [
+      "Actua en 4 minutos",
+      "Libre de siliconas y sulfatos",
+      "Protege de dano futuro"
+    ],
+    "ewg_score": "2",
+    "certifications": [],
+    "attributes": {
+      "hair_type": [
+        "liso_fino",
+        "liso_grueso",
+        "tratado_quimicamente"
+      ],
+      "goals_hair": [
+        "reparar_dano_quimico",
+        "fortalecer_la_fibra"
+      ],
+      "hair_porosity": [
+        "media",
+        "alta",
+        "no_estoy_segura"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_sensible"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos",
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "sin_fragancia"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://k18hair.com/products/k18-leave-in-molecular-repair-hair-mask"
+    ]
+  },
+  {
+    "id": "christophe_robin_purifying_scrub",
+    "name": "Christophe Robin Cleansing Purifying Scrub with Sea Salt",
+    "brand": "Christophe Robin",
+    "category": "exfoliante capilar",
+    "description": "Exfoliante con sal marina que purifica raices grasas y calma irritacion.",
+    "highlights": [
+      "Desintoxica cuero cabelludo",
+      "Aporta volumen inmediato",
+      "Formula sin siliconas"
+    ],
+    "ewg_score": "3",
+    "certifications": [],
+    "attributes": {
+      "hair_type": [
+        "liso_grueso",
+        "ondulado",
+        "rizado"
+      ],
+      "goals_hair": [
+        "control_de_frizz",
+        "aumentar_volumen"
+      ],
+      "hair_porosity": [
+        "media"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_graso",
+        "caspa"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos"
+      ],
+      "fragrance_preference": [
+        "aroma_citrico"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://www.christopherobin.com/cleansing-purifying-scrub-sea-salt/11864820.html"
+    ]
+  },
+  {
+    "id": "acure_ultra_hydrating_shampoo",
+    "name": "Acure Ultra Hydrating Shampoo",
+    "brand": "Acure",
+    "category": "shampoo hidratante",
+    "description": "Shampoo vegano con argan y calabaza que hidrata cabellos finos a ondulados sin pesarlos.",
+    "highlights": [
+      "Vegano y cruelty free",
+      "Sin sulfatos ni parabenos",
+      "Ideal para cuero cabelludo seco"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "Leaping Bunny"
+    ],
+    "attributes": {
+      "hair_type": [
+        "liso_fino",
+        "ondulado"
+      ],
+      "goals_hair": [
+        "hidratar_y_sellar"
+      ],
+      "hair_porosity": [
+        "baja",
+        "media"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_seco"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos",
+        "sin_parabenos"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "budget_level": [
+        "accesible"
+      ]
+    },
+    "sources": [
+      "https://acure.com/products/ultra-hydrating-shampoo"
+    ]
+  },
+  {
+    "id": "shea_moisture_curl_enhancing_smoothie",
+    "name": "SheaMoisture Curl Enhancing Smoothie",
+    "brand": "SheaMoisture",
+    "category": "crema definidora",
+    "description": "Crema con manteca de karite y aceite de coco que define rizos y controla frizz.",
+    "highlights": [
+      "Libre de sulfatos",
+      "Aporta brillo y suavidad",
+      "Ideal para rizos y cabello afro"
+    ],
+    "ewg_score": "2",
+    "certifications": [
+      "Leaping Bunny"
+    ],
+    "attributes": {
+      "hair_type": [
+        "rizado",
+        "afro"
+      ],
+      "goals_hair": [
+        "definir_rizos_ondas",
+        "control_de_frizz",
+        "hidratar_y_sellar"
+      ],
+      "hair_porosity": [
+        "media",
+        "alta"
+      ],
+      "ingredient_preferences": [
+        "sin_sulfatos",
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "aroma_floral"
+      ],
+      "budget_level": [
+        "accesible"
+      ]
+    },
+    "sources": [
+      "https://www.sheamoisture.com/curl-enhancing-smoothie.html"
+    ]
+  },
+  {
+    "id": "josh_rosebrook_balance_shampoo",
+    "name": "Josh Rosebrook Balance Shampoo",
+    "brand": "Josh Rosebrook",
+    "category": "shampoo equilibrante",
+    "description": "Shampoo suave con plantas adaptogenas que equilibra cuero cabelludo sensible.",
+    "highlights": [
+      "Vegano y cruelty free",
+      "Sin sulfatos",
+      "Aroma botanico ligero"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "Leaping Bunny"
+    ],
+    "attributes": {
+      "hair_type": [
+        "liso_fino",
+        "liso_grueso",
+        "ondulado"
+      ],
+      "goals_hair": [
+        "control_de_frizz",
+        "fortalecer_la_fibra"
+      ],
+      "hair_porosity": [
+        "media"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_sensible"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://joshrosebrook.com/products/balance-shampoo"
+    ]
+  },
+  {
+    "id": "avalon_organics_anti_dandruff_shampoo",
+    "name": "Avalon Organics Anti-Dandruff Itch and Flake Shampoo",
+    "brand": "Avalon Organics",
+    "category": "shampoo anticaspa",
+    "description": "Shampoo con acido salicilico, aloe y aceites botanicos que combate la caspa sin sulfatos.",
+    "highlights": [
+      "Certificado vegano",
+      "Alivia picazon",
+      "Aroma citrico refrescante"
+    ],
+    "ewg_score": "2",
+    "certifications": [
+      "NSF Organic",
+      "Vegan"
+    ],
+    "attributes": {
+      "hair_type": [
+        "liso_grueso",
+        "ondulado",
+        "rizado"
+      ],
+      "goals_hair": [
+        "fortalecer_la_fibra",
+        "control_de_frizz"
+      ],
+      "hair_porosity": [
+        "media"
+      ],
+      "scalp_condition": [
+        "caspa",
+        "cuero_cabelludo_graso"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "sin_sulfatos",
+        "sin_parabenos"
+      ],
+      "fragrance_preference": [
+        "aroma_citrico"
+      ],
+      "budget_level": [
+        "accesible"
+      ]
+    },
+    "sources": [
+      "https://www.avalonorganics.com/en/products/anti-dandruff-itch-flake-shampoo/"
+    ]
+  },
+  {
+    "id": "rahua_classic_shampoo",
+    "name": "Rahua Classic Shampoo",
+    "brand": "Rahua",
+    "category": "shampoo fortalecedor",
+    "description": "Shampoo con aceite de rahua y quinoa que fortalece y equilibra cuero cabelludo.",
+    "highlights": [
+      "Certificado rainforest grown",
+      "Sin siliconas ni sulfatos",
+      "Aroma herbal relajante"
+    ],
+    "ewg_score": "1",
+    "certifications": [
+      "Cruelty Free International",
+      "Vegan Society"
+    ],
+    "attributes": {
+      "hair_type": [
+        "liso_grueso",
+        "ondulado",
+        "rizado"
+      ],
+      "goals_hair": [
+        "fortalecer_la_fibra",
+        "control_de_frizz"
+      ],
+      "hair_porosity": [
+        "media",
+        "no_estoy_segura"
+      ],
+      "scalp_condition": [
+        "cuero_cabelludo_sensible"
+      ],
+      "ingredient_preferences": [
+        "vegano",
+        "cruelty_free",
+        "sin_sulfatos",
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "aroma_natural_suave"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://rahua.com/products/classic-shampoo"
+    ]
+  },
+  {
+    "id": "living_proof_full_thickening_cream",
+    "name": "Living Proof Full Thickening Cream",
+    "brand": "Living Proof",
+    "category": "crema voluminizadora",
+    "description": "Crema ligera que da cuerpo duradero a cabello fino sin residuos pegajosos.",
+    "highlights": [
+      "Tecnologia patentada OFPMA",
+      "Sin siliconas",
+      "Protege del calor"
+    ],
+    "ewg_score": "3",
+    "certifications": [],
+    "attributes": {
+      "hair_type": [
+        "liso_fino"
+      ],
+      "goals_hair": [
+        "aumentar_volumen",
+        "fortalecer_la_fibra"
+      ],
+      "hair_porosity": [
+        "baja",
+        "no_estoy_segura"
+      ],
+      "ingredient_preferences": [
+        "sin_siliconas"
+      ],
+      "fragrance_preference": [
+        "aroma_citrico"
+      ],
+      "budget_level": [
+        "premium"
+      ]
+    },
+    "sources": [
+      "https://www.livingproof.com/products/full-thickening-cream"
+    ]
+  }
+]

@@ -1,0 +1,146 @@
+# Integration Configuration for Java-Python Communication
+# This file contains specific settings for Java-Python integration
+
+spring:
+  application:
+    name: mommyshops-java-backend
+  
+  # Database configuration for integration tests
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  # JPA configuration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+  # H2 Console for testing
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Python Backend Integration Configuration
+python:
+  backend:
+    url: ${PYTHON_BACKEND_URL:http://localhost:8000}
+    timeout: ${PYTHON_BACKEND_TIMEOUT:30000}
+    retry:
+      max-attempts: 3
+      delay: 1000
+      max-delay: 10000
+      multiplier: 2
+    circuit-breaker:
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 30s
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+    time-limiter:
+      timeout-duration: 30s
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      python-backend:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        
+  retry:
+    instances:
+      python-backend:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        max-wait-duration: 10s
+        
+  timelimiter:
+    instances:
+      python-backend:
+        timeout-duration: 30s
+        cancel-running-future: true
+
+# Logging Configuration
+logging:
+  level:
+    com.mommyshops.integration: DEBUG
+    com.mommyshops.analysis: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    io.github.resilience4j: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,retries,timelimiters
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Security Configuration
+security:
+  jwt:
+    secret: ${JWT_SECRET:test-secret-key-for-integration-tests}
+    expiration: 3600
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: Content-Type,Authorization,X-Requested-With
+    max-age: 3600
+
+# External API Configuration
+external:
+  api:
+    timeout: 10000
+    retry:
+      max-attempts: 3
+      delay: 1000
+    circuit-breaker:
+      failure-rate-threshold: 60
+      wait-duration-in-open-state: 60s
+
+# Cache Configuration
+cache:
+  type: simple
+  ttl: 300000 # 5 minutes
+
+# File Upload Configuration
+file:
+  upload:
+    max-size: 10MB
+    allowed-types: image/jpeg,image/png,image/webp
+    temp-dir: ${java.io.tmpdir}
+
+# Integration Test Configuration
+integration:
+  test:
+    python-backend:
+      enabled: true
+      health-check-interval: 5000
+      max-retries: 3
+    mock:
+      external-apis: false
+      ollama-service: false
+    timeout:
+      default: 30000
+      health-check: 5000
+      analysis: 60000

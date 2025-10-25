@@ -1,0 +1,230 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+
+jobs:
+  python-security:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety semgrep
+
+    - name: Run Bandit security linter
+      run: |
+        bandit -r backend-python/ -f json -o bandit-report.json
+        bandit -r backend-python/ -f txt
+
+    - name: Run Safety check
+      run: |
+        safety check --json --output safety-report.json
+        safety check
+
+    - name: Run Semgrep
+      run: |
+        semgrep --config=auto backend-python/ --json --output=semgrep-report.json
+        semgrep --config=auto backend-python/
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: python-security-results
+        path: |
+          bandit-report.json
+          safety-report.json
+          semgrep-report.json
+
+  java-security:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+
+    - name: Run SpotBugs security analysis
+      run: |
+        cd backend-java
+        mvn spotbugs:check
+
+    - name: Run OWASP Dependency Check
+      run: |
+        cd backend-java
+        mvn org.owasp:dependency-check-maven:check
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: java-security-results
+        path: |
+          backend-java/target/spotbugsXml.xml
+          backend-java/target/dependency-check-report.html
+
+  docker-security:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker images
+      run: |
+        docker build -t mommyshops-python:latest ./backend-python
+        docker build -t mommyshops-java:latest ./backend-java
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'mommyshops-python:latest'
+        format: 'sarif'
+        output: 'trivy-python-results.sarif'
+
+    - name: Run Trivy vulnerability scanner for Java
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'mommyshops-java:latest'
+        format: 'sarif'
+        output: 'trivy-java-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-python-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-java-results.sarif'
+
+  codeql-analysis:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python', 'java' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC, GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0
+        deny-licenses: GPL-1.0, AGPL-1.0, AGPL-3.0
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run TruffleHog secret scanner
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  license-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install pip-licenses
+
+    - name: Check Python dependencies licenses
+      run: |
+        pip-licenses --format=json --output-file=python-licenses.json
+        pip-licenses --format=table
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'temurin'
+
+    - name: Check Java dependencies licenses
+      run: |
+        cd backend-java
+        mvn license:add-third-party
+
+    - name: Upload license check results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: license-check-results
+        path: |
+          python-licenses.json
+          backend-java/target/generated-sources/license/

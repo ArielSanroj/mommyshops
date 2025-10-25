@@ -1,0 +1,194 @@
+# Testing requirements for MommyShops project
+
+# Core testing framework
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-xdist==3.5.0
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+
+# FastAPI testing
+httpx==0.25.2
+fastapi[all]==0.104.1
+testclient==0.2.1
+
+# Database testing
+sqlalchemy==2.0.23
+alembic==1.12.1
+pytest-postgresql==5.0.0
+
+# Mock and fixtures
+factory-boy==3.3.0
+faker==20.1.0
+responses==0.24.1
+
+# Coverage and reporting
+coverage==7.3.2
+pytest-cov==4.1.0
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+
+# Performance testing
+locust==2.17.0
+pytest-benchmark==4.0.0
+
+# Security testing
+bandit==1.7.5
+safety==2.3.5
+
+# Code quality
+flake8==6.1.0
+black==23.11.0
+isort==5.12.0
+mypy==1.7.1
+
+# Integration testing
+requests==2.31.0
+websockets==12.0
+
+# Test data generation
+hypothesis==6.92.1
+freezegun==1.2.2
+
+# Monitoring and logging
+structlog==23.2.0
+python-json-logger==2.0.7
+
+# Async testing
+aiohttp==3.9.1
+asyncio-mock==0.1.2
+
+# Database fixtures
+pytest-postgresql==5.0.0
+pytest-redis==3.0.0
+
+# Image testing
+Pillow==10.1.0
+opencv-python==4.8.1.78
+
+# OCR testing
+pytesseract==0.3.10
+
+# Machine learning testing
+scikit-learn==1.3.2
+numpy==1.25.2
+pandas==2.1.4
+
+# External API testing
+vcrpy==6.0.1
+betamax==0.8.1
+
+# Load testing
+locust==2.17.0
+pytest-loadtest==0.1.0
+
+# Test utilities
+pytest-timeout==2.2.0
+pytest-repeat==0.9.1
+pytest-rerunfailures==12.0
+
+# Documentation testing
+pytest-doctestplus==0.13.0
+sphinx==7.2.6
+
+# Environment testing
+python-dotenv==1.0.0
+environ==1.0.0
+
+# Test configuration
+pytest-env==0.8.0
+pytest-sugar==0.9.7
+pytest-clarity==1.0.1
+
+# Database testing utilities
+pytest-postgresql==5.0.0
+pytest-redis==3.0.0
+pytest-mysql==2.3.0
+
+# API testing
+pytest-httpx==0.25.0
+pytest-socket==0.5.1
+
+# Test reporting
+pytest-json-report==1.5.0
+pytest-html==4.1.1
+pytest-cov==4.1.0
+
+# Performance testing
+pytest-benchmark==4.0.0
+pytest-profiling==1.7.0
+
+# Security testing
+pytest-security==0.1.0
+pytest-bandit==0.1.0
+
+# Test data management
+pytest-datadir==1.4.1
+pytest-tmpdir==0.1.0
+
+# Test parallelization
+pytest-xdist==3.5.0
+pytest-parallel==0.1.0
+
+# Test debugging
+pytest-debugging==0.1.0
+pytest-trace==0.1.0
+
+# Test monitoring
+pytest-monitor==1.0.0
+pytest-metrics==0.1.0
+
+# Test documentation
+pytest-docstring==0.1.0
+pytest-annotate==0.1.0
+
+# Test configuration management
+pytest-config==0.1.0
+pytest-settings==0.1.0
+
+# Test data generation
+pytest-factoryboy==2.5.1
+pytest-fixture-order==0.1.0
+
+# Test utilities
+pytest-helpers-namespace==2019.1.8
+pytest-mock==3.12.0
+pytest-stub==0.1.0
+
+# Test reporting and visualization
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+pytest-cov==4.1.0
+
+# Test performance
+pytest-benchmark==4.0.0
+pytest-profiling==1.7.0
+
+# Test automation
+pytest-xdist==3.5.0
+pytest-parallel==0.1.0
+
+# Test data management
+pytest-datadir==1.4.1
+pytest-tmpdir==0.1.0
+
+# Test debugging and monitoring
+pytest-debugging==0.1.0
+pytest-trace==0.1.0
+pytest-monitor==1.0.0
+pytest-metrics==0.1.0
+
+# Test documentation and configuration
+pytest-docstring==0.1.0
+pytest-annotate==0.1.0
+pytest-config==0.1.0
+pytest-settings==0.1.0
+
+# Test data generation and fixtures
+pytest-factoryboy==2.5.1
+pytest-fixture-order==0.1.0
+pytest-helpers-namespace==2019.1.8
+pytest-mock==3.12.0
+pytest-stub==0.1.0

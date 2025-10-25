@@ -1,0 +1,149 @@
+# MommyShops - Configuración Principal
+# Configuración consolidada para desarrollo local
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: mommyshops
+  main:
+    banner-mode: off
+    web-application-type: servlet
+  threads:
+    virtual:
+      enabled: true
+  
+  # Database Configuration
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/mommyshops}
+    username: ${DB_USERNAME:mommyshops}
+    password: ${DB_PASSWORD:change-me}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  
+  # Security Configuration
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+  
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Vaadin Configuration
+vaadin:
+  production-mode: false
+  close-idle-sessions: true
+  heartbeat-interval: 300
+  whitelisted-packages: com.mommyshops
+  allowed-packages: com.mommyshops
+  launch-browser: false
+
+# Python Backend Integration
+python:
+  backend:
+    url: ${PYTHON_BACKEND_URL:http://localhost:8000}
+    timeout: ${PYTHON_BACKEND_TIMEOUT:30000}
+    retry:
+      max-attempts: 3
+      delay: 1000
+
+# External API Configuration
+external:
+  api:
+    fda:
+      key: ${FDA_API_KEY:}
+      base-url: https://api.fda.gov
+    ewg:
+      key: ${EWG_API_KEY:}
+      base-url: https://www.ewg.org/skindeep
+    pubchem:
+      base-url: https://pubchem.ncbi.nlm.nih.gov/rest/pug
+    who:
+      base-url: https://ghoapi.azureedge.net/api
+
+# Ollama Configuration
+ollama:
+  base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+  model: ${OLLAMA_MODEL:llama3.1}
+  vision-model: ${OLLAMA_VISION_MODEL:llava}
+  timeout: 120
+
+# Analysis Configuration
+analysis:
+  confidence:
+    threshold: 70
+  max-ingredients: 50
+  cache:
+    duration: 3600
+
+# Monitoring Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always
+
+# Logging Configuration
+logging:
+  level:
+    com.mommyshops: INFO
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/mommyshops.log
+

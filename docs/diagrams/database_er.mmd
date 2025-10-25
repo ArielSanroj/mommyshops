@@ -1,0 +1,100 @@
+erDiagram
+    USERS {
+        int id PK
+        string email UK
+        string hashed_password
+        string full_name
+        string firebase_uid UK
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    USER_PROFILES {
+        int id PK
+        int user_id FK
+        string skin_type
+        string[] concerns
+        jsonb preferences
+        timestamp created_at
+    }
+    
+    INGREDIENTS {
+        int id PK
+        string name
+        string inci_name UK
+        string cas_number
+        decimal eco_score
+        string risk_level
+        text description
+        text benefits
+        text risks
+        jsonb sources
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PRODUCTS {
+        int id PK
+        string name
+        string brand
+        string category
+        string[] ingredients
+        decimal avg_eco_score
+        jsonb analysis_data
+        timestamp created_at
+    }
+    
+    ANALYSIS_HISTORY {
+        int id PK
+        int user_id FK
+        int product_id FK
+        string analysis_type
+        jsonb results
+        decimal confidence
+        timestamp created_at
+    }
+    
+    RECOMMENDATIONS {
+        int id PK
+        int user_id FK
+        int product_id FK
+        text recommendation_text
+        jsonb alternatives
+        decimal score
+        timestamp created_at
+    }
+    
+    CACHE_METADATA {
+        string key PK
+        jsonb value
+        timestamp expires_at
+        timestamp created_at
+    }
+    
+    INGREDIENT_ANALYSIS {
+        int id PK
+        int ingredient_id FK
+        string analysis_type
+        jsonb results
+        decimal confidence
+        timestamp created_at
+    }
+    
+    EXTERNAL_API_CALLS {
+        int id PK
+        string api_name
+        string endpoint
+        jsonb request_data
+        jsonb response_data
+        int status_code
+        timestamp created_at
+    }
+    
+    %% Relationships
+    USERS ||--o{ USER_PROFILES : "has profile"
+    USERS ||--o{ ANALYSIS_HISTORY : "performs analysis"
+    USGREDIENTS ||--o{ INGREDIENT_ANALYSIS : "analyzed"
+    PRODUCTS ||--o{ ANALYSIS_HISTORY : "analyzed in"
+    USERS ||--o{ RECOMMENDATIONS : "receives"
+    PRODUCTS ||--o{ RECOMMENDATIONS : "recommended for"
