@@ -3,8 +3,9 @@ Security middleware configuration
 """
 
 from fastapi import FastAPI
-from security_enhanced import configure_enhanced_security
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 def configure_security_middleware(app: FastAPI):
     """Configure security middleware"""
-    configure_enhanced_security(app)
+    # Add trusted host middleware
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])

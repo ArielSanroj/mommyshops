@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MommyShops - Cosmetic Ingredient Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .upload-area {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .ingredient-item.warning {
+            border-left-color: #ffc107;
+        }
+
+        .ingredient-item.danger {
+            border-left-color: #dc3545;
+        }
+
+        .ingredient-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .ingredient-score {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .ingredient-score.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .ingredient-score.danger {
+            background: #dc3545;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .preview-image {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧴 MommyShops</h1>
+            <p>Cosmetic Ingredient Analyzer & Safety Checker</p>
+        </div>
+
+        <div class="main-content">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('image')">📸 Image Analysis</div>
+                <div class="tab" onclick="switchTab('text')">📝 Text Analysis</div>
+            </div>
+
+            <!-- Image Analysis Tab -->
+            <div id="image-tab" class="tab-content active">
+                <div class="upload-section">
+                    <div class="upload-area">
+                        <div class="upload-icon">📷</div>
+                        <h3>Upload Product Image</h3>
+                        <p>Take a photo or upload an image of your cosmetic product's ingredient list</p>
+                        <input type="file" id="imageInput" class="file-input" accept="image/*">
+                        <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                            Choose Image
+                        </button>
+                        <div id="imagePreview"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" placeholder="Enter product name (optional)">
+                </div>
+
+                <div class="form-group">
+                    <label for="userNeed">Your Skin Type/Concerns</label>
+                    <select id="userNeed">
+                        <option value="general">General</option>
+                        <option value="sensitive_skin">Sensitive Skin</option>
+                        <option value="acne_prone">Acne Prone</option>
+                        <option value="dry_skin">Dry Skin</option>
+                        <option value="oily_skin">Oily Skin</option>
+                        <option value="mature_skin">Mature Skin</option>
+                    </select>
+                </div>
+
+                <button class="analyze-btn" onclick="analyzeImage()">
+                    🔍 Analyze Product
+                </button>
+            </div>
+
+            <!-- Text Analysis Tab -->
+            <div id="text-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="ingredientText">Ingredient List</label>
+                    <textarea id="ingredientText" rows="6" placeholder="Paste your ingredient list here...&#10;Example:&#10;AQUA, GLYCERIN, DIMETHICONE, CYCLOPENTASILOXANE, BUTYLENE GLYCOL, SODIUM HYALURONATE, PHENOXYETHANOL, METHYLPARABEN, PROPYLPARABEN, FRAGRANCE"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="textProductName">Product Name</label>
+                    <input type="text" id="textProductName" placeholder="Enter product name (optional)">
+                </div>
+
+                <div class="form-group">
+                    <label for="textUserNeed">Your Skin Type/Concerns</label>
+                    <select id="textUserNeed">
+                        <option value="general">General</option>
+                        <option value="sensitive_skin">Sensitive Skin</option>
+                        <option value="acne_prone">Acne Prone</option>
+                        <option value="dry_skin">Dry Skin</option>
+                        <option value="oily_skin">Oily Skin</option>
+                        <option value="mature_skin">Mature Skin</option>
+                    </select>
+                </div>
+
+                <button class="analyze-btn" onclick="analyzeText()">
+                    🔍 Analyze Ingredients
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="results-section">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing your product... This may take a few seconds.</p>
+                </div>
+
+                <div id="resultsContent" style="display: none;">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" class="preview-image" alt="Preview">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function() {
+            previewImage(this);
+        });
+
+        async function analyzeImage() {
+            const fileInput = document.getElementById('imageInput');
+            const productName = document.getElementById('productName').value || 'Unknown Product';
+            const userNeed = document.getElementById('userNeed').value;
+
+            if (!fileInput.files[0]) {
+                alert('Please select an image file first!');
+                return;
+            }
+
+            showLoading();
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('product_name', productName);
+            formData.append('user_need', userNeed);
+
+            try {
+                const response = await fetch(`${API_BASE}/analyze/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                showResults(result);
+            } catch (error) {
+                showError('Failed to analyze image: ' + error.message);
+            }
+        }
+
+        async function analyzeText() {
+            const ingredientText = document.getElementById('ingredientText').value;
+            const productName = document.getElementById('textProductName').value || 'Unknown Product';
+            const userNeed = document.getElementById('textUserNeed').value;
+
+            if (!ingredientText.trim()) {
+                alert('Please enter ingredient list first!');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE}/analyze/text?text=${encodeURIComponent(ingredientText)}&product_name=${encodeURIComponent(productName)}&user_need=${encodeURIComponent(userNeed)}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                showResults(result);
+            } catch (error) {
+                showError('Failed to analyze text: ' + error.message);
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('results').classList.add('show');
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsContent').style.display = 'none';
+        }
+
+        function showResults(result) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+
+            const resultsContent = document.getElementById('resultsContent');
+            
+            if (result.success) {
+                resultsContent.innerHTML = `
+                    <div class="success">
+                        ✅ Analysis completed successfully!
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">📊 Product Analysis</div>
+                        <p><strong>Product:</strong> ${result.product_name}</p>
+                        <p><strong>Safety Score:</strong> ${result.avg_eco_score}/100</p>
+                        <p><strong>Suitability:</strong> ${result.suitability}</p>
+                        <p><strong>Processing Time:</strong> ${result.processing_time}s</p>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-title">🧪 Ingredient Analysis</div>
+                        ${result.ingredients.map(ingredient => `
+                            <div class="ingredient-item ${getIngredientClass(ingredient.score)}">
+                                <div>
+                                    <div class="ingredient-name">${ingredient.name}</div>
+                                    <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">${ingredient.description}</div>
+                                </div>
+                                <div class="ingredient-score ${getScoreClass(ingredient.score)}">${ingredient.score}/100</div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-title">💡 Recommendations</div>
+                        <ul style="list-style: none; padding: 0;">
+                            ${result.recommendations.map(rec => `<li style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 8px;">💡 ${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    ${result.extracted_text ? `
+                    <div class="result-card">
+                        <div class="result-title">📄 Extracted Text</div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">${result.extracted_text}</div>
+                    </div>
+                    ` : ''}
+                `;
+            } else {
+                resultsContent.innerHTML = `
+                    <div class="error">
+                        ❌ Analysis failed: ${result.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="error">
+                    ❌ ${message}
+                </div>
+            `;
+        }
+
+        function getIngredientClass(score) {
+            if (score >= 80) return '';
+            if (score >= 60) return 'warning';
+            return 'danger';
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return '';
+            if (score >= 60) return 'warning';
+            return 'danger';
+        }
+
+        // Check API health on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                console.log('API Health:', health);
+            } catch (error) {
+                console.error('API not available:', error);
+                alert('⚠️ API server is not running. Please start the backend server first.');
+            }
+        });
+    </script>
+</body>
+</html>
