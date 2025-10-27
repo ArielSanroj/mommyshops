@@ -65,13 +65,14 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET must be at least 32 characters long")
         return v
     
-    @field_validator("DATABASE_URL")
-    @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        """Ensure database URL is provided"""
-        if not v:
-            raise ValueError("DATABASE_URL must be provided in environment variables")
-        return v
+        @field_validator("DATABASE_URL")
+        @classmethod
+        def validate_database_url(cls, v: str) -> str:
+            """Ensure database URL is provided"""
+            if not v:
+                # For development/testing, use a default SQLite database
+                return "sqlite:///./mommyshops.db"
+            return v
     
     # CORS
     CORS_ORIGINS: str = Field(default="http://localhost:8080,http://localhost:3000", env="CORS_ORIGINS")

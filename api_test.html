@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MommyShops API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 MommyShops API Connection Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Backend Status</h2>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="healthResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 Text Analysis Test</h2>
+        <button onclick="testTextAnalysis()">Test Text Analysis</button>
+        <div id="textResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🌐 Frontend Connection Test</h2>
+        <button onclick="testFrontendConnection()">Test Frontend → Backend</button>
+        <div id="frontendResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Health check successful!</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Health check failed: ${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Connection failed: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function testTextAnalysis() {
+            const resultDiv = document.getElementById('textResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const testText = "AQUA, GLYCERIN, DIMETHICONE";
+                const url = `${API_BASE}/analyze/text?text=${encodeURIComponent(testText)}&product_name=Test Product&user_need=general`;
+                
+                const response = await fetch(url, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Text analysis successful!</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Text analysis failed: ${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Text analysis error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function testFrontendConnection() {
+            const resultDiv = document.getElementById('frontendResult');
+            resultDiv.innerHTML = 'Testing frontend connection...';
+            
+            try {
+                // Test the exact same request format as the frontend
+                const ingredientText = `Aqua
+Cetearyl Alcohol
+Cetrimonium Chloride
+Glycerin
+Cyclopentasiloxane
+Dimethicone`;
+                
+                const productName = "Test Hair Product";
+                const userNeed = "general";
+                
+                const url = `${API_BASE}/analyze/text?text=${encodeURIComponent(ingredientText)}&product_name=${encodeURIComponent(productName)}&user_need=${encodeURIComponent(userNeed)}`;
+                
+                console.log('Making request to:', url);
+                
+                const response = await fetch(url, {
+                    method: 'POST'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Frontend connection successful!</div>
+                        <div><strong>Status:</strong> ${response.status}</div>
+                        <div><strong>Product:</strong> ${data.product_name}</div>
+                        <div><strong>Score:</strong> ${data.avg_eco_score}/100</div>
+                        <div><strong>Suitability:</strong> ${data.suitability}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Frontend connection failed: ${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Frontend connection error: ${error.message}</div>
+                    <div>Check browser console for more details.</div>
+                `;
+            }
+        }
+        
+        // Auto-run health test on page load
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

@@ -9,9 +9,9 @@ import logging
 import time
 from datetime import datetime
 
-from database import Product, Ingredient, User
-from services.ingredient_service import IngredientService
-from services.ocr_service import OCRService
+from app.database.models import Product, Ingredient, User
+from app.services.ingredient_service import IngredientService
+from app.services.ocr_service import OCRService
 
 logger = logging.getLogger(__name__)
 

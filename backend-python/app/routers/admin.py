@@ -9,7 +9,7 @@ from typing import List, Dict, Any
 import logging
 
 from app.dependencies import get_database, require_admin
-from database import User, Product, Ingredient
+from app.database.models import User, Product, Ingredient
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
