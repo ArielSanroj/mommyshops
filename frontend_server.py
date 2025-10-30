@@ -11,6 +11,11 @@ import os
 import sys
 from pathlib import Path
 
+LANDING_PATH = Path("frontend/landing/index.html")
+APP_PATH = Path("frontend.html")
+API_TEST_PATH = Path("api_test.html")
+
+
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Custom handler to serve HTML files with proper MIME types"""
     
@@ -22,21 +27,26 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
     
     def do_GET(self):
-        # Serve frontend.html as the main page
-        if self.path == '/' or self.path == '/index.html':
-            self.path = '/frontend.html'
+        # Serve landing page as entry point
+        if self.path in {'/', '/index.html'}:
+            self.path = f'/{LANDING_PATH.as_posix()}'
+        # Serve app interface
+        elif self.path in {'/app', '/app/', '/app/index.html'}:
+            self.path = f'/{APP_PATH.as_posix()}'
         # Serve API test page
         elif self.path == '/test':
-            self.path = '/api_test.html'
+            self.path = f'/{API_TEST_PATH.as_posix()}'
         return super().do_GET()
 
 def start_frontend_server(port=10888):
     """Start the frontend server"""
     
-    # Check if frontend.html exists
-    if not os.path.exists('frontend.html'):
-        print("❌ Error: frontend.html not found!")
-        print("Please make sure frontend.html is in the current directory.")
+    missing_files = [path for path in (LANDING_PATH, APP_PATH, API_TEST_PATH) if not path.exists()]
+    if missing_files:
+        print("❌ Error: required frontend assets not found:")
+        for path in missing_files:
+            print(f"   - {path}")
+        print("Please make sure the static files are present in the project directory.")
         return False
     
     try:
@@ -44,9 +54,10 @@ def start_frontend_server(port=10888):
         with socketserver.TCPServer(("", port), CustomHTTPRequestHandler) as httpd:
             print("🚀 MommyShops Frontend Server Starting...")
             print("=" * 50)
-            print(f"📱 Frontend URL: http://localhost:{port}")
+            print(f"📱 Landing URL:  http://localhost:{port}/")
+            print(f"🌐 App URL:      http://localhost:{port}/app")
+            print(f"🧪 API tester:  http://localhost:{port}/test")
             print(f"📁 Serving files from: {os.getcwd()}")
-            print(f"🌐 Main page: http://localhost:{port}/frontend.html")
             print("=" * 50)
             print("✨ Features:")
             print("   📸 Image upload and analysis")

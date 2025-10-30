@@ -25,7 +25,7 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; echo '✅ Packages installed and Requirements met'",
+  "postCreateCommand": "[ -f packages.txt ] && sudo apt update && sudo xargs apt install -y <packages.txt; [ -f backend-python/requirements.txt ] && pip install -r backend-python/requirements.txt; echo '✅ Dev container ready'",
   "portsAttributes": {
     "8501": {
       "label": "Application",
