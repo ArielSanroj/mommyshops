@@ -12,7 +12,7 @@ import psutil
 import os
 
 from app.dependencies import get_database
-from app.core.config import get_settings
+from core.config import get_settings
 from app.services.external_apis import health_check as external_api_health_check
 import redis
 
@@ -42,6 +42,9 @@ async def detailed_health_check(
         except Exception as e:
             db_status = f"unhealthy: {str(e)}"
         
+        # Get application settings
+        settings = get_settings()
+        
         # Check Redis connectivity
         redis_status = "healthy"
         try:
@@ -57,9 +60,6 @@ async def detailed_health_check(
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
-        
-        # Get application settings
-        settings = get_settings()
         
         return {
             "status": "healthy" if db_status == "healthy" else "degraded",

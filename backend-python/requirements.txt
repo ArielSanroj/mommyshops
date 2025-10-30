@@ -19,6 +19,7 @@ celery[redis]==5.3.4
 # HTTP Client
 httpx==0.25.2
 tenacity==8.2.3
+waha==1.0.5
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0

@@ -9,7 +9,7 @@ from typing import Optional, List
 import logging
 import time
 
-from app.dependencies import get_database, require_auth, optional_auth
+from app.dependencies import get_database, optional_auth, require_auth
 from app.database.models import User, Product, Ingredient
 from app.services.analysis_service import AnalysisService
 from app.services.ocr_service import OCRService
@@ -25,6 +25,7 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 # Pydantic models
 class AnalysisRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=10000, description="Text to analyze")
+    product_name: Optional[str] = Field(None, max_length=200, description="Product name for category detection")
     user_need: Optional[str] = Field(None, max_length=500, description="User's specific needs")
     notes: Optional[str] = Field(None, max_length=1000, description="Additional notes")
     
@@ -49,10 +50,12 @@ class AnalysisRequest(BaseModel):
 class AnalysisResponse(BaseModel):
     success: bool
     product_name: Optional[str] = None
+    product_type: Optional[str] = None
     ingredients: List[dict] = []
     avg_eco_score: Optional[float] = None
     suitability: Optional[str] = None
     recommendations: List[str] = []
+    structured_report: Optional[dict] = None
     processing_time: float
 
 class IngredientAnalysisRequest(BaseModel):
@@ -102,7 +105,7 @@ class IngredientAnalysisResponse(BaseModel):
 @router.post("/text", response_model=AnalysisResponse)
 async def analyze_text(
     request: AnalysisRequest,
-    current_user: User = Depends(require_auth),
+    current_user: Optional[User] = Depends(optional_auth),
     db: Session = Depends(get_database)
 ):
     """Analyze text for ingredients and provide analysis"""
@@ -110,24 +113,30 @@ async def analyze_text(
     
     try:
         analysis_service = AnalysisService(db)
+        user_id = current_user.id if current_user else "dev-user"
         result = await analysis_service.analyze_text(
             text=request.text,
-            user_id=current_user.id,
+            user_id=user_id,
             user_need=request.user_need,
-            notes=request.notes
+            notes=request.notes,
+            product_name=request.product_name
         )
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Text analysis completed for user {current_user.id} in {processing_time:.2f}s")
+        logger.info(
+            f"Text analysis completed for user {current_user.id if current_user else 'dev-user'} in {processing_time:.2f}s"
+        )
         
         return AnalysisResponse(
             success=result.get("success", False),
             product_name=result.get("product_name"),
+            product_type=result.get("product_type"),
             ingredients=result.get("ingredients", []),
             avg_eco_score=result.get("avg_eco_score"),
             suitability=result.get("suitability"),
             recommendations=result.get("recommendations", []),
+            structured_report=result.get("structured_report"),
             processing_time=processing_time
         )
         
@@ -144,7 +153,7 @@ async def analyze_image(
     product_name: Optional[str] = Form(None),
     user_need: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
-    current_user: User = Depends(require_auth),
+    current_user: Optional[User] = Depends(optional_auth),
     db: Session = Depends(get_database)
 ):
     """Analyze image for ingredients using OCR"""
@@ -199,9 +208,10 @@ async def analyze_image(
         
         # Analyze extracted text
         analysis_service = AnalysisService(db)
+        user_id = current_user.id if current_user else "dev-user"
         result = await analysis_service.analyze_text(
             text=extracted_text,
-            user_id=current_user.id,
+            user_id=user_id,
             user_need=user_need,
             notes=notes,
             product_name=product_name
@@ -209,7 +219,9 @@ async def analyze_image(
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Image analysis completed for user {current_user.id} in {processing_time:.2f}s")
+        logger.info(
+            f"Image analysis completed for user {current_user.id if current_user else 'dev-user'} in {processing_time:.2f}s"
+        )
         
         return AnalysisResponse(
             success=result.get("success", False),
@@ -233,7 +245,7 @@ async def analyze_image(
 @router.post("/ingredients", response_model=IngredientAnalysisResponse)
 async def analyze_ingredients(
     request: IngredientAnalysisRequest,
-    current_user: User = Depends(require_auth),
+    current_user: Optional[User] = Depends(optional_auth),
     db: Session = Depends(get_database)
 ):
     """Analyze specific ingredients"""
@@ -241,9 +253,10 @@ async def analyze_ingredients(
     
     try:
         ingredient_service = IngredientService(db)
+        user_id = current_user.id if current_user else "dev-user"
         result = await ingredient_service.analyze_ingredients(
             ingredients=request.ingredients,
-            user_id=current_user.id,
+            user_id=user_id,
             user_concerns=request.user_concerns
         )
         

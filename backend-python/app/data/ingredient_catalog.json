@@ -1,0 +1,213 @@
+{
+  "Aqua": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "none",
+    "eco": true,
+    "description": "Water - esencial y completamente seguro",
+    "categories": ["all"]
+  },
+  "Cetearyl Alcohol": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Alcohol graso emulsionante y acondicionador",
+    "categories": ["hair_conditioner", "skincare"],
+    "aliases": ["Cetearyl Alcohol (and) Ceteareth-20"]
+  },
+  "Ceteareth-20": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Emulsionante no iónico común en acondicionadores",
+    "categories": ["hair_conditioner"]
+  },
+  "PEG-100 Stearate": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": false,
+    "description": "Emulsionante derivado de PEG con bajo riesgo según EWG",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Cetrimonium Chloride": {
+    "score": 70,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Acondicionador catiónico eficaz, posible irritación",
+    "categories": ["hair_conditioner"]
+  },
+  "Behentrimonium Chloride": {
+    "score": 75,
+    "ewg": 3,
+    "risk": "low",
+    "eco": true,
+    "description": "Acondicionador catiónico derivado de colza",
+    "categories": ["hair_conditioner"]
+  },
+  "Behentrimonium Methosulfate": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "BTMS: acondicionador catiónico suave y altamente compatible",
+    "categories": ["hair_conditioner"],
+    "aliases": ["BTMS", "Behentrimonium Methosulfate (and) Cetearyl Alcohol"]
+  },
+  "Polyquaternium-10": {
+    "score": 70,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Polímero catiónico, puede generar acumulación",
+    "categories": ["hair_conditioner"]
+  },
+  "Guar Hydroxypropyltrimonium Chloride": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Derivado de guar catiónico, alternativa vegetal suave",
+    "categories": ["hair_conditioner"]
+  },
+  "Dimethicone": {
+    "score": 60,
+    "ewg": 5,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Silicona no volátil, aporta desliz pero puede acumularse",
+    "categories": ["hair_conditioner", "styling"]
+  },
+  "Amodimethicone": {
+    "score": 65,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Silicona funcional con depósito selectivo, menos residuo",
+    "categories": ["hair_conditioner", "styling"]
+  },
+  "Cyclomethicone": {
+    "score": 60,
+    "ewg": 6,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Siliconas cíclicas volátiles, liberan residuo rápidamente",
+    "categories": ["hair_conditioner", "styling"]
+  },
+  "Cyclopentasiloxane": {
+    "score": 55,
+    "ewg": 6,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Silicona volátil de alto desliz",
+    "categories": ["hair_conditioner", "styling"]
+  },
+  "Trideceth-12": {
+    "score": 80,
+    "ewg": 3,
+    "risk": "low",
+    "eco": false,
+    "description": "Surfactante/dispersante usado con siliconas",
+    "categories": ["hair_conditioner"]
+  },
+  "Hydroxyethylcellulose": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Polímero celulósico espesante y estabilizante",
+    "categories": ["hair_conditioner", "styling"]
+  },
+  "Panthenol": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "none",
+    "eco": true,
+    "description": "Provitamina B5, retiene hidratación y mejora elasticidad",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Hydrolyzed Wheat Protein": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Proteína hidrolizada que fortalece la fibra capilar",
+    "categories": ["hair_conditioner"]
+  },
+  "Hydrolyzed Soy Protein": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Proteína vegetal reparadora y acondicionadora",
+    "categories": ["hair_conditioner"]
+  },
+  "Hydrolyzed Corn Protein": {
+    "score": 80,
+    "ewg": 3,
+    "risk": "low",
+    "eco": true,
+    "description": "Proteína hidrolizada de maíz, aporta acondicionamiento",
+    "categories": ["hair_conditioner"]
+  },
+  "Hydrolyzed Keratin": {
+    "score": 80,
+    "ewg": 3,
+    "risk": "low",
+    "eco": true,
+    "description": "Proteína de queratina para fortalecer el cabello",
+    "categories": ["hair_conditioner", "treatment"]
+  },
+  "Phenoxyethanol": {
+    "score": 70,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Conservante sintético de amplio espectro",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Ethylhexylglycerin": {
+    "score": 80,
+    "ewg": 3,
+    "risk": "low",
+    "eco": true,
+    "description": "Potenciador conservante con bajo perfil de irritación",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Disodium EDTA": {
+    "score": 75,
+    "ewg": 3,
+    "risk": "low",
+    "eco": false,
+    "description": "Agente quelante que estabiliza la fórmula",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Sodium Citrate": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Regulador de pH y quelante suave",
+    "categories": ["hair_conditioner", "skincare"]
+  },
+  "Parfum": {
+    "score": 50,
+    "ewg": 8,
+    "risk": "high",
+    "eco": false,
+    "description": "Fragancia genérica que puede contener alérgenos",
+    "categories": ["hair_conditioner", "skincare"],
+    "aliases": ["Fragrance"]
+  },
+  "Fragrance-Free": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "none",
+    "eco": true,
+    "description": "Versión sin fragancia para minimizar sensibilidades",
+    "categories": ["hair_conditioner", "skincare"]
+  }
+}

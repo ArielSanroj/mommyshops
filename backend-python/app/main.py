@@ -13,7 +13,13 @@ import time
 from typing import Dict, Any
 
 # Import routers
-from app.routers import auth_router, analysis_router, health_router, admin_router
+from app.routers import (
+    admin_router,
+    analysis_router,
+    auth_router,
+    health_router,
+    whatsapp_router,
+)
 
 # Import middleware
 from app.middleware import (
@@ -77,6 +83,8 @@ def create_app() -> FastAPI:
     app.include_router(analysis_router)
     app.include_router(health_router)
     app.include_router(admin_router)
+    if whatsapp_router is not None:
+        app.include_router(whatsapp_router)
     
     # Global exception handler
     @app.exception_handler(Exception)

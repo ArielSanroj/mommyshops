@@ -17,8 +17,9 @@ from .password import verify_password
 
 logger = logging.getLogger(__name__)
 
-# OAuth2 scheme
+# OAuth2 scheme with optional token support
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 
 def get_current_user(
@@ -64,7 +65,7 @@ def get_current_user(
 
 
 def get_current_user_optional(
-    token: Optional[str] = Depends(oauth2_scheme),
+    token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """

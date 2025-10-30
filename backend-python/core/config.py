@@ -100,6 +100,11 @@ class Settings(BaseSettings):
     JAVA_INTEGRATION_ENABLED: bool = Field(default=True, env="JAVA_INTEGRATION_ENABLED")
     JAVA_REQUEST_TIMEOUT: int = Field(default=30, env="JAVA_REQUEST_TIMEOUT")
     JAVA_HEALTH_CHECK_INTERVAL: int = Field(default=30, env="JAVA_HEALTH_CHECK_INTERVAL")
+
+    # WhatsApp WAHA Integration
+    WAHA_BASE_URL: Optional[str] = Field(default=None, env="WAHA_BASE_URL")
+    WAHA_API_KEY: Optional[str] = Field(default=None, env="WAHA_API_KEY")
+    WAHA_DEFAULT_SESSION: str = Field(default="default", env="WAHA_DEFAULT_SESSION")
     
     # Circuit Breaker Configuration
     CIRCUIT_BREAKER_ENABLED: bool = Field(default=True, env="CIRCUIT_BREAKER_ENABLED")
@@ -128,4 +133,3 @@ def get_settings() -> Settings:
     if _settings is None:
         _settings = Settings()
     return _settings
-

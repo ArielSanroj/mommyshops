@@ -1,0 +1,58 @@
+{
+  "hair_conditioner": {
+    "DIMETHICONE": [
+      {
+        "name": "Amodimethicone",
+        "reason": "Silicona funcional con depósito selectivo; deja menos residuo."
+      },
+      {
+        "name": "Dimethicone PEG-7 Phosphate",
+        "reason": "Derivado hidrofílico que se elimina fácilmente con lavado suave."
+      }
+    ],
+    "CYCLOPENTASILOXANE": [
+      {
+        "name": "Amodimethicone",
+        "reason": "Alternativa con fijación selectiva y menor volatilidad."
+      }
+    ],
+    "POLYQUATERNIUM-10": [
+      {
+        "name": "Guar Hydroxypropyltrimonium Chloride",
+        "reason": "Polímero catiónico vegetal, buena compatibilidad y baja irritación."
+      }
+    ],
+    "CETRIMONIUM CHLORIDE": [
+      {
+        "name": "Behentrimonium Methosulfate (BTMS)",
+        "reason": "Acondicionador catiónico suave con excelente desenredo."
+      },
+      {
+        "name": "Behentrimonium Chloride",
+        "reason": "Quat de cadena larga, menor potencial de irritación."
+      }
+    ],
+    "PARFUM": [
+      {
+        "name": "Fragrance-Free",
+        "reason": "Versión sin fragancia para minimizar sensibilidades y alergias."
+      }
+    ],
+    "FRAGRANCE": [
+      {
+        "name": "Fragrance-Free",
+        "reason": "Evita mezclas aromáticas que pueden provocar irritación."
+      }
+    ],
+    "PHENOXYETHANOL": [
+      {
+        "name": "Ethylhexylglycerin",
+        "reason": "Conservante auxiliar más suave, reduce potencial de irritación."
+      },
+      {
+        "name": "Sodium Benzoate",
+        "reason": "Conservante aceptado en fórmulas de pH ácido."
+      }
+    ]
+  }
+}

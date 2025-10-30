@@ -11,7 +11,7 @@ from typing import Any, Optional, Dict, Union
 import redis
 import logging
 from functools import wraps
-from app.core.config import get_settings
+from core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
