@@ -11,8 +11,12 @@ import logging
 
 from app.database.session import get_db
 from app.database.models import User
-from core.config import get_settings
+from core.config import Settings, get_settings
 from app.security.auth import get_current_user, get_current_user_optional
+try:
+    from app.services.whatsapp_service import WhatsAppService
+except Exception:
+    WhatsAppService = None  # Optional in dev environments
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +29,9 @@ def get_app_settings():
     return get_settings()
 
 # Database dependency
-def get_database() -> Session:
-    """Get database session"""
-    return get_db()
+def get_database(db: Session = Depends(get_db)) -> Session:
+    """FastAPI-friendly DB dependency that returns a Session, not a generator"""
+    return db
 
 # Authentication dependencies
 def require_auth(current_user: User = Depends(get_current_user)) -> User:
@@ -61,3 +65,19 @@ def get_rate_limit_key(request, current_user: Optional[User] = Depends(optional_
 def get_request_logger():
     """Get request logger with context"""
     return logger
+
+# WhatsApp WAHA service dependency
+_whatsapp_service = None
+
+
+def get_whatsapp_service(
+    settings: Settings = Depends(get_app_settings),
+):
+    """Get WhatsApp service singleton. Optional in local dev; raises if unavailable."""
+    from fastapi import HTTPException
+    global _whatsapp_service
+    if WhatsAppService is None:
+        raise HTTPException(status_code=503, detail="WhatsApp service not available in this environment")
+    if _whatsapp_service is None:
+        _whatsapp_service = WhatsAppService(settings=settings)
+    return _whatsapp_service

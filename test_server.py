@@ -4,7 +4,7 @@ Simple test server for MommyShops
 Tests basic functionality without complex dependencies
 """
 
-from fastapi import FastAPI, File, UploadFile, Form, Query
+from fastapi import FastAPI, File, UploadFile, Form, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 import pytesseract
 from PIL import Image
@@ -21,6 +21,185 @@ pillow_heif.register_heif_opener()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def _build_detailed_report(product_name: str, ingredients_found: list, overall_score: float, avg_ewg_score: float, eco_friendly_percentage: float) -> str:
+    """Build a Spanish executive summary style report with risk and recommendations"""
+    # Classify ingredients by risk using available fields
+    safe = []
+    moderate = []
+    high = []
+    for ing in ingredients_found:
+        risk = (ing.get("risk") or "").lower()
+        if risk == "high":
+            high.append(ing)
+        elif risk == "moderate":
+            moderate.append(ing)
+        else:
+            safe.append(ing)
+
+    def row_line(i):
+        name = i.get("name", "-")
+        ewg = i.get("ewg_score", "-")
+        eco_score = 90 if i.get("eco_friendly") else 40
+        analysis = i.get("description", "")
+        sub = i.get("substitute") or "-"
+        return f"| {name} | {ewg}/10 | {eco_score}/100 | {analysis} | {sub} |"
+
+    lines = []
+    lines.append("**📋 RESUMEN EJECUTIVO**")
+    lines.append("")
+    lines.append(f"He procesado exitosamente el producto {product_name} y aquí están los resultados completos como los vería un usuario final:")
+    lines.append("---")
+    lines.append("")
+    lines.append("**🧪 INGREDIENTES DETECTADOS**")
+    for i in ingredients_found:
+        lines.append(f"• {i.get('name','-')}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("**📊 ANÁLISIS DETALLADO DE SEGURIDAD**")
+    lines.append("")
+    lines.append("**✅ INGREDIENTES SEGUROS (Nivel de Riesgo: BAJO)**")
+    lines.append("| Ingrediente | EWG Score | Eco-Friendly | Análisis |")
+    lines.append("|-------------|-----------|--------------|----------|")
+    for i in safe:
+        # omit substitute column in safe table
+        name = i.get("name","-")
+        ewg = i.get("ewg_score","-")
+        eco_score = 90 if i.get("eco_friendly") else 40
+        analysis = i.get("description","")
+        lines.append(f"| {name} | {ewg}/10 | {eco_score}/100 | {analysis} |")
+    lines.append("")
+    lines.append("**⚠️ INGREDIENTES PROBLEMÁTICOS (Nivel de Riesgo: MEDIO-ALTO)**")
+    lines.append("| Ingrediente | EWG Score | Eco-Friendly | Análisis | Sustituto Recomendado |")
+    lines.append("|-------------|-----------|--------------|----------|----------------------|")
+    for i in high + moderate:
+        lines.append(row_line(i))
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("**📈 ESTADÍSTICAS GENERALES**")
+    total = len(ingredients_found)
+    safe_pct = round((len(safe)/total*100),1) if total else 0
+    prob_cnt = len(high)+len(moderate)
+    prob_pct = round((prob_cnt/total*100),1) if total else 0
+    calif = "EXCELENTE ⭐⭐⭐⭐⭐" if overall_score>=90 else "BUENA ⭐⭐⭐⭐" if overall_score>=75 else "ACEPTABLE ⭐⭐⭐" if overall_score>=60 else "NECESITA MEJORA ⭐⭐"
+    lines.append(f"• Total de Ingredientes: {total}")
+    lines.append(f"• Ingredientes Seguros: {len(safe)} ({safe_pct}%)")
+    lines.append(f"• Ingredientes Problemáticos: {prob_cnt} ({prob_pct}%)")
+    lines.append(f"• Puntaje de Seguridad General: {round(overall_score,1)}%")
+    lines.append(f"• Puntaje Eco-Friendly Promedio: {round(eco_friendly_percentage,1)}%")
+    lines.append(f"• EWG Promedio: {round(avg_ewg_score,1)}/10")
+    lines.append(f"• Calificación General: {calif}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("**🔄 INGREDIENTES SUSTITUTOS RECOMENDADOS**")
+    for i in high + moderate:
+        if i.get("substitute"):
+            lines.append("")
+            lines.append(f"Para {i.get('name')}:\n• {i.get('substitute')}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("**💡 RECOMENDACIONES FINALES**")
+    if prob_cnt:
+        lines.append("**⚠️ ASPECTOS CRÍTICOS:**")
+        lines.append(f"• {prob_pct}% de ingredientes problemáticos")
+    lines.append("**✅ ASPECTOS POSITIVOS:**")
+    if len(safe):
+        lines.append("• Contiene ingredientes considerados seguros")
+    lines.append("")
+    lines.append("**🎯 CONCLUSIÓN:**")
+    if overall_score >= 70:
+        lines.append("Producto generalmente adecuado con preocupaciones menores.")
+    elif overall_score >= 50:
+        lines.append("Producto con preocupaciones moderadas; considerar alternativas.")
+    else:
+        lines.append("Producto con alto riesgo; se recomiendan alternativas más naturales y seguras.")
+    return "\n".join(lines)
+
+def _build_structured_report(product_name: str, ingredients_found: list, overall_score: float, avg_ewg_score: float, eco_friendly_percentage: float) -> dict:
+    """Return a structured report suited for card-based UI rendering, including substitutes and reasons."""
+    detected = [i.get("name", "-") for i in ingredients_found]
+    detected_details = []
+    safe = []
+    problematic = []
+    for i in ingredients_found:
+        risk = (i.get("risk") or "").lower()
+        entry = {
+            "ingredient": i.get("name","-"),
+            "ewg_score": i.get("ewg_score"),
+            "eco_score": 90 if i.get("eco_friendly") else 40,
+            "analysis": i.get("description",""),
+            "substitute": i.get("substitute") or None
+        }
+        detected_details.append({
+            "ingredient": i.get("name","-"),
+            "score": i.get("score"),
+            "risk": i.get("risk"),
+            "ewg_score": i.get("ewg_score"),
+            "eco_score": 90 if i.get("eco_friendly") else 40,
+            "analysis": i.get("description","")
+        })
+        if risk in ("high", "moderate"):
+            problematic.append(entry)
+        else:
+            safe.append({k: entry[k] for k in ["ingredient","ewg_score","eco_score","analysis"]})
+
+    # Build substitutes with hair-appropriate reasons (demo)
+    substitute_reasons = {
+        "Fragrance-free": "Versión sin fragancia para minimizar alérgenos.",
+        "BTMS (Behentrimonium Methosulfate)": "Acondicionador catiónico suave, excelente para desenredar.",
+        "Guar Hydroxypropyltrimonium Chloride": "Acondicionador catiónico de origen vegetal, baja irritación.",
+        "Amodimethicone": "Silicona modificada que se fija donde se necesita y se elimina más fácil.",
+        "Dimethicone PEG-7 Phosphate": "Silicona más hidrofílica, menos acumulación.",
+        "Ethylhexylglycerin": "Conservante auxiliar más suave, reduce irritación.",
+    }
+    substitutes = []
+    for p in problematic:
+        if p.get("substitute"):
+            alt = p["substitute"]
+            substitutes.append({
+                "for": p["ingredient"],
+                "alternatives": [
+                    {"name": alt, "reason": substitute_reasons.get(alt, "Alternativa sugerida por seguridad/compatibilidad.")}
+                ]
+            })
+
+    stats = {
+        "total": len(ingredients_found),
+        "safe_count": len(safe),
+        "problematic_count": len(problematic),
+        "overall_score": round(overall_score, 1),
+        "eco_friendly_percentage": round(eco_friendly_percentage, 1),
+        "avg_ewg_score": round(avg_ewg_score, 1),
+        "rating": "EXCELENTE ⭐⭐⭐⭐⭐" if overall_score>=90 else "BUENA ⭐⭐⭐⭐" if overall_score>=75 else "ACEPTABLE ⭐⭐⭐" if overall_score>=60 else "NECESITA MEJORA ⭐⭐"
+    }
+
+    recs = []
+    if stats["problematic_count"]:
+        pct = round(stats["problematic_count"] / stats["total"] * 100, 1) if stats["total"] else 0
+        recs.append(f"{pct}% de ingredientes problemáticos: revisar sustituciones sugeridas.")
+    if stats["safe_count"]:
+        recs.append("Incluye ingredientes seguros y ampliamente aceptados.")
+
+    # Simple demo product substitutes based on common safer profiles
+    product_substitutes = []
+
+    return {
+        "product_name": product_name,
+        "detected_ingredients": detected,
+        "detected_details": detected_details,
+        "safety": {
+            "safe": safe,
+            "problematic": problematic,
+        },
+        "stats": stats,
+        "substitutes": substitutes,
+        "product_substitutes": product_substitutes,
+        "recommendations": recs,
+    }
 
 def process_heic_image(image_content):
     """Process HEIC image using multiple methods"""
@@ -183,10 +362,15 @@ async def analyze_image(
                 'description': 'Emulsifier and thickener, generally safe',
                 'eco_friendly': True, 'substitute': 'Cetyl Alcohol'
             },
+            'CETEARETH-20': {
+                'score': 85, 'safety_level': 'safe', 'ewg_score': 2, 'risk': 'low',
+                'description': 'Non-ionic emulsifier commonly used in conditioners (EWG ~1-3)',
+                'eco_friendly': True, 'substitute': None
+            },
             'CETRIMONIUM CHLORIDE': {
                 'score': 70, 'safety_level': 'moderate', 'ewg_score': 4, 'risk': 'moderate',
                 'description': 'Conditioning agent, may cause irritation',
-                'eco_friendly': False, 'substitute': 'Behentrimonium Chloride'
+                'eco_friendly': False, 'substitute': 'BTMS (Behentrimonium Methosulfate)'
             },
             'BEHENTRIMONIUM CHLORIDE': {
                 'score': 75, 'safety_level': 'moderate', 'ewg_score': 3, 'risk': 'low',
@@ -202,6 +386,11 @@ async def analyze_image(
                 'score': 80, 'safety_level': 'safe', 'ewg_score': 3, 'risk': 'low',
                 'description': 'Protein for hair strengthening',
                 'eco_friendly': True, 'substitute': 'Hydrolyzed Wheat Protein'
+            },
+            'PEG-100 STEARATE': {
+                'score': 85, 'safety_level': 'safe', 'ewg_score': 2, 'risk': 'low',
+                'description': 'Emulsifier (EWG ~1-3) commonly used in conditioners',
+                'eco_friendly': False, 'substitute': None
             },
             'HYDROLYZED COLLAGEN': {
                 'score': 85, 'safety_level': 'safe', 'ewg_score': 2, 'risk': 'none',
@@ -236,6 +425,11 @@ async def analyze_image(
             'PANTENOL': {
                 'score': 90, 'safety_level': 'safe', 'ewg_score': 1, 'risk': 'none',
                 'description': 'Vitamin B5, excellent for hair and skin',
+                'eco_friendly': True, 'substitute': None
+            },
+            'PANTHENOL': {
+                'score': 90, 'safety_level': 'safe', 'ewg_score': 1, 'risk': 'none',
+                'description': 'Vitamin B5 (Panthenol), excellent for hair and skin',
                 'eco_friendly': True, 'substitute': None
             },
             'HYDROLYZED WHEAT PROTEIN': {
@@ -326,12 +520,32 @@ async def analyze_image(
             'DIMETHICONE': {
                 'score': 60, 'safety_level': 'moderate', 'ewg_score': 5, 'risk': 'moderate',
                 'description': 'Silicone that provides slip but may build up',
-                'eco_friendly': False, 'substitute': 'Cyclopentasiloxane'
+                'eco_friendly': False, 'substitute': 'Amodimethicone'
+            },
+            'AMODIMETHICONE': {
+                'score': 65, 'safety_level': 'moderate', 'ewg_score': 3, 'risk': 'moderate',
+                'description': 'Deposits selectively; easier to remove with mild surfactants',
+                'eco_friendly': False, 'substitute': 'Dimethicone PEG-7 Phosphate'
             },
             'CYCLOPENTASILOXANE': {
                 'score': 55, 'safety_level': 'moderate', 'ewg_score': 6, 'risk': 'moderate',
                 'description': 'Volatile silicone, evaporates quickly',
-                'eco_friendly': False, 'substitute': 'Dimethicone'
+                'eco_friendly': False, 'substitute': None
+            },
+            'CYCLOMETHICONE': {
+                'score': 60, 'safety_level': 'moderate', 'ewg_score': 6, 'risk': 'moderate',
+                'description': 'Blend of cyclic silicones; volatile',
+                'eco_friendly': False, 'substitute': None
+            },
+            'TRIDECETH-12': {
+                'score': 80, 'safety_level': 'safe', 'ewg_score': 3, 'risk': 'low',
+                'description': 'Non-ionic surfactant; helps dispersion',
+                'eco_friendly': False, 'substitute': None
+            },
+            'HYDROXYETHYLCELLULOSE': {
+                'score': 85, 'safety_level': 'safe', 'ewg_score': 1, 'risk': 'low',
+                'description': 'Thickener; improves texture',
+                'eco_friendly': True, 'substitute': None
             },
             'DIMETHICONOL': {
                 'score': 50, 'safety_level': 'moderate', 'ewg_score': 7, 'risk': 'high',
@@ -341,7 +555,7 @@ async def analyze_image(
             'POLYQUATERNIUM-10': {
                 'score': 70, 'safety_level': 'moderate', 'ewg_score': 4, 'risk': 'moderate',
                 'description': 'Conditioning polymer, may cause buildup',
-                'eco_friendly': False, 'substitute': 'Cetyl Alcohol'
+                'eco_friendly': False, 'substitute': 'Guar Hydroxypropyltrimonium Chloride'
             },
             'PROPYLENE GLYCOL': {
                 'score': 65, 'safety_level': 'moderate', 'ewg_score': 5, 'risk': 'moderate',
@@ -371,12 +585,12 @@ async def analyze_image(
             'FRAGRANCE': {
                 'score': 50, 'safety_level': 'moderate', 'ewg_score': 8, 'risk': 'high',
                 'description': 'Synthetic fragrance, may cause allergic reactions',
-                'eco_friendly': False, 'substitute': 'Essential Oils'
+                'eco_friendly': False, 'substitute': 'Fragrance-free'
             },
             'PARFUM': {
                 'score': 50, 'safety_level': 'moderate', 'ewg_score': 8, 'risk': 'high',
                 'description': 'Synthetic fragrance, may cause allergic reactions',
-                'eco_friendly': False, 'substitute': 'Essential Oils'
+                'eco_friendly': False, 'substitute': 'Fragrance-free'
             },
             'CI 19140': {
                 'score': 60, 'safety_level': 'moderate', 'ewg_score': 5, 'risk': 'moderate',
@@ -491,6 +705,20 @@ async def analyze_image(
             },
             "suitability": "suitable" if overall_score >= 70 else "moderate" if overall_score >= 50 else "not_recommended",
             "recommendations": recommendations,
+            "detailed_report": _build_detailed_report(
+                product_name=product_name,
+                ingredients_found=ingredients_found,
+                overall_score=overall_score,
+                avg_ewg_score=avg_ewg_score,
+                eco_friendly_percentage=eco_friendly_percentage
+            ),
+            "structured_report": _build_structured_report(
+                product_name=product_name,
+                ingredients_found=ingredients_found,
+                overall_score=overall_score,
+                avg_ewg_score=avg_ewg_score,
+                eco_friendly_percentage=eco_friendly_percentage
+            ),
             "processing_time": 1.5,
             "api_sources": ["EWG", "PubChem", "OMS", "FDA", "CIR", "SCCS"],
             "substitute_suggestions": [ing.get("substitute") for ing in ingredients_found if ing.get("substitute")]
@@ -510,9 +738,32 @@ async def analyze_image(
         }
 
 @app.post("/analyze/text")
-async def analyze_text(text: str = Query(...), product_name: str = Query("Unknown Product")):
+async def analyze_text(
+    payload: dict = Body(None),
+    text: str = Query(None),
+    product_name: str = Query("Unknown Product"),
+):
     """Analyze text for ingredients with comprehensive API data"""
     try:
+        # Accept JSON body as alternative to query params
+        if payload:
+            if text is None:
+                text = payload.get("text", text)
+            # Only override product_name if provided in body
+            product_name = payload.get("product_name", product_name)
+
+        # Backward compatible: if still None, raise for missing text
+        if text is None:
+            return {
+                "success": False,
+                "error": "Missing 'text'. Send JSON { text, product_name } or use query params.",
+                "product_name": product_name,
+                "ingredients": [],
+                "avg_eco_score": 0,
+                "suitability": "unknown",
+                "recommendations": ["Provide ingredient text"],
+                "processing_time": 0
+            }
         # Use the same comprehensive ingredient database as image analysis
         comprehensive_ingredients = {
             'AQUA': {
@@ -733,19 +984,66 @@ async def analyze_text(text: str = Query(...), product_name: str = Query("Unknow
         }
         
         # Enhanced analysis with comprehensive database
+        # Parse the provided text as a comma-separated list so we reflect exactly what the user entered
+        def normalize_token(token: str) -> str:
+            t = token.upper().strip()
+            # Remove content inside parentheses for matching (e.g., "CITRUS LIMON (LEMON) PEEL OIL")
+            import re
+            t = re.sub(r"\([^\)]*\)", "", t)
+            t = t.replace("  ", " ").strip()
+            return t
+
+        raw_items = [s.strip() for s in text.replace("\n", " ").split(",") if s.strip()]
+        seen = set()
         ingredients_found = []
-        text_upper = text.upper()
-        for ingredient_key, ingredient_data in comprehensive_ingredients.items():
-            if ingredient_key in text_upper:
+
+        # Avoid substring false-positives with an alias map and exact matches only
+        alias_map = {
+            'ETHYLHEXYLGLYCERIN': 'ETHYLHEXYLGLYCERIN',
+            'PANTHENOL': 'PANTHENOL',
+            'PANTENOL': 'PANTHENOL',
+            'CETEARETH 20': 'CETEARETH-20',
+            'CETEARETH-20': 'CETEARETH-20',
+            'PEG 100 STEARATE': 'PEG-100 STEARATE',
+            'PEG-100 STEARATE': 'PEG-100 STEARATE',
+            'CYCLOMETHICONE': 'CYCLOMETHICONE',
+            'TRIDECETH 12': 'TRIDECETH-12',
+            'TRIDECETH-12': 'TRIDECETH-12',
+            'HYDROXYETHYLCELLULOSE': 'HYDROXYETHYLCELLULOSE',
+        }
+
+        for raw in raw_items:
+            raw_clean = raw.strip().rstrip('.;:')
+            normalized = normalize_token(raw_clean)
+            key = alias_map.get(normalized, normalized)
+            if key in comprehensive_ingredients:
+                if key in seen:
+                    continue
+                seen.add(key)
+                d = comprehensive_ingredients[key]
                 ingredients_found.append({
-                    "name": ingredient_key,
-                    "score": ingredient_data['score'],
-                    "safety_level": ingredient_data['safety_level'],
-                    "ewg_score": ingredient_data['ewg_score'],
-                    "risk": ingredient_data['risk'],
-                    "description": ingredient_data['description'],
-                    "eco_friendly": ingredient_data['eco_friendly'],
-                    "substitute": ingredient_data['substitute']
+                    "name": key,
+                    "score": d['score'],
+                    "safety_level": d['safety_level'],
+                    "ewg_score": d['ewg_score'],
+                    "risk": d['risk'],
+                    "description": d['description'],
+                    "eco_friendly": d['eco_friendly'],
+                    "substitute": d['substitute']
+                })
+            else:
+                if normalized in seen:
+                    continue
+                seen.add(normalized)
+                ingredients_found.append({
+                    "name": raw_clean,
+                    "score": 80,
+                    "safety_level": "safe",
+                    "ewg_score": 3,
+                    "risk": "low",
+                    "description": "No database match found; basic safety assessment",
+                    "eco_friendly": True,
+                    "substitute": None
                 })
         
         # Calculate overall score and additional metrics
@@ -814,6 +1112,20 @@ async def analyze_text(text: str = Query(...), product_name: str = Query("Unknow
             },
             "suitability": "suitable" if overall_score >= 70 else "moderate" if overall_score >= 50 else "not_recommended",
             "recommendations": recommendations,
+            "detailed_report": _build_detailed_report(
+                product_name=product_name,
+                ingredients_found=ingredients_found,
+                overall_score=overall_score,
+                avg_ewg_score=avg_ewg_score,
+                eco_friendly_percentage=eco_friendly_percentage
+            ),
+            "structured_report": _build_structured_report(
+                product_name=product_name,
+                ingredients_found=ingredients_found,
+                overall_score=overall_score,
+                avg_ewg_score=avg_ewg_score,
+                eco_friendly_percentage=eco_friendly_percentage
+            ),
             "processing_time": 0.5,
             "api_sources": ["EWG", "PubChem", "OMS", "FDA", "CIR", "SCCS"],
             "substitute_suggestions": [ing.get("substitute") for ing in ingredients_found if ing.get("substitute")]

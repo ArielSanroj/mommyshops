@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import logging
 
 from app.dependencies import get_database, require_auth, optional_auth
-from app.core.config import get_settings
+from core.config import get_settings
 from app.security.jwt import create_access_token
 from app.security.password import verify_password, hash_password
 from app.database.models import User

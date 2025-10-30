@@ -9,7 +9,7 @@ import time
 import redis
 import json
 from typing import Dict, Optional
-from app.core.config import get_settings
+from core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
