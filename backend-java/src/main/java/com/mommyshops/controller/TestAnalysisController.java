@@ -6,9 +6,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
+/**
+ * DEPRECATED: This test controller is no longer used.
+ * All frontend requests now go to Python backend at http://localhost:8000/analysis/image
+ * 
+ * This controller is kept for reference only and may be removed in the future.
+ */
 @RestController
 @RequestMapping("/api/test")
 @CrossOrigin(origins = "*")
+@Deprecated
 public class TestAnalysisController {
     
     @PostMapping("/analyze-image")

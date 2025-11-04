@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     
     # Ollama
     OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    OLLAMA_MODEL: str = Field(default="llama3.1", env="OLLAMA_MODEL")
+    OLLAMA_MODEL: str = Field(default="llama3:latest", env="OLLAMA_MODEL")
     OLLAMA_VISION_MODEL: str = Field(default="llava", env="OLLAMA_VISION_MODEL")
     OLLAMA_TIMEOUT: int = Field(default=120, env="OLLAMA_TIMEOUT")
     
@@ -75,7 +75,7 @@ class Settings(BaseSettings):
             return v
     
     # CORS
-    CORS_ORIGINS: str = Field(default="http://localhost:8080,http://localhost:3000", env="CORS_ORIGINS")
+    CORS_ORIGINS: str = Field(default="http://localhost:8080,http://localhost:3000,http://localhost:10888,http://localhost:10889,http://localhost:8501", env="CORS_ORIGINS")
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True, env="CORS_ALLOW_CREDENTIALS")
     CORS_ALLOW_METHODS: str = Field(default="GET,POST,PUT,DELETE,OPTIONS", env="CORS_ALLOW_METHODS")
     

@@ -17,7 +17,10 @@ from app.routers import (
     admin_router,
     analysis_router,
     auth_router,
+    formulation_router,
     health_router,
+    builder_router,
+    profile_router,
     whatsapp_router,
 )
 
@@ -81,6 +84,9 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(auth_router)
     app.include_router(analysis_router)
+    app.include_router(profile_router)
+    app.include_router(builder_router)
+    app.include_router(formulation_router)
     app.include_router(health_router)
     app.include_router(admin_router)
     if whatsapp_router is not None:

@@ -161,13 +161,34 @@
     "description": "Proteína de queratina para fortalecer el cabello",
     "categories": ["hair_conditioner", "treatment"]
   },
+  "Sodium Lauryl Sulfate": {
+    "score": 40,
+    "ewg": 8,
+    "risk": "high",
+    "eco": false,
+    "description": "Surfactante aniónico económico con alto potencial irritante; se asocia con sequedad, sensibilización cutánea y daño a la barrera de la piel. Puede causar irritación ocular y dermatitis de contacto.",
+    "categories": ["hair_conditioner", "shampoo", "skincare"],
+    "aliases": ["SLS", "Sodium Lauryl Sulphate", "Sodium Dodecyl Sulfate"],
+    "substitutes": ["Coco-glucósido", "Decyl glucósido", "Lauryl glucósido"]
+  },
   "Phenoxyethanol": {
-    "score": 70,
+    "score": 45,
     "ewg": 4,
     "risk": "moderate",
     "eco": false,
-    "description": "Conservante sintético de amplio espectro",
-    "categories": ["hair_conditioner", "skincare"]
+    "description": "Conservante sintético de amplio espectro controvertido. Puede causar sensibilización y dermatitis en personas sensibles. En la UE está restringido al 1% en productos cosméticos.",
+    "categories": ["hair_conditioner", "skincare"],
+    "substitutes": ["Sorbato de potasio", "Benzoato de sodio", "Leucidal", "Radish Root Ferment"]
+  },
+  "Parabens": {
+    "score": 35,
+    "ewg": 6,
+    "risk": "high",
+    "eco": false,
+    "description": "Grupo de conservantes sintéticos (methylparaben, propylparaben, butylparaben, etc.) controvertidos por su potencial como disruptores endocrinos. Aunque la evidencia no es concluyente, muchos consumidores prefieren evitarlos.",
+    "categories": ["hair_conditioner", "skincare"],
+    "aliases": ["Methylparaben", "Propylparaben", "Butylparaben", "Ethylparaben", "Paraben"],
+    "substitutes": ["Sorbato de potasio", "Benzoato de sodio", "Leucidal", "Radish Root Ferment", "Ácido sórbico"]
   },
   "Ethylhexylglycerin": {
     "score": 80,
