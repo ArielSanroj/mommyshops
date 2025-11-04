@@ -4,7 +4,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.SessionScope;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @SessionScope
@@ -32,26 +34,48 @@ public class UserSessionService {
     }
     
     public String getSkinType() {
-        return (String) userProfile.getOrDefault("skin_type", "normal");
+        Object value = resolveValue("skin_type", "skinType");
+        return value != null ? value.toString() : "normal";
     }
     
     public String getSkinConcerns() {
-        Object concerns = userProfile.get("skin_concerns");
-        if (concerns instanceof java.util.List) {
-            return String.join(", ", (java.util.List<String>) concerns);
-        }
-        return (String) concerns;
+        Object concerns = resolveValue("skin_concerns", "skinConcerns");
+        return formatList(concerns, "");
     }
     
     public String getAllergies() {
-        return (String) userProfile.getOrDefault("allergies", "none");
+        Object allergies = resolveValue("allergies", "allergyPreferences");
+        return formatList(allergies, "none");
     }
     
     public String getAvoidIngredients() {
-        Object avoid = userProfile.get("avoid_ingredients");
-        if (avoid instanceof java.util.List) {
-            return String.join(", ", (java.util.List<String>) avoid);
+        Object avoid = resolveValue("avoid_ingredients", "avoidIngredients");
+        return formatList(avoid, "");
+    }
+    
+    private Object resolveValue(String... keys) {
+        for (String key : keys) {
+            if (userProfile.containsKey(key)) {
+                return userProfile.get(key);
+            }
         }
-        return (String) avoid;
+        return null;
+    }
+    
+    private String formatList(Object value, String defaultValue) {
+        if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            if (list.isEmpty()) {
+                return defaultValue;
+            }
+            return list.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+        }
+        if (value instanceof String) {
+            String str = (String) value;
+            return str.isBlank() ? defaultValue : str;
+        }
+        return defaultValue;
     }
 }

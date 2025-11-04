@@ -66,5 +66,93 @@ class SubstituteService:
                         "reason": "Versión sin fragancia para minimizar alérgenos.",
                     }
                 ],
+                "SODIUM LAURYL SULFATE": [
+                    {
+                        "name": "Coco-glucósido",
+                        "reason": "Surfactante suave libre de sulfatos, apto para piel sensible.",
+                    },
+                    {
+                        "name": "Decyl glucósido",
+                        "reason": "Limpiador no iónico derivado de glucosa, muy suave.",
+                    },
+                    {
+                        "name": "Lauryl glucósido",
+                        "reason": "Alternativa vegetal con bajo potencial irritante.",
+                    }
+                ],
+                "PHENOXYETHANOL": [
+                    {
+                        "name": "Sorbato de potasio",
+                        "reason": "Conservante natural de amplio espectro, seguro y efectivo.",
+                    },
+                    {
+                        "name": "Benzoato de sodio",
+                        "reason": "Conservante natural compatible con pH ácido.",
+                    },
+                    {
+                        "name": "Leucidal",
+                        "reason": "Conservante natural derivado de fermentación de lactobacilos.",
+                    }
+                ],
+                "PARABENS": [
+                    {
+                        "name": "Sorbato de potasio",
+                        "reason": "Conservante natural de amplio espectro, seguro y efectivo.",
+                    },
+                    {
+                        "name": "Benzoato de sodio",
+                        "reason": "Conservante natural compatible con pH ácido.",
+                    },
+                    {
+                        "name": "Leucidal",
+                        "reason": "Conservante natural derivado de fermentación de lactobacilos.",
+                    }
+                ],
+            },
+            "shampoo": {
+                "SODIUM LAURYL SULFATE": [
+                    {
+                        "name": "Coco-glucósido",
+                        "reason": "Surfactante suave libre de sulfatos, apto para piel sensible.",
+                    },
+                    {
+                        "name": "Decyl glucósido",
+                        "reason": "Limpiador no iónico derivado de glucosa, muy suave.",
+                    }
+                ],
+                "PHENOXYETHANOL": [
+                    {
+                        "name": "Sorbato de potasio",
+                        "reason": "Conservante natural de amplio espectro, seguro y efectivo.",
+                    }
+                ],
+            },
+            "skincare": {
+                "SODIUM LAURYL SULFATE": [
+                    {
+                        "name": "Coco-glucósido",
+                        "reason": "Surfactante suave libre de sulfatos, apto para piel sensible.",
+                    }
+                ],
+                "PHENOXYETHANOL": [
+                    {
+                        "name": "Sorbato de potasio",
+                        "reason": "Conservante natural de amplio espectro, seguro y efectivo.",
+                    },
+                    {
+                        "name": "Benzoato de sodio",
+                        "reason": "Conservante natural compatible con pH ácido.",
+                    }
+                ],
+                "PARABENS": [
+                    {
+                        "name": "Sorbato de potasio",
+                        "reason": "Conservante natural de amplio espectro, seguro y efectivo.",
+                    },
+                    {
+                        "name": "Ácido sórbico",
+                        "reason": "Conservante natural eficaz contra hongos y bacterias.",
+                    }
+                ]
             }
         }

@@ -4,6 +4,9 @@ Routers package for MommyShops application
 
 from .auth import router as auth_router
 from .analysis import router as analysis_router
+from .builder import router as builder_router
+from .formulation import router as formulation_router
+from .profile import router as profile_router
 from .health import router as health_router
 from .admin import router as admin_router
 
@@ -16,6 +19,9 @@ except ImportError:
 __all__ = [
     "auth_router",
     "analysis_router", 
+    "profile_router",
+    "builder_router",
+    "formulation_router",
     "health_router",
     "admin_router",
     "whatsapp_router",

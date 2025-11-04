@@ -28,7 +28,13 @@ class IngredientService:
     def _normalize_token(raw_name: str) -> str:
         import re
         t = (raw_name or "").upper().strip()
+        # Remove content inside parentheses (e.g., "Sodium (something)" -> "Sodium")
         t = re.sub(r"\([^)]+\)", "", t)
+        # Remove orphan closing parentheses (e.g., "Parabens)" -> "Parabens")
+        t = t.rstrip(")")
+        # Remove orphan opening parentheses
+        t = t.lstrip("(")
+        # Clean up multiple spaces and trailing punctuation
         t = t.replace("  ", " ").strip().rstrip(".;:")
         return t
     
@@ -44,16 +50,17 @@ class IngredientService:
         """
         try:
             seen = set()
-            cleaned: List[str] = []
+            processed: List[Tuple[str, str]] = []
             for ing in ingredients:
-                norm = self._normalize_token(ing)
+                original = (ing or "").strip()
+                norm = self._normalize_token(original)
                 if not norm or norm in seen:
                     continue
                 seen.add(norm)
-                cleaned.append(norm)
+                processed.append((norm, original))
 
             ingredients_analysis: List[Dict[str, Any]] = []
-            for norm in cleaned:
+            for norm, original_name in processed:
                 canonical = self.alias_lookup.get(norm, norm)
                 data = self.catalog.get(canonical)
                 if data:
@@ -61,36 +68,90 @@ class IngredientService:
                     safety_level = (
                         "safe" if score >= 80 else "moderate" if score >= 60 else "caution"
                     )
-                    substitutes = self.substitute_service.get_substitutes(product_type or "", canonical)
-                    first_sub = substitutes[0]["name"] if substitutes else None
+                    # First try substitutes from catalog entry, then from substitute service
+                    catalog_subs = data.get("substitutes", [])
+                    if catalog_subs:
+                        # Use substitutes from catalog entry
+                        if isinstance(catalog_subs, list):
+                            first_sub = catalog_subs[0] if catalog_subs else None
+                            all_subs = catalog_subs
+                        else:
+                            first_sub = str(catalog_subs)
+                            all_subs = [first_sub]
+                    else:
+                        # Fallback to substitute service
+                        substitutes = self.substitute_service.get_substitutes(product_type or "", canonical)
+                        first_sub = substitutes[0]["name"] if substitutes else None
+                        all_subs = [s["name"] for s in substitutes] if substitutes else []
+                    
                     display_name = data.get("display", canonical.title())
+                    if original_name:
+                        display_name = original_name
 
+                    # Format substitute string
+                    substitute_str = None
+                    if all_subs:
+                        if len(all_subs) == 1:
+                            substitute_str = all_subs[0]
+                        else:
+                            substitute_str = ", ".join(all_subs[:3])
+                    elif first_sub:
+                        substitute_str = first_sub
+                    
                     ingredients_analysis.append(
                         {
                             "name": display_name,
                             "score": score,
                             "safety_level": safety_level,
-                            "description": data["desc"],
+                            "description": data.get("desc") or data.get("description", ""),
                             "ewg_score": data["ewg"],
                             "risk": data["risk"],
                             "eco_friendly": data["eco"],
-                            "substitute": first_sub,
+                            "substitute": substitute_str,
                         }
                     )
                 else:
-                    # Unknown – neutral defaults without inventing new names
-                    ingredients_analysis.append(
-                        {
-                            "name": norm.title(),
-                            "score": 80,
-                            "safety_level": "safe",
-                            "description": "Datos no disponibles",
-                            "ewg_score": 3,
-                            "risk": "low",
-                            "eco_friendly": True,
-                            "substitute": None,
-                        }
-                    )
+                    # Unknown ingredient - detect if it's a natural plant extract
+                    display_name = original_name or norm.title()
+                    
+                    # Detect natural/plant-based ingredients by keywords (case-insensitive)
+                    norm_lower = norm.lower()
+                    is_natural_extract = any(keyword in norm_lower for keyword in [
+                        "extract", "oil", "juice", "root", "leaf", "flower", "seed", 
+                        "fruit", "bark", "stem", "plant", "herb", "botanical", "sinensis",
+                        "sativa", "officinalis", "biloba", "gasipaes", "usitatissimum"
+                    ])
+                    
+                    # Natural extracts are generally safer - assign better defaults
+                    if is_natural_extract:
+                        ingredient_type = "extracto natural" if "extract" in norm_lower else "jugo natural" if "juice" in norm_lower else "aceite natural" if "oil" in norm_lower else "ingrediente natural"
+                        description = f"{ingredient_type.capitalize()} de origen vegetal. Generalmente considerado seguro para uso cosmético. Puede proporcionar beneficios antioxidantes y nutritivos para la piel/cabello."
+                        ingredients_analysis.append(
+                            {
+                                "name": display_name,
+                                "score": 75,  # Better default for natural extracts
+                                "safety_level": "safe",
+                                "description": description,
+                                "ewg_score": 4,  # Moderate EWG for plant extracts
+                                "risk": "low",  # Low risk for natural extracts
+                                "eco_friendly": True,
+                                "substitute": "Mantener (es un ingrediente natural seguro)",
+                            }
+                        )
+                    else:
+                        # Unknown synthetic/chemical ingredient - use conservative defaults
+                        ingredients_analysis.append(
+                            {
+                                "name": display_name,
+                                "score": 65,
+                                "safety_level": "moderate",
+                                "description": "Datos no disponibles; se recomienda verificar fuentes adicionales.",
+                                "ewg_score": 6,
+                                "risk": "moderate",
+                                "eco_friendly": False,
+                                "substitute": "Alternativas naturales certificadas (ej. glicerina vegetal, aloe vera orgánico)",
+                            }
+                        )
 
             if not ingredients_analysis:
                 return {
@@ -158,6 +219,8 @@ class IngredientService:
                     "description", catalog.get(normalized, {}).get("desc", "Datos no disponibles")
                 ),
                 "categories": payload.get("categories", []),
+                # Include substitutes if present in catalog entry
+                "substitutes": payload.get("substitutes", []),
             }
             catalog[normalized] = entry
 

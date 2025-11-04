@@ -45,6 +45,61 @@ public class UserProfile {
     @Column(name = "pregnancy_status")
     private String pregnancyStatus;
     
+    // Extended questionnaire fields
+    @Column(name = "age")
+    private String age;
+    
+    @Column(name = "skin_reactivity")
+    private String skinReactivity;
+    
+    @Column(name = "skin_goals", columnDefinition = "TEXT")
+    private String skinGoals; // Stored as comma-separated list
+    
+    @Column(name = "face_shape")
+    private String faceShape;
+    
+    @Column(name = "hair_type")
+    private String hairType;
+    
+    @Column(name = "hair_porosity")
+    private String hairPorosity;
+    
+    @Column(name = "scalp_condition")
+    private String scalpCondition;
+    
+    @Column(name = "hair_concerns", columnDefinition = "TEXT")
+    private String hairConcerns; // Stored as comma-separated list
+    
+    @Column(name = "hair_routine", columnDefinition = "TEXT")
+    private String hairRoutine; // Stored as comma-separated list
+    
+    @Column(name = "fragrance_preference")
+    private String fragrancePreference;
+    
+    @Column(name = "texture_preferences", columnDefinition = "TEXT")
+    private String texturePreferences; // Stored as comma-separated list
+    
+    @Column(name = "avoid_ingredients", columnDefinition = "TEXT")
+    private String avoidIngredients; // Stored as comma-separated list
+    
+    @Column(name = "ingredient_focus", columnDefinition = "TEXT")
+    private String ingredientFocus; // Stored as comma-separated list
+    
+    @Column(name = "environment_factors", columnDefinition = "TEXT")
+    private String environmentFactors; // Stored as comma-separated list
+    
+    @Column(name = "product_preferences")
+    private String productPreferences;
+    
+    @Column(name = "budget")
+    private String budget;
+    
+    @Column(name = "purchase_frequency")
+    private String purchaseFrequency;
+    
+    @Column(name = "information_preference")
+    private String informationPreference;
+    
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
     
@@ -111,4 +166,59 @@ public class UserProfile {
     
     public String getPregnancyStatus() { return pregnancyStatus; }
     public void setPregnancyStatus(String pregnancyStatus) { this.pregnancyStatus = pregnancyStatus; }
+    
+    // Extended questionnaire getters and setters
+    public String getAge() { return age; }
+    public void setAge(String age) { this.age = age; }
+    
+    public String getSkinReactivity() { return skinReactivity; }
+    public void setSkinReactivity(String skinReactivity) { this.skinReactivity = skinReactivity; }
+    
+    public String getSkinGoals() { return skinGoals; }
+    public void setSkinGoals(String skinGoals) { this.skinGoals = skinGoals; }
+    
+    public String getFaceShape() { return faceShape; }
+    public void setFaceShape(String faceShape) { this.faceShape = faceShape; }
+    
+    public String getHairType() { return hairType; }
+    public void setHairType(String hairType) { this.hairType = hairType; }
+    
+    public String getHairPorosity() { return hairPorosity; }
+    public void setHairPorosity(String hairPorosity) { this.hairPorosity = hairPorosity; }
+    
+    public String getScalpCondition() { return scalpCondition; }
+    public void setScalpCondition(String scalpCondition) { this.scalpCondition = scalpCondition; }
+    
+    public String getHairConcerns() { return hairConcerns; }
+    public void setHairConcerns(String hairConcerns) { this.hairConcerns = hairConcerns; }
+    
+    public String getHairRoutine() { return hairRoutine; }
+    public void setHairRoutine(String hairRoutine) { this.hairRoutine = hairRoutine; }
+    
+    public String getFragrancePreference() { return fragrancePreference; }
+    public void setFragrancePreference(String fragrancePreference) { this.fragrancePreference = fragrancePreference; }
+    
+    public String getTexturePreferences() { return texturePreferences; }
+    public void setTexturePreferences(String texturePreferences) { this.texturePreferences = texturePreferences; }
+    
+    public String getAvoidIngredients() { return avoidIngredients; }
+    public void setAvoidIngredients(String avoidIngredients) { this.avoidIngredients = avoidIngredients; }
+    
+    public String getIngredientFocus() { return ingredientFocus; }
+    public void setIngredientFocus(String ingredientFocus) { this.ingredientFocus = ingredientFocus; }
+    
+    public String getEnvironmentFactors() { return environmentFactors; }
+    public void setEnvironmentFactors(String environmentFactors) { this.environmentFactors = environmentFactors; }
+    
+    public String getProductPreferences() { return productPreferences; }
+    public void setProductPreferences(String productPreferences) { this.productPreferences = productPreferences; }
+    
+    public String getBudget() { return budget; }
+    public void setBudget(String budget) { this.budget = budget; }
+    
+    public String getPurchaseFrequency() { return purchaseFrequency; }
+    public void setPurchaseFrequency(String purchaseFrequency) { this.purchaseFrequency = purchaseFrequency; }
+    
+    public String getInformationPreference() { return informationPreference; }
+    public void setInformationPreference(String informationPreference) { this.informationPreference = informationPreference; }
 }

@@ -35,6 +35,7 @@ class User(Base):
     firebase_uid = Column(String(128), unique=True, index=True, nullable=True)  # Firebase UID for dual write
     skin_face = Column(String(64))
     hair_type = Column(String(64))
+    face_shape = Column(String(64))
     goals_face = Column(JSON)
     climate = Column(String(64))
     skin_body = Column(JSON)
@@ -48,6 +49,7 @@ class User(Base):
 
     routines = relationship("Routine", back_populates="user", cascade="all, delete-orphan")
     recommendations = relationship("Recommendation", back_populates="user", cascade="all, delete-orphan")
+    custom_products = relationship("CustomProduct", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_admin(self) -> bool:
@@ -78,6 +80,25 @@ class Product(Base):
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CustomProduct(Base):
+    __tablename__ = "custom_products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    base_product_name = Column(String(255), nullable=False)
+    safe_ingredients = Column(JSON)
+    substitutions = Column(JSON)
+    profile_snapshot = Column(JSON)
+    labs_formula = Column(JSON)
+    labs_summary = Column(JSON)
+    labs_mockup = Column(JSON)
+    price = Column(Float, default=0.0)
+    status = Column(String(32), default="draft")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="custom_products")
 
 
 class Recommendation(Base):
