@@ -8,6 +8,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://malaysia-organoleptic-nonhistrionically.ngrok-free.dev/$1"
+    },
+    {
       "source": "/",
       "destination": "/frontend.html"
     },
