@@ -306,6 +306,15 @@
             width: min(280px, 80vw);
         }
 
+        .sticky-assistant summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sticky-assistant summary::-webkit-details-marker { display: none; }
+
         .sticky-assistant button {
             margin-top: 6px;
             border: none;
@@ -315,6 +324,12 @@
             color: white;
             font-weight: 600;
             cursor: pointer;
+        }
+
+        .assistant-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .modal-backdrop {
@@ -543,6 +558,11 @@
             .pillar-card {
                 min-width: 240px;
             }
+            .steps-pane {
+                position: static;
+                max-height: none;
+                overflow: visible;
+            }
         }
 
         .steps-pane {
@@ -550,6 +570,11 @@
             border-radius: 20px;
             padding: 24px;
             box-shadow: var(--shadow-soft);
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
         }
 
         .steps-pane h2 {
@@ -577,6 +602,7 @@
             border: 1px solid rgba(168, 85, 247, 0.18);
             background: rgba(255, 255, 255, 0.85);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
         }
 
         .steps-item .step-index {
@@ -608,6 +634,16 @@
         }
 
         .steps-item.is-active .step-index {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-accent));
+            color: #fff;
+        }
+
+        .steps-item.is-nav-focus:not(.is-active) {
+            border-color: var(--color-primary);
+            box-shadow: 0 12px 26px rgba(168, 85, 247, 0.16);
+        }
+
+        .steps-item.is-nav-focus:not(.is-active) .step-index {
             background: linear-gradient(135deg, var(--color-primary), var(--color-primary-accent));
             color: #fff;
         }
@@ -710,12 +746,17 @@
             font-weight: 600;
             font-size: 0.92rem;
             box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+            background: rgba(15, 23, 42, 0.08);
+            color: var(--color-dark);
         }
 
-        .profile-highlight--skin { background: #d9fbe3; color: #166534; }
-        .profile-highlight--hair { background: #dbeafe; color: #1d4ed8; }
-        .profile-highlight--concern { background: #fbd2d7; color: #9f1239; }
-        .profile-highlight--goal { background: #ede9fe; color: #5b21b6; }
+        .profile-highlight--skin,
+        .profile-highlight--hair,
+        .profile-highlight--concern,
+        .profile-highlight--goal {
+            background: rgba(15, 23, 42, 0.08);
+            color: var(--color-dark);
+        }
 
         .profile-actions {
             display: flex;
@@ -2242,7 +2283,7 @@
                     <li>✔️ Análisis inteligente de ingredientes (IA)</li>
                     <li>🌿 Análisis con estándares globales OMS/FDA/CIR, ICCR, SCCS</li>
                     <li>🍼 Personalizado para tus necesidades reales</li>
-                    <li>📦 Producto hecho a tu medida en casa</li>
+                    <li>📦 Producto hiper personalizados con inteligencia artificial</li>
                 </ul>
             </div>
         </div>
@@ -2284,7 +2325,7 @@
                 <div class="journey-card">
                     <span>04 • Fórmula Mommyshops</span>
                     <strong>Blend listo para fabricar</strong>
-                    <p>Ingredientes sustitutos, porcentajes y el producto hecho a tu medida en casa.</p>
+                    <p>Ingredientes sustitutos, porcentajes y producto hiper personalizados con inteligencia artificial.</p>
                 </div>
             </div>
         </div>
@@ -2303,42 +2344,42 @@
             <aside class="steps-pane" aria-label="Progreso de la experiencia">
                 <h2>Tu recorrido</h2>
                 <ol class="steps-list" id="journeySteps">
-                    <li class="steps-item" data-step="1">
+                    <li class="steps-item" data-step="1" data-target="profileCard">
                         <span class="step-index">1</span>
                         <div>
                             <div class="step-label">Perfil personalizado</div>
                             <div class="step-hint">Completa el cuestionario inicial</div>
                         </div>
                     </li>
-                    <li class="steps-item" data-step="2">
+                    <li class="steps-item" data-step="2" data-target="analysisEntry">
                         <span class="step-index">2</span>
                         <div>
                             <div class="step-label">Elige cómo analizar</div>
                             <div class="step-hint">Sube imagen o pega ingredientes</div>
                         </div>
                     </li>
-                    <li class="steps-item" data-step="3">
+                    <li class="steps-item" data-step="3" data-target="results">
                         <span class="step-index">3</span>
                         <div>
                             <div class="step-label">Escaneo inteligente</div>
                             <div class="step-hint">Mommyshops trabaja por ti</div>
                         </div>
                     </li>
-                    <li class="steps-item" data-step="4">
+                    <li class="steps-item" data-step="4" data-target="resultsContent">
                         <span class="step-index">4</span>
                         <div>
                             <div class="step-label">Resultados al instante</div>
                             <div class="step-hint">Revisa riesgos y fortalezas</div>
                         </div>
                     </li>
-                    <li class="steps-item" data-step="5">
+                    <li class="steps-item" data-step="5" data-target="labsFormulationMount">
                         <span class="step-index">5</span>
                         <div>
                             <div class="step-label">Formula personalizada</div>
                             <div class="step-hint">Elige sustitutos recomendados</div>
                         </div>
                     </li>
-                    <li class="steps-item" data-step="6">
+                    <li class="steps-item" data-step="6" data-target="builderMount">
                         <span class="step-index">6</span>
                         <div>
                             <div class="step-label">Compra segura</div>
@@ -2443,7 +2484,7 @@
                 </form>
             </div>
 
-            <div class="tabs">
+            <div class="tabs" id="analysisEntry">
                 <div class="tab active" onclick="switchTab('image', event)">📸 Image Analysis</div>
                 <div class="tab" onclick="switchTab('text', event)">📝 Text Analysis</div>
             </div>
@@ -2464,19 +2505,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="productName">Product Name</label>
-                    <input type="text" id="productName" placeholder="Enter product name (optional)">
+                    <label for="productName">Nombre del producto</label>
+                    <input type="text" id="productName" placeholder="Ingresa el nombre del producto (opcional)">
                 </div>
 
                 <div class="form-group">
-                    <label for="userNeed">Your Skin Type/Concerns</label>
+                    <label for="userNeed">Tipo de producto</label>
                     <select id="userNeed">
-                        <option value="general">General</option>
-                        <option value="sensitive_skin">Sensitive Skin</option>
-                        <option value="acne_prone">Acne Prone</option>
-                        <option value="dry_skin">Dry Skin</option>
-                        <option value="oily_skin">Oily Skin</option>
-                        <option value="mature_skin">Mature Skin</option>
+                        <option value="">Selecciona el tipo de producto</option>
+                        <option value="hair">Pelo</option>
+                        <option value="face">Cara</option>
+                        <option value="body">Cuerpo</option>
                     </select>
                 </div>
 
@@ -2493,19 +2532,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="textProductName">Product Name</label>
-                    <input type="text" id="textProductName" placeholder="Enter product name (optional)">
+                    <label for="textProductName">Nombre del producto</label>
+                    <input type="text" id="textProductName" placeholder="Ingresa el nombre del producto (opcional)">
                 </div>
 
                 <div class="form-group">
-                    <label for="textUserNeed">Your Skin Type/Concerns</label>
+                    <label for="textUserNeed">Tipo de producto</label>
                     <select id="textUserNeed">
-                        <option value="general">General</option>
-                        <option value="sensitive_skin">Sensitive Skin</option>
-                        <option value="acne_prone">Acne Prone</option>
-                        <option value="dry_skin">Dry Skin</option>
-                        <option value="oily_skin">Oily Skin</option>
-                        <option value="mature_skin">Mature Skin</option>
+                        <option value="">Selecciona el tipo de producto</option>
+                        <option value="hair">Pelo</option>
+                        <option value="face">Cara</option>
+                        <option value="body">Cuerpo</option>
                     </select>
                 </div>
 
@@ -2533,6 +2570,15 @@
         const API_BASE = 'http://localhost:8000';
         const PROFILE_STORAGE_KEY = 'mommyshopsProfile';
         let journeyStepItems = [];
+        const PRODUCT_TYPE_CONTEXT = {
+            hair: { label: 'Pelo', context: 'tu cuidado capilar' },
+            face: { label: 'Cara', context: 'tu cuidado facial' },
+            body: { label: 'Cuerpo', context: 'tu cuidado corporal' }
+        };
+        let currentProductTypeKey = null;
+        let journeySections = [];
+        let journeyScrollScheduled = false;
+        let journeyScrollBound = false;
         let labsFormulationState = {
             controller: null,
             lastPayloadKey: null,
@@ -2569,6 +2615,51 @@
             }
         }
 
+        function setCurrentProductType(key) {
+            currentProductTypeKey = key || null;
+        }
+
+        function updateProductTypeFromSelect(selectEl) {
+            if (!selectEl) return;
+            const value = selectEl.value || '';
+            setCurrentProductType(value || null);
+        }
+
+        function getCurrentProductTypeInfo() {
+            if (!currentProductTypeKey) return null;
+            return PRODUCT_TYPE_CONTEXT[currentProductTypeKey] || null;
+        }
+
+        function getCurrentProductTypeLabel() {
+            const info = getCurrentProductTypeInfo();
+            return info ? info.label : null;
+        }
+
+        function getCurrentProductTypeContext() {
+            const info = getCurrentProductTypeInfo();
+            return info ? info.context : null;
+        }
+
+        function applyProductTypeContext(description) {
+            const info = getCurrentProductTypeInfo();
+            if (!info) {
+                return description;
+            }
+            const baseText = (description || '').trim();
+            const labelLower = info.label.toLowerCase();
+            if (baseText.toLowerCase().includes(labelLower)) {
+                return baseText;
+            }
+            const contextText = info.context || `tu cuidado de ${labelLower}`;
+            if (!baseText) {
+                return `Enfocado en ${contextText}.`;
+            }
+            const hasEndingPeriod = /[.!?]$/.test(baseText);
+            return hasEndingPeriod
+                ? `${baseText} Enfocado en ${contextText}.`
+                : `${baseText}. Enfocado en ${contextText}.`;
+        }
+
         function openSignupModal() {
             const modal = document.getElementById('signupModal');
             if (!modal) return;
@@ -2585,6 +2676,24 @@
             if (!modal) return;
             modal.classList.remove('is-visible');
             modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function setupProductTypeListeners() {
+            ['userNeed', 'textUserNeed'].forEach(id => {
+                const selectEl = document.getElementById(id);
+                if (!selectEl) return;
+                selectEl.addEventListener('change', () => updateProductTypeFromSelect(selectEl));
+                if (selectEl.value) {
+                    setCurrentProductType(selectEl.value);
+                }
+            });
+        }
+
+        function collapseAssistPanel() {
+            const assist = document.getElementById('assistPanel');
+            if (!assist) return;
+            assist.removeAttribute('open');
+            localStorage.setItem('assist_open_state', 'false');
         }
 
         document.addEventListener('keydown', (event) => {
@@ -3163,7 +3272,8 @@
                 metaParts.push(`Eco ${ecoValue}/100`);
             }
             const meta = metaParts.length ? metaParts.join(' · ') : 'Sin índices de referencia';
-            const description = item.comment || item.analysis || evaluation.summary || 'Sin descripción personalizada.';
+            const baseDescription = item.comment || item.analysis || evaluation.summary || 'Sin descripción personalizada.';
+            const description = applyProductTypeContext(baseDescription);
             const datasetStatus = item.status || item.state || 'safe';
             const title = item.inci || item.ingredient || item.name || '-';
             return `
@@ -3499,6 +3609,13 @@
             const supportMap = new Map();
             const conflictMap = new Map();
             const categoryMap = new Map();
+            const ingredientSummary = new Map();
+            const compatibilityLabelMap = {
+                high: 'Alta compatibilidad',
+                medium: 'Compatibilidad media',
+                low: 'Baja compatibilidad',
+                neutral: 'Compatibilidad neutra'
+            };
 
             const ensureCategory = (type, key, label) => {
                 if (!key && !label) return null;
@@ -3572,6 +3689,30 @@
                         }
                     });
                 }
+
+                const ingredientName = item.inci || item.ingredient || item.name || 'Ingrediente';
+                const compat = determineIngredientCompatibility(item, evaluation);
+                const objectiveSource = evaluation.supports.find(entry => entry.type === 'goal')
+                    || evaluation.supports.find(entry => entry.type && entry.type !== 'general')
+                    || evaluation.conflicts.find(entry => entry.type === 'goal')
+                    || evaluation.conflicts.find(entry => entry.type && entry.type !== 'general')
+                    || null;
+                const fallbackGoal = (profile.overall_goals || [])[0] || 'Objetivo general';
+                const objectiveLabel = objectiveSource
+                    ? titleCase(objectiveSource.label || objectiveSource)
+                    : titleCase(fallbackGoal);
+                const key = ingredientName.toLowerCase();
+                const current = ingredientSummary.get(key);
+                const level = compat.level || 'neutral';
+                const labelText = compatibilityLabelMap[level] || compatibilityLabelMap.neutral;
+                if (!current) {
+                    ingredientSummary.set(key, {
+                        ingredient: ingredientName,
+                        objective: objectiveLabel,
+                        level,
+                        label: labelText
+                    });
+                }
             });
 
             const categories = Array.from(categoryMap.values()).filter(category => {
@@ -3593,7 +3734,8 @@
                 supports: uniqueLabels(supportHighlightsSpecific.length ? supportHighlightsSpecific : supportHighlightsAll),
                 conflicts: uniqueLabels(conflictHighlightsSpecific.length ? conflictHighlightsSpecific : conflictHighlightsAll),
                 categories,
-                totalIngredients
+                totalIngredients,
+                ingredientRows: Array.from(ingredientSummary.values())
             };
         }
 
@@ -3601,6 +3743,7 @@
             journeyStepItems = Array.from(document.querySelectorAll('#journeySteps .steps-item'));
             journeyStepItems.forEach(item => item.classList.remove('is-active', 'is-complete'));
             setStepStatus(1, 'active');
+            setupJourneyNavigation();
         }
 
         function setStepStatus(step, status) {
@@ -3625,6 +3768,67 @@
                     setStepStatus(stepNumber, 'pending');
                 }
             });
+        }
+
+        function highlightJourneyStep(step) {
+            if (!journeyStepItems.length) {
+                journeyStepItems = Array.from(document.querySelectorAll('#journeySteps .steps-item'));
+            }
+            journeyStepItems.forEach(item => {
+                const matches = Number(item.dataset.step) === Number(step);
+                item.classList.toggle('is-nav-focus', matches && step != null);
+                if (!matches && step == null) {
+                    item.classList.remove('is-nav-focus');
+                }
+            });
+        }
+
+        function handleJourneyScroll() {
+            if (journeyScrollScheduled) return;
+            journeyScrollScheduled = true;
+            requestAnimationFrame(() => {
+                const offset = window.scrollY + 160;
+                let current = null;
+                journeySections.forEach(section => {
+                    const top = section.element ? section.element.offsetTop : 0;
+                    if (top <= offset) {
+                        current = section.step;
+                    }
+                });
+                highlightJourneyStep(current);
+                journeyScrollScheduled = false;
+            });
+        }
+
+        function setupJourneyNavigation() {
+            journeyStepItems = Array.from(document.querySelectorAll('#journeySteps .steps-item'));
+            journeyStepItems.forEach(item => {
+                if (!item.dataset.navBound) {
+                    item.addEventListener('click', (event) => {
+                        const targetId = item.dataset.target;
+                        if (!targetId) return;
+                        const target = document.getElementById(targetId);
+                        if (!target) return;
+                        event.preventDefault();
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                    item.dataset.navBound = 'true';
+                }
+            });
+            journeySections = journeyStepItems
+                .map(item => {
+                    const targetId = item.dataset.target;
+                    const target = targetId ? document.getElementById(targetId) : null;
+                    if (!target) return null;
+                    return { step: Number(item.dataset.step), element: target };
+                })
+                .filter(Boolean)
+                .sort((a, b) => (a.element.offsetTop || 0) - (b.element.offsetTop || 0));
+            if (!journeyScrollBound) {
+                window.addEventListener('scroll', handleJourneyScroll, { passive: true });
+                journeyScrollBound = true;
+            }
+            handleJourneyScroll();
         }
 
         function getStoredProfile() {
@@ -3710,8 +3914,8 @@
             }
 
             pill.textContent = 'Perfil activo';
-            hero.textContent = '🌸 Tu perfil activo';
-            subtitle.textContent = 'Aplicamos tu perfil en cada análisis y recomendación.';
+            hero.textContent = 'Cuestionario Cuidado Personal';
+            subtitle.textContent = 'Aplicamos las respuestas de tu cuestionario en cada análisis y recomendación.';
             const summaryParts = [];
             if (profile.skin_type) summaryParts.push(`piel ${profile.skin_type}`);
             if (profile.hair_type) summaryParts.push(`cabello ${profile.hair_type}`);
@@ -3719,20 +3923,20 @@
                 ? `Basado en ${summaryParts.join(' y ')}, sensibilidades y objetivos declarados.`
                 : 'Tus datos nos permiten personalizar cada resultado.';
 
-            const chips = [];
-            if (profile.skin_type) chips.push({ text: `Piel: ${titleCase(profile.skin_type)}`, class: 'profile-highlight profile-highlight--skin' });
-            if (profile.face_shape) chips.push({ text: `Zonas: ${getFaceZoneLabel(profile.face_shape)}`, class: 'profile-highlight profile-highlight--skin' });
-            if (profile.hair_type) chips.push({ text: `Cabello: ${titleCase(profile.hair_type)}`, class: 'profile-highlight profile-highlight--hair' });
-            (profile.skin_concerns || []).slice(0, 3).forEach(item => chips.push({ text: `Piel: ${titleCase(item)}`, class: 'profile-highlight profile-highlight--concern' }));
-            (profile.hair_concerns || []).slice(0, 3).forEach(item => chips.push({ text: `Cabello: ${titleCase(item)}`, class: 'profile-highlight profile-highlight--concern' }));
-            (profile.overall_goals || []).slice(0, 4).forEach(item => chips.push({ text: item, class: 'profile-highlight profile-highlight--goal' }));
+            const chipTexts = [];
+            if (profile.skin_type) chipTexts.push(`Piel: ${titleCase(profile.skin_type)}`);
+            if (profile.face_shape) chipTexts.push(`Zonas: ${getFaceZoneLabel(profile.face_shape)}`);
+            if (profile.hair_type) chipTexts.push(`Cabello: ${titleCase(profile.hair_type)}`);
+            (profile.skin_concerns || []).slice(0, 3).forEach(item => chipTexts.push(`Piel: ${titleCase(item)}`));
+            (profile.hair_concerns || []).slice(0, 3).forEach(item => chipTexts.push(`Cabello: ${titleCase(item)}`));
+            (profile.overall_goals || []).slice(0, 4).forEach(item => chipTexts.push(titleCase(item)));
 
-            if (!chips.length) {
+            if (!chipTexts.length) {
                 highlights.innerHTML = '<span class="muted">Añade tus objetivos para personalizar más los resultados.</span>';
                 return;
             }
 
-            highlights.innerHTML = chips.map(chip => `<span class="${chip.class}">${escapeHtml(chip.text)}</span>`).join('');
+            highlights.innerHTML = chipTexts.map(text => `<span class="profile-highlight">${escapeHtml(text)}</span>`).join('');
         }
 
         window.toggleProfileForm = function toggleProfileForm() {};
@@ -4081,6 +4285,7 @@
                 return '';
             }
 
+            const productContextText = getCurrentProductTypeContext();
             const cardsHtml = combined.map(item => renderIngredientCard(item, profile)).join('');
             const body = `
                 <p class="muted" style="margin-bottom:8px;">Colores según compatibilidad con tu perfil: 🟢 Alta · 🟡 Media · 🔴 Baja · ⚪ Neutra</p>
@@ -4096,7 +4301,9 @@
 
             return buildCollapsibleCard({
                 title: '🧪 Ingredientes evaluados',
-                subtitle: `${combined.length} ingredientes analizados por nuestro laboratorio inteligente.`,
+                subtitle: productContextText
+                    ? `${combined.length} ingredientes analizados para ${productContextText}.`
+                    : `${combined.length} ingredientes analizados por nuestro laboratorio inteligente.`,
                 bodyHtml: body
             });
         }
@@ -4202,66 +4409,65 @@
         }
 
         function buildCompatibilityCard(structuredReport, alignment, profile) {
-            if (!alignment || !alignment.categories || !alignment.categories.length) {
+            const rows = alignment?.ingredientRows || [];
+            if (!alignment || !rows.length) {
                 return '';
             }
 
-            const compatibilityGoals = structuredReport?.compatibility?.goals || null;
             const summaryText = structuredReport?.compatibility?.goals_summary
                 || (alignment.conflictCount
                     ? `${alignment.supportiveCount} ingredientes están alineados y ${alignment.conflictCount} necesitan ajustes.`
                     : 'Todos los ingredientes detectados respaldan tus objetivos principales.');
 
-            const order = ['goal', 'skin_concern', 'hair_concern', 'skin_type', 'hair_type', 'face_zone'];
-            const sortedCategories = alignment.categories.slice().sort((a, b) => {
-                const aIndex = order.indexOf(a.type);
-                const bIndex = order.indexOf(b.type);
-                return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
-            });
+            const subtitle = profile && Object.keys(profile || {}).length
+                ? 'Relación entre ingredientes, tus objetivos y su compatibilidad.'
+                : 'Completa tu perfil para obtener compatibilidad personalizada.';
 
-            const sourceRows = compatibilityGoals && compatibilityGoals.length
-                ? compatibilityGoals
-                : sortedCategories.map(entry => ({
-                    goal: entry.label,
-                    state: classifyCompatibility(entry).level,
-                    compatibility_percent: classifyCompatibility(entry).percent,
-                    ingredients_supporting: entry.supported,
-                    alerts: entry.conflicting ? [ `${entry.conflicting} en conflicto` ] : []
-                }));
+            const badgeClassMap = {
+                high: 'compat-badge compat-badge--high',
+                medium: 'compat-badge compat-badge--medium',
+                low: 'compat-badge compat-badge--low',
+                neutral: 'compat-badge compat-badge--none'
+            };
 
-            const cards = sourceRows.map(entry => {
-                const level = entry.state || (entry.compatibility_percent >= 80 ? 'high' : entry.compatibility_percent >= 50 ? 'medium' : 'low');
-                const label = entry.state
-                    ? (entry.state === 'high' ? 'Alta compatibilidad' : entry.state === 'medium' ? 'Compatibilidad media' : 'Compatibilidad baja')
-                    : (level === 'high' ? 'Alta compatibilidad' : level === 'medium' ? 'Compatibilidad media' : 'Compatibilidad baja');
-                const percent = entry.compatibility_percent ?? (entry.percent || 0);
-                const detail = entry.ingredients_supporting
-                    ? `${entry.ingredients_supporting} ingrediente${entry.ingredients_supporting > 1 ? 's' : ''} a favor`
-                    : 'Sin evidencias aún';
-                const alerts = entry.alerts && entry.alerts.length ? entry.alerts.join(', ') : 'Sin alertas';
+            const limitedRows = rows.slice(0, 12);
+            const tableBody = limitedRows.map(row => {
+                const badgeClass = badgeClassMap[row.level] || badgeClassMap.neutral;
                 return `
-                    <div class="compat-card">
-                        <strong>${escapeHtml(entry.goal || entry.label)}</strong>
-                        <span class="compat-level" data-level="${level}">${label}</span>
-                        <div class="compat-progress"><span style="width:${percent || 0}%"></span></div>
-                        <p class="muted" style="margin:4px 0 0;">${escapeHtml(detail)} · ${escapeHtml(alerts)}</p>
-                    </div>
+                    <tr>
+                        <td>${escapeHtml(row.ingredient)}</td>
+                        <td>${escapeHtml(row.objective)}</td>
+                        <td><span class="${badgeClass}">${escapeHtml(row.label)}</span></td>
+                    </tr>
                 `;
             }).join('');
 
-            const subtitle = profile && Object.keys(profile).length
-                ? 'Cómo responde esta fórmula a tus objetivos y sensibilidades.'
-                : 'Completa tu perfil para obtener compatibilidad personalizada.';
+            const productContext = getCurrentProductTypeContext();
+            const contextNote = productContext
+                ? `<p class="muted" style="margin-top:12px;">Contexto actual: ${escapeHtml(productContext)}.</p>`
+                : '';
+
+            const bodyHtml = `
+                <div class="compat-summary">${escapeHtml(summaryText)}</div>
+                <table class="compat-table">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Objetivo del cuestionario</th>
+                            <th>Compatibilidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableBody}
+                    </tbody>
+                </table>
+                ${contextNote}
+            `;
 
             return buildCollapsibleCard({
                 title: '🔍 Compatibilidad personalizada',
                 subtitle,
-                bodyHtml: `
-                    <div class="compat-summary">${escapeHtml(summaryText)}</div>
-                    <div class="compat-cards">
-                        ${cards}
-                    </div>
-                `
+                bodyHtml
             });
         }
 
@@ -4585,14 +4791,6 @@
             }
             const source = payload.intelligent_formula || payload;
             const summary = source.summary || payload.summary || {};
-            const compatBefore = source.compatibility_before ?? summary.compatibility_before ?? summary.compatibility_score ?? 0;
-            const compatAfterRaw = source.compatibility_after ?? summary.compatibility_after ?? summary.compatibility_score ?? compatBefore;
-            const compatibility = scoreToPercent(compatAfterRaw) ?? 0;
-            const beforePercent = scoreToPercent(compatBefore) ?? 0;
-            const highlightsRaw = summary.highlights || source.highlights || [];
-            const highlights = highlightsRaw.length
-                ? highlightsRaw.map(item => `<span>${escapeHtml(item)}</span>`).join('')
-                : '<span>Balance nutritivo</span>';
             const eta = source.delivery?.estimated_time
                 || summary.delivery_eta
                 || (payload.mockup && payload.mockup.eta_days)
@@ -4614,7 +4812,6 @@
             const statusClass = status => {
                 const value = (status || '').toString().toLowerCase();
                 if (['sustituir', 'replace', 'warning', 'conflict'].includes(value)) return 'labs-base-chip labs-base-chip--warning';
-                if (['potenciar', 'boost'].includes(value)) return 'labs-base-chip labs-base-chip--boost';
                 return 'labs-base-chip labs-base-chip--safe';
             };
 
@@ -4631,19 +4828,21 @@
             }
 
             const formulaList = Array.isArray(source.new_formula) ? source.new_formula : [];
+            const ingredientCount = basePool.length;
+            const substitutesCount = formulaList.length;
+            const keptCount = Math.max(ingredientCount - substitutesCount, 0);
+            // Cálculo: (detected ingredients - substitutes) / detected ingredients
+            const compatibility = ingredientCount > 0 ? Math.round(((ingredientCount - substitutesCount) / ingredientCount) * 100) : 0;
+            const gaugeValue = Math.max(0, Math.min(compatibility, 100));
             const substituteCards = formulaList.length
                 ? formulaList.map(item => {
                     const tagHtml = item.function_tags && item.function_tags.length
                         ? `<div class="labs-substitute-tags">${item.function_tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>`
                         : '';
-                    const percentChip = typeof item.percent === 'number'
-                        ? `<span class="labs-substitute-percent">${item.percent}%</span>`
-                        : '';
                     return `
                         <div class="labs-substitute-card">
                             <div class="labs-substitute-head">
                                 <strong>${escapeHtml(item.inci || item.name || 'Activo Mommyshops')}</strong>
-                                ${percentChip}
                             </div>
                             <p class="muted">${escapeHtml(item.reason || 'Activo recomendado por Mommyshops Labs')}</p>
                             ${tagHtml}
@@ -4700,9 +4899,9 @@
                         <div>
                             <span class="lab-badge">${escapeHtml(variantLabel)}</span>
                             <h4>🧪 Tu fórmula inteligente está lista.</h4>
-                            <p class="muted">Optimizada para ${escapeHtml(focusLabel)}. Procesamos ${basePool.length} ingredientes y elevamos la compatibilidad de ${beforePercent}% a ${compatibility}%.</p>
+                            <p class="muted">Optimizada para ${escapeHtml(focusLabel)}. Procesamos ${ingredientCount} ingredientes y recomendamos ${substitutesCount} sustitutos. Compatibilidad estimada: ${compatibility}%.</p>
                         </div>
-                        <div class="labs-gauge" style="--gauge-value:${Math.min(compatibility, 130)}">
+                        <div class="labs-gauge" style="--gauge-value:${gaugeValue}">
                             <span>${compatibility}%</span>
                             <small>Compatibilidad</small>
                         </div>
@@ -4711,7 +4910,7 @@
                     ${replacementsHtml}
                     <div class="labs-result-body">
                         <div class="labs-base">
-                            <h5>Base analizada</h5>
+                            <h5>Ingredientes producto</h5>
                             <ul class="labs-base-chips">
                                 ${baseListHtml}
                             </ul>
@@ -4722,9 +4921,6 @@
                         </div>
                     </div>
                     <div class="labs-result-footer">
-                        <div class="labs-highlights">
-                            ${highlights}
-                        </div>
                         <p class="muted">Entrega estimada en ${escapeHtml(eta)} · producido bajo estándares OMS/FDA/CIR.</p>
                         <button class="cta-buy" type="button" onclick="submitCustomProduct()">
                             Solicitar blend Mommyshops
@@ -5032,6 +5228,8 @@
             const userNeed = (userNeedEl && userNeedEl.value) ? userNeedEl.value : null;
             const profile = getProfileForRequest();
 
+            setCurrentProductType(userNeed);
+
             if (!fileInput || !fileInput.files || !fileInput.files[0]) {
                 alert('Por favor selecciona una imagen primero.');
                 return;
@@ -5103,6 +5301,8 @@
             const userNeedEl = document.getElementById('textUserNeed');
             const userNeed = (userNeedEl && userNeedEl.value) ? userNeedEl.value : null;
             const profile = getProfileForRequest();
+
+            setCurrentProductType(userNeed);
 
             if (!textValue.trim()) {
                 alert('Por favor ingresa la lista de ingredientes primero.');
@@ -5260,6 +5460,7 @@
                 if (needsAsyncFormula) {
                     triggerLabsFormulation(structuredReport, activeProfile, result.product_name);
                 }
+                setupJourneyNavigation();
                 return;
             }
 
@@ -5278,6 +5479,7 @@
                     </div>
                 `;
                 builderState = null;
+                setupJourneyNavigation();
                 return;
             }
 
@@ -5293,6 +5495,7 @@
                     </div>
                 `;
             builderState = null;
+            setupJourneyNavigation();
             }
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
@@ -5558,6 +5761,8 @@
             
             // Initialize image input
             initializeImageInput();
+
+            setupProductTypeListeners();
             
             // Initialize journey steps
             initializeJourneySteps();
@@ -5672,11 +5877,16 @@
         </div>
     </div>
 
-    <div class="sticky-assistant" role="complementary" aria-label="Asistente Mommyshops">
-        <strong>¿Necesitas ayuda?</strong>
-        <span>¿Necesitas ayuda en conocer más sobre tu rutina y productos de belleza?</span>
-        <button type="button" onclick="openSignupModal()">habla con mommyshops</button>
-    </div>
+    <details class="sticky-assistant" id="assistPanel" role="complementary" aria-label="Asistente Mommyshops" open>
+        <summary>
+            <strong>¿Necesitas ayuda?</strong>
+            <span>¿Necesitas ayuda en conocer más sobre tu rutina y productos de belleza?</span>
+        </summary>
+        <div class="assistant-actions">
+            <button type="button" onclick="openSignupModal()">habla con mommyshops</button>
+            <button type="button" onclick="collapseAssistPanel()">contraer panel</button>
+        </div>
+    </details>
 
     <div class="modal-backdrop" id="signupModal" aria-hidden="true">
         <div class="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signupTitle">
@@ -5729,6 +5939,17 @@
                     loop: true,
                     autoplay: true,
                     path: 'https://assets9.lottiefiles.com/private_files/lf30_dgfumnvn.json'
+                });
+            }
+            // Persist open/closed state of assistant
+            const assist = document.getElementById('assistPanel');
+            if (assist) {
+                const k = 'assist_open_state';
+                const saved = localStorage.getItem(k);
+                if (saved === 'false') assist.removeAttribute('open');
+                if (saved === 'true') assist.setAttribute('open', '');
+                assist.addEventListener('toggle', () => {
+                    localStorage.setItem(k, assist.open ? 'true' : 'false');
                 });
             }
         });

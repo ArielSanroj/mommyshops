@@ -15,6 +15,7 @@ from app.database.models import Product, Ingredient, User
 from app.services.ingredient_service import IngredientService, CATALOG_PATH
 from app.services.ocr_service import OCRService
 from app.services.ollama_service import OllamaService
+from app.services.formulation_service import FormulationService
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,39 @@ class AnalysisService:
             analysis_result["eco_friendly_percentage"] = eco_friendly_percentage
             analysis_result["avg_ewg_score"] = avg_ewg_score
             analysis_result["profile"] = profile or {}
+
+            # Build analysis summary for frontend quick badges
+            total_count = len(ingredients_analysis_data)
+            high_count = sum(1 for i in ingredients_analysis_data if (i.get("risk") or "").lower() == "high")
+            moderate_count = sum(1 for i in ingredients_analysis_data if (i.get("risk") or "").lower() == "moderate")
+            if high_count:
+                risk_level = "high"
+            elif moderate_count:
+                risk_level = "moderate"
+            else:
+                risk_level = "low"
+            overall_score_val = float(analysis_result.get("overall_score") or 0)
+            analysis_summary = {
+                "compatibility_score": round(overall_score_val / 100.0, 2),
+                "eco_score": eco_friendly_percentage,
+                "risk_level": risk_level,
+                "ingredient_count": total_count,
+            }
+
+            # Generate intelligent formula (Labs) using detected ingredients + profile
+            try:
+                formulation_service = FormulationService()
+                detected_names = [i.get("name") for i in ingredients_analysis_data if i.get("name")]
+                intelligent_formula = formulation_service.generate_formula(
+                    profile=profile or {},
+                    detected_ingredients=detected_names,
+                    variant=None,
+                    product_name=product_name,
+                    budget=None,
+                )
+            except Exception as exc:
+                logger.warning(f"Formulation generation failed: {exc}")
+                intelligent_formula = None
             
             # Persist product if schema supports it; otherwise continue without failing
             product_name_final = product_name or "Unknown Product"
@@ -159,7 +193,9 @@ class AnalysisService:
                 "recommendations": analysis_result.get("recommendations", []),
                 "structured_report": structured_report,
                 "detailed_report": detailed_report,
-                "profile": profile or {}
+                "profile": profile or {},
+                "analysis_summary": analysis_summary,
+                "intelligent_formula": intelligent_formula,
             }
             if product_type:
                 result["product_type"] = product_type
