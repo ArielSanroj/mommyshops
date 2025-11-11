@@ -2571,18 +2571,13 @@
         const API_BASE = (() => {
             if (typeof window === 'undefined') return 'http://localhost:8000';
             const hostname = window.location.hostname;
-            // Development
+            // Development - use localhost directly
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 return 'http://localhost:8000';
             }
-            // Production - use environment variable or default
-            // Set VERCEL_API_URL in Vercel dashboard for production backend
-            const envApiUrl = window.VERCEL_API_URL || window.API_URL;
-            if (envApiUrl) {
-                return envApiUrl.startsWith('http') ? envApiUrl : `https://${envApiUrl}`;
-            }
-            // Fallback to relative API path or default production URL
-            return window.location.origin.replace(/\/$/, '') + '/api' || 'https://api.mommyshops.com';
+            // Production - use relative /api path which Vercel rewrites to ngrok
+            // This works for both vercel.app domains and custom domains
+            return '/api';
         })();
         const PROFILE_STORAGE_KEY = 'mommyshopsProfile';
         let journeyStepItems = [];
