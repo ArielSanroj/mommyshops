@@ -1,0 +1,22 @@
+# Backend files - not needed for frontend deployment
+backend-python/
+backend-java/
+*.py
+*.java
+*.db
+*.log
+__pycache__/
+venv/
+node_modules/
+.env
+*.pid
+docker-compose*.yml
+Dockerfile
+nginx/
+monitoring/
+scripts/
+tests/
+docs/
+markdown/
+waha/
+
