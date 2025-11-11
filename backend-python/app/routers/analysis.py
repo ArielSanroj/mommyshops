@@ -115,6 +115,8 @@ class AnalysisResponse(BaseModel):
     structured_report: Optional[dict] = None
     detailed_report: Optional[str] = None
     profile: Optional[dict] = None
+    analysis_summary: Optional[dict] = None
+    intelligent_formula: Optional[dict] = None
     processing_time: float
 
 class IngredientAnalysisRequest(BaseModel):
@@ -280,6 +282,8 @@ Normalized ingredient list:"""
             structured_report=result.get("structured_report"),
             detailed_report=result.get("detailed_report"),
             profile=result.get("profile"),
+            analysis_summary=result.get("analysis_summary"),
+            intelligent_formula=result.get("intelligent_formula"),
             processing_time=processing_time
         )
         
@@ -473,6 +477,8 @@ Cleaned ingredient list:"""
             structured_report=result.get("structured_report"),
             detailed_report=result.get("detailed_report"),
             profile=result.get("profile"),
+            analysis_summary=result.get("analysis_summary"),
+            intelligent_formula=result.get("intelligent_formula"),
             processing_time=processing_time
         )
         
