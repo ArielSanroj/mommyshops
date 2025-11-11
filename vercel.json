@@ -6,14 +6,14 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/frontend.html"
+      "source": "/",
+      "destination": "/frontend.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/frontend.html"
+      "source": "/(.*)",
+      "destination": "/frontend.html"
     }
   ],
   "headers": [
