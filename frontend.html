@@ -5799,8 +5799,9 @@
                 const health = await response.json();
                 console.log('API Health:', health);
             } catch (error) {
-                console.error('API not available:', error);
-                alert('⚠️ API server is not running. Please start the backend server first.');
+                // Only log error, don't show alert - API might be available but CORS or network issue
+                console.warn('API health check failed (this is normal if backend is starting):', error.message);
+                // Don't show alert - let the user try to use the app anyway
             }
         });
         
