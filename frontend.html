@@ -2496,7 +2496,7 @@
                         <div class="upload-icon">📷</div>
                         <h3>Upload Product Image</h3>
                         <p>Take a photo or upload an image of your cosmetic product's ingredient list</p>
-                        <input type="file" id="imageInput" class="file-input" accept="image/*">
+                        <input type="file" id="imageInput" class="file-input" accept="image/jpeg,image/png,image/webp,image/jpg">
                         <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
                             Choose Image
                         </button>
@@ -5245,6 +5245,15 @@
                 alert('Por favor selecciona una imagen primero.');
                 return;
             }
+            const file = fileInput.files[0];
+            const allowedMime = ['image/jpeg', 'image/png', 'image/webp'];
+            const nameLower = (file.name || '').toLowerCase();
+            const isHeic = nameLower.endsWith('.heic') || file.type === 'image/heic' || file.type === 'image/heif';
+            const isPdf = nameLower.endsWith('.pdf') || file.type === 'application/pdf';
+            if (!allowedMime.includes(file.type) || isHeic || isPdf) {
+                alert('Formato no permitido. Usa .jpg, .jpeg, .png o .webp.\nSugerencia: si tu foto es HEIC (iPhone), conviértela a JPG/PNG antes de subirla.');
+                return;
+            }
             
             // Profile is optional - allow analysis without it but show a gentle reminder
             if (!profile) {
@@ -5282,12 +5291,32 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
+                    // Provide friendlier guidance on common OCR failure
+                    if (response.status === 400 && /Could not extract text from image/i.test(errorText)) {
+                        const tips = [
+                            'Verifica que la foto esté enfocada y con buena iluminación.',
+                            'Asegúrate de que toda la lista de ingredientes sea legible (sin cortes/reflejos).',
+                            'Evita ángulos inclinados; toma la foto perpendicular a la etiqueta.',
+                            'Si puedes, convierte a texto y usa la pestaña “Text Analysis”.'
+                        ];
+                        showError('No pudimos leer el texto de la imagen. ' + tips.join(' '));
+                        // Sugerir pasar a pestaña de texto
+                        setTimeout(() => { if (typeof window.switchTab === 'function') window.switchTab('text'); }, 50);
+                        return;
+                    }
                     throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
                 }
 
-                const result = await response.json();
-                console.log('Analysis result received:', result);
-                showResults(result);
+                    console.log('Analysis result received:', result);
+                    showResults(result);
+                } else {
+                    // Si no es JSON, puede ser HTML (error de Vercel)
+                    const text = await response.text();
+                    if (text.includes('ROUTER_EXTERNAL_TARGET_ERROR') || text.includes('<!DOCTYPE html>')) {
+                        throw new Error('El servidor backend no está disponible temporalmente. Por favor, intenta de nuevo en unos momentos.');
+                    }
+                    throw new Error(`Respuesta inesperada del servidor (${response.status})`);
+                }
             } catch (error) {
                 console.error('Image analysis error:', error);
                 console.error('Error details:', {
@@ -5295,7 +5324,9 @@
                     stack: error.stack,
                     name: error.name
                 });
-                showError('Error al analizar imagen: ' + error.message);
+                if (!/Could not extract text from image/i.test(error?.message || '')) {
+                    showError('Error al analizar imagen: ' + error.message);
+                }
             }
         }
 
@@ -5361,10 +5392,27 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                    
+                    // Detectar si Vercel devolvió HTML (error de router)
+                    if (errorText.includes('ROUTER_EXTERNAL_TARGET_ERROR') || errorText.includes('<!DOCTYPE html>')) {
+                        throw new Error('El servidor backend no está disponible temporalmente. Por favor, intenta de nuevo en unos momentos o verifica tu conexión.');
+                    }
+                    
+                    // Intentar parsear como JSON si parece JSON
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.detail || errorJson.message || errorMessage;
+                    } catch {
+                        // Si no es JSON, usar el texto truncado
+                        errorMessage = errorText.substring(0, 200);
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const result = await response.json();
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
                 console.log('Analysis result received:', result);
                 showResults(result);
             } catch (error) {
