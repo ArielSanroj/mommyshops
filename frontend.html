@@ -5291,22 +5291,41 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
+                    
+                    // Detectar si Vercel devolvió HTML (error de router)
+                    if (errorText.includes('ROUTER_EXTERNAL_TARGET_ERROR') || errorText.includes('<!DOCTYPE html>')) {
+                        throw new Error('El servidor backend no está disponible temporalmente. Por favor, intenta de nuevo en unos momentos o verifica tu conexión.');
+                    }
+                    
                     // Provide friendlier guidance on common OCR failure
                     if (response.status === 400 && /Could not extract text from image/i.test(errorText)) {
                         const tips = [
                             'Verifica que la foto esté enfocada y con buena iluminación.',
                             'Asegúrate de que toda la lista de ingredientes sea legible (sin cortes/reflejos).',
                             'Evita ángulos inclinados; toma la foto perpendicular a la etiqueta.',
-                            'Si puedes, convierte a texto y usa la pestaña “Text Analysis”.'
+                            'Si puedes, convierte a texto y usa la pestaña "Text Analysis".'
                         ];
                         showError('No pudimos leer el texto de la imagen. ' + tips.join(' '));
                         // Sugerir pasar a pestaña de texto
                         setTimeout(() => { if (typeof window.switchTab === 'function') window.switchTab('text'); }, 50);
                         return;
                     }
-                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                    
+                    // Intentar parsear como JSON si parece JSON
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.detail || errorJson.message || errorMessage;
+                    } catch {
+                        // Si no es JSON, usar el texto truncado
+                        errorMessage = errorText.substring(0, 200);
+                    }
+                    throw new Error(errorMessage);
                 }
 
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
                     console.log('Analysis result received:', result);
                     showResults(result);
                 } else {
