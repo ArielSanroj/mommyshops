@@ -4004,7 +4004,7 @@
             }
         }
 
-        async function saveProfile(event) {
+        window.saveProfile = async function saveProfile(event) {
             event.preventDefault();
             const profile = serializeProfileFromForm();
 
@@ -5432,8 +5432,16 @@
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     const result = await response.json();
-                console.log('Analysis result received:', result);
-                showResults(result);
+                    console.log('Analysis result received:', result);
+                    showResults(result);
+                } else {
+                    // Si no es JSON, puede ser HTML (error de Vercel)
+                    const text = await response.text();
+                    if (text.includes('ROUTER_EXTERNAL_TARGET_ERROR') || text.includes('<!DOCTYPE html>')) {
+                        throw new Error('El servidor backend no está disponible temporalmente. Por favor, intenta de nuevo en unos momentos.');
+                    }
+                    throw new Error(`Respuesta inesperada del servidor (${response.status})`);
+                }
             } catch (error) {
                 console.error('Text analysis error:', error);
                 console.error('Error details:', {
