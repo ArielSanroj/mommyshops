@@ -2791,13 +2791,53 @@
                 return;
             }
             form.dataset.bound = 'true';
-            form.addEventListener('submit', (event) => {
+            form.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 const formData = new FormData(form);
                 const firstName = formData.get('firstName') || 'creador/a';
-                closeSignupModal();
-                alert(`Gracias ${firstName}! Nuestro equipo Mommyshops se pondrá en contacto muy pronto.`);
-                form.reset();
+                const lastName = formData.get('lastName') || '';
+                const email = formData.get('email') || '';
+                const phone = formData.get('phone') || '';
+                const country = formData.get('country') || '';
+                
+                // Disable submit button to prevent double submission
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Enviando...';
+                
+                try {
+                    const response = await fetch(`${API_BASE}/leads/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            first_name: firstName,
+                            last_name: lastName,
+                            email: email,
+                            phone: phone || null,
+                            country: country
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Error al enviar los datos');
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Lead creado:', result);
+                    
+                    closeSignupModal();
+                    alert(`Gracias ${firstName}! Nuestro equipo Mommyshops se pondrá en contacto muy pronto.`);
+                    form.reset();
+                } catch (error) {
+                    console.error('Error al enviar formulario:', error);
+                    alert('Hubo un error al enviar tus datos. Por favor, intenta de nuevo.');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
             });
         }
 

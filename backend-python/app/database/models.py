@@ -135,3 +135,15 @@ class RecommendationFeedback(Base):
     feedback_type = Column(String(32))  # 'helpful', 'not_helpful', 'irrelevant'
     feedback_text = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Lead(Base):
+    __tablename__ = "leads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    email = Column(String(128), nullable=False, index=True)
+    phone = Column(String(50), nullable=True)
+    country = Column(String(10), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

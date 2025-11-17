@@ -9,6 +9,7 @@ from .formulation import router as formulation_router
 from .profile import router as profile_router
 from .health import router as health_router
 from .admin import router as admin_router
+from .leads import router as leads_router
 
 # WhatsApp router is optional (requires waha module)
 try:
@@ -24,5 +25,6 @@ __all__ = [
     "formulation_router",
     "health_router",
     "admin_router",
+    "leads_router",
     "whatsapp_router",
 ]
