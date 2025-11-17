@@ -30,7 +30,7 @@ class LeadResponse(BaseModel):
     first_name: str
     last_name: str
     email: str
-    phone: str | None
+    phone: Optional[str]
     country: str
     created_at: str
 
