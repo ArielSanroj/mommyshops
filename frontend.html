@@ -2831,20 +2831,42 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
                     
+                    // Try without trailing slash first, then with
+                    let url = `${API_BASE}/leads`;
+                    console.log('Fetch URL:', url);
+                    console.log('Fetch headers:', headers);
+                    
                     let response;
                     try {
-                        response = await fetch(`${API_BASE}/leads/`, {
+                        response = await fetch(url, {
                             method: 'POST',
                             headers: headers,
                             body: JSON.stringify(payload),
-                            signal: controller.signal
+                            signal: controller.signal,
+                            mode: 'cors', // Explicitly set CORS mode
+                            credentials: 'omit' // Don't send credentials
                         });
                         clearTimeout(timeoutId);
                     } catch (fetchError) {
                         clearTimeout(timeoutId);
+                        console.error('Fetch error details:', {
+                            name: fetchError.name,
+                            message: fetchError.message,
+                            stack: fetchError.stack,
+                            cause: fetchError.cause
+                        });
+                        
                         if (fetchError.name === 'AbortError') {
                             throw new Error('La solicitud tardó demasiado tiempo. Por favor, intenta de nuevo.');
                         }
+                        
+                        // Network error - server might be down or CORS issue
+                        if (fetchError.message.includes('Failed to fetch') || 
+                            fetchError.message.includes('NetworkError') ||
+                            fetchError.message.includes('Network request failed')) {
+                            throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo en ${API_BASE}`);
+                        }
+                        
                         throw fetchError;
                     }
                     
