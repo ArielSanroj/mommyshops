@@ -253,10 +253,24 @@
         .journey-card {
             background: var(--color-card);
             border-radius: 20px;
-            padding: 20px;
+            padding: 28px;
             box-shadow: var(--shadow-soft);
             border: 1px solid var(--color-border);
             scroll-snap-align: start;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .journey-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-strong);
+        }
+
+        .journey-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            line-height: 1;
         }
 
         .journey-card span {
@@ -2334,31 +2348,219 @@
 
     <section class="site-section" id="laboratorio">
         <div class="journey-section">
-            <div>
+            <div style="text-align:center;margin-bottom:48px;">
                 <p class="lab-badge">Flujo guiado</p>
-                <h2 style="font-size:2rem;margin-bottom:12px;">Del producto comercial, a un producto diseñado para ti</h2>
-                <p style="color:var(--color-muted);">Cada bloque se ajusta a tu perfil (mamá, marca o laboratorio) con seguimiento en tiempo real.</p>
+                <h2 style="font-size:2.5rem;margin-bottom:16px;line-height:1.2;">Del producto comercial, a un producto diseñado para ti</h2>
+                <p style="color:var(--color-muted);font-size:1.1rem;max-width:700px;margin:0 auto;">Cada bloque se ajusta a tu perfil (mamá, marca o laboratorio) con seguimiento en tiempo real. Transformamos ingredientes comerciales en fórmulas personalizadas y seguras.</p>
             </div>
             <div class="journey-grid">
                 <div class="journey-card">
+                    <div class="journey-icon">👤</div>
                     <span>01 • Perfil</span>
                     <strong>Contexto inteligente</strong>
-                    <p>Tipo de piel, metas y restricciones médicas.</p>
+                    <p>Tipo de piel, metas y restricciones médicas. Nuestra IA aprende tus necesidades específicas para personalizar cada análisis.</p>
+                    <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
+                        <li>Perfil de piel y cabello</li>
+                        <li>Condiciones médicas</li>
+                        <li>Objetivos personalizados</li>
+                    </ul>
                 </div>
                 <div class="journey-card">
+                    <div class="journey-icon">📸</div>
                     <span>02 • Escaneo</span>
                     <strong>OCR + IA</strong>
-                    <p>Detecta riesgos, crea ingredientes y valida normativas.</p>
+                    <p>Detecta riesgos, crea ingredientes y valida normativas. Escaneamos etiquetas con tecnología de reconocimiento óptico avanzado.</p>
+                    <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
+                        <li>Reconocimiento de texto (OCR)</li>
+                        <li>Validación regulatoria</li>
+                        <li>Detección de riesgos</li>
+                    </ul>
                 </div>
                 <div class="journey-card">
+                    <div class="journey-icon">🔍</div>
                     <span>03 • Diagnóstico</span>
                     <strong>Compatibilidad personalizada</strong>
-                    <p>Metrics, alertas y recomendaciones claras para cada necesidad.</p>
+                    <p>Metrics, alertas y recomendaciones claras para cada necesidad. Análisis profundo con estándares OMS, FDA, CIR y SCCS.</p>
+                    <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
+                        <li>Análisis de compatibilidad</li>
+                        <li>Alertas de seguridad</li>
+                        <li>Recomendaciones inteligentes</li>
+                    </ul>
                 </div>
                 <div class="journey-card">
+                    <div class="journey-icon">🧪</div>
                     <span>04 • Fórmula Mommyshops</span>
                     <strong>Blend listo para fabricar</strong>
-                    <p>Ingredientes sustitutos, porcentajes y producto hiper personalizados con inteligencia artificial.</p>
+                    <p>Ingredientes sustitutos, porcentajes y producto hiper personalizados con inteligencia artificial. Fórmula completa lista para producción.</p>
+                    <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
+                        <li>Sustitutos certificados</li>
+                        <li>Porcentajes precisos</li>
+                        <li>Lista de ingredientes completa</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:48px;">
+                <button class="btn btn-primary" onclick="startMainFlow()" style="font-size:1.1rem;padding:16px 32px;">Comenzar tu análisis ahora</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="site-section" id="planes" style="background:linear-gradient(180deg, #f6f6fb 0%, #ffffff 100%);padding:80px 24px;">
+        <div style="max-width:1200px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:64px;">
+                <p class="lab-badge">Planes y precios</p>
+                <h2 style="font-size:2.5rem;margin-bottom:16px;">Elige el plan perfecto para ti</h2>
+                <p style="color:var(--color-muted);font-size:1.1rem;max-width:600px;margin:0 auto;">Desde análisis individuales hasta soluciones empresariales completas</p>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:32px;margin-top:48px;">
+                <div style="background:var(--color-card);border-radius:24px;padding:40px;box-shadow:var(--shadow-soft);border:2px solid var(--color-border);position:relative;">
+                    <div style="font-size:0.9rem;color:var(--color-primary);font-weight:600;margin-bottom:8px;">PARA MAMÁS</div>
+                    <h3 style="font-size:2rem;margin-bottom:8px;color:var(--color-dark);">Básico</h3>
+                    <div style="font-size:3rem;font-weight:700;color:var(--color-primary);margin-bottom:24px;">
+                        Gratis
+                        <span style="font-size:1rem;color:var(--color-muted);font-weight:400;">/ siempre</span>
+                    </div>
+                    <ul style="list-style:none;padding:0;margin:24px 0;display:grid;gap:16px;">
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Análisis de hasta 3 productos</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Recomendaciones básicas</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Perfil personalizado</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Soporte por email</span>
+                        </li>
+                    </ul>
+                    <button class="btn btn-secondary" onclick="startMainFlow()" style="width:100%;margin-top:24px;">Comenzar gratis</button>
+                </div>
+                <div style="background:linear-gradient(135deg, var(--color-primary), var(--color-primary-accent));border-radius:24px;padding:40px;box-shadow:var(--shadow-strong);border:2px solid var(--color-primary);position:relative;transform:scale(1.05);">
+                    <div style="position:absolute;top:-12px;right:24px;background:#10b981;color:white;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;">POPULAR</div>
+                    <div style="font-size:0.9rem;color:rgba(255,255,255,0.9);font-weight:600;margin-bottom:8px;">PARA FAMILIAS</div>
+                    <h3 style="font-size:2rem;margin-bottom:8px;color:white;">Premium</h3>
+                    <div style="font-size:3rem;font-weight:700;color:white;margin-bottom:24px;">
+                        $29
+                        <span style="font-size:1rem;color:rgba(255,255,255,0.8);font-weight:400;">/ mes</span>
+                    </div>
+                    <ul style="list-style:none;padding:0;margin:24px 0;display:grid;gap:16px;">
+                        <li style="display:flex;align-items:start;gap:12px;color:white;">
+                            <span style="font-size:1.2rem;">✓</span>
+                            <span>Análisis ilimitados</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;color:white;">
+                            <span style="font-size:1.2rem;">✓</span>
+                            <span>Fórmulas personalizadas</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;color:white;">
+                            <span style="font-size:1.2rem;">✓</span>
+                            <span>Historial completo</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;color:white;">
+                            <span style="font-size:1.2rem;">✓</span>
+                            <span>Prioridad en soporte</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;color:white;">
+                            <span style="font-size:1.2rem;">✓</span>
+                            <span>API access</span>
+                        </li>
+                    </ul>
+                    <button class="btn" onclick="openSignupModal()" style="width:100%;margin-top:24px;background:white;color:var(--color-primary);">Empezar ahora</button>
+                </div>
+                <div style="background:var(--color-card);border-radius:24px;padding:40px;box-shadow:var(--shadow-soft);border:2px solid var(--color-border);position:relative;">
+                    <div style="font-size:0.9rem;color:var(--color-primary);font-weight:600;margin-bottom:8px;">PARA MARCAS</div>
+                    <h3 style="font-size:2rem;margin-bottom:8px;color:var(--color-dark);">Empresarial</h3>
+                    <div style="font-size:3rem;font-weight:700;color:var(--color-primary);margin-bottom:24px;">
+                        Personalizado
+                    </div>
+                    <ul style="list-style:none;padding:0;margin:24px 0;display:grid;gap:16px;">
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Análisis masivos</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Integración API completa</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Soporte dedicado</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>White-label disponible</span>
+                        </li>
+                        <li style="display:flex;align-items:start;gap:12px;">
+                            <span style="color:#10b981;font-size:1.2rem;">✓</span>
+                            <span>Capacitación incluida</span>
+                        </li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="openSignupModal()" style="width:100%;margin-top:24px;">Contactar ventas</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="site-section" id="recursos" style="padding:80px 24px;">
+        <div style="max-width:1200px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:64px;">
+                <p class="lab-badge">Recursos</p>
+                <h2 style="font-size:2.5rem;margin-bottom:16px;">Todo lo que necesitas para empezar</h2>
+                <p style="color:var(--color-muted);font-size:1.1rem;max-width:600px;margin:0 auto;">Biblioteca de recursos, documentación y herramientas para aprovechar al máximo Mommyshops Labs</p>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:32px;">
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">📚</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Biblioteca de ingredientes</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Accede a nuestra base de datos con más de 12,000 ingredientes auditados con estándares globales.</p>
+                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Explorar biblioteca →
+                    </a>
+                </div>
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">📖</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Documentación API</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Integra Mommyshops Labs en tu aplicación con nuestra API completa y documentación detallada.</p>
+                    <a href="https://mommyshops.notion.site" target="_blank" rel="noopener" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Ver documentación →
+                    </a>
+                </div>
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">🎓</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Guías y tutoriales</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Aprende a usar todas las funcionalidades de Mommyshops Labs con guías paso a paso.</p>
+                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Ver tutoriales →
+                    </a>
+                </div>
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">🔬</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Estándares regulatorios</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Información sobre OMS, FDA, CIR, ICCR, SCCS y otros estándares que utilizamos en nuestros análisis.</p>
+                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Conocer estándares →
+                    </a>
+                </div>
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">💡</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Blog y noticias</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Mantente al día con las últimas tendencias en clean beauty, ingredientes seguros y ciencia cosmética.</p>
+                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Leer blog →
+                    </a>
+                </div>
+                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
+                    <div style="font-size:2.5rem;margin-bottom:16px;">🤝</div>
+                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Soporte y comunidad</h3>
+                    <p style="color:var(--color-muted);margin-bottom:20px;">Únete a nuestra comunidad, resuelve dudas y comparte experiencias con otros usuarios.</p>
+                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                        Unirse a comunidad →
+                    </a>
                 </div>
             </div>
         </div>
