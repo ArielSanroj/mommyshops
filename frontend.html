@@ -2807,22 +2807,32 @@
                 submitButton.textContent = 'Enviando...';
                 
                 try {
+                    const payload = {
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        phone: phone || null,
+                        country: country
+                    };
+                    
+                    console.log('Enviando datos:', payload);
+                    console.log('API_BASE:', API_BASE);
+                    
                     const response = await fetch(`${API_BASE}/leads/`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            first_name: firstName,
-                            last_name: lastName,
-                            email: email,
-                            phone: phone || null,
-                            country: country
-                        })
+                        body: JSON.stringify(payload)
                     });
                     
+                    console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+                    
                     if (!response.ok) {
-                        throw new Error('Error al enviar los datos');
+                        const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }));
+                        console.error('Error response:', errorData);
+                        throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`);
                     }
                     
                     const result = await response.json();
@@ -2833,7 +2843,8 @@
                     form.reset();
                 } catch (error) {
                     console.error('Error al enviar formulario:', error);
-                    alert('Hubo un error al enviar tus datos. Por favor, intenta de nuevo.');
+                    const errorMessage = error.message || 'Error desconocido';
+                    alert(`Hubo un error al enviar tus datos: ${errorMessage}. Por favor, intenta de nuevo.`);
                 } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = originalButtonText;
