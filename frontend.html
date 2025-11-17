@@ -2818,16 +2818,39 @@
                     console.log('Enviando datos:', payload);
                     console.log('API_BASE:', API_BASE);
                     
-                    const response = await fetch(`${API_BASE}/leads/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    // Add ngrok header if using ngrok (production)
+                    if (API_BASE === '/api' || API_BASE.includes('ngrok')) {
+                        headers['ngrok-skip-browser-warning'] = 'true';
+                    }
+                    
+                    // Create AbortController for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                    
+                    let response;
+                    try {
+                        response = await fetch(`${API_BASE}/leads/`, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(payload),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                    } catch (fetchError) {
+                        clearTimeout(timeoutId);
+                        if (fetchError.name === 'AbortError') {
+                            throw new Error('La solicitud tardó demasiado tiempo. Por favor, intenta de nuevo.');
+                        }
+                        throw fetchError;
+                    }
                     
                     console.log('Response status:', response.status);
                     console.log('Response ok:', response.ok);
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
                     
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }));
@@ -2843,8 +2866,20 @@
                     form.reset();
                 } catch (error) {
                     console.error('Error al enviar formulario:', error);
-                    const errorMessage = error.message || 'Error desconocido';
-                    alert(`Hubo un error al enviar tus datos: ${errorMessage}. Por favor, intenta de nuevo.`);
+                    console.error('Error completo:', {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                        cause: error.cause
+                    });
+                    
+                    // Check if it's a network error
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        alert('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet o intenta más tarde.');
+                    } else {
+                        const errorMessage = error.message || 'Error desconocido';
+                        alert(`Hubo un error al enviar tus datos: ${errorMessage}. Por favor, intenta de nuevo.`);
+                    }
                 } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = originalButtonText;
