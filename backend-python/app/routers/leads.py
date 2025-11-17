@@ -21,7 +21,7 @@ class LeadCreate(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100, description="First name")
     last_name: str = Field(..., min_length=1, max_length=100, description="Last name")
     email: EmailStr = Field(..., description="Email address")
-    phone: str = Field(None, max_length=50, description="Phone number")
+    phone: Optional[str] = Field(None, max_length=50, description="Phone number")
     country: str = Field(..., min_length=2, max_length=10, description="Country code")
 
 
@@ -87,11 +87,12 @@ async def create_lead(
         )
         
     except Exception as e:
-        logger.error(f"Lead creation failed: {e}")
+        logger.error(f"Lead creation failed: {e}", exc_info=True)
         db.rollback()
+        error_detail = str(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create lead"
+            detail=f"Failed to create lead: {error_detail}"
         )
 
 

@@ -51,7 +51,19 @@ async def lifespan(app: FastAPI):
     settings = get_app_settings()
     logger.info(f"Application configured for environment: {settings.ENVIRONMENT}")
     
-    # TODO: Initialize database connections
+    # Import all models to ensure they're registered with SQLAlchemy
+    from app.database.models import Lead, User, Product, CustomProduct, Recommendation, Ingredient, Routine, RecommendationFeedback
+    logger.info("Database models imported successfully")
+    
+    # Initialize database tables if needed
+    try:
+        from app.database.session import engine
+        from app.database.models import Base
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables initialized")
+    except Exception as e:
+        logger.warning(f"Could not initialize database tables: {e}")
+    
     # TODO: Initialize Redis connections
     # TODO: Initialize external API clients
     
