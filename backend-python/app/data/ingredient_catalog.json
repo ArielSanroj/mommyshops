@@ -1012,5 +1012,149 @@
       "microbiome_friendly",
       "sin_lagrimas"
     ]
+  },
+  "Aqua / Water / Eau": {
+    "score": 100,
+    "ewg": 1,
+    "risk": "none",
+    "eco": true,
+    "description": "Agua purificada, ingrediente base esencial y completamente seguro para productos cosméticos. No tiene efectos adversos conocidos.",
+    "categories": [
+      "all"
+    ],
+    "aliases": [
+      "Aqua",
+      "Water",
+      "Eau",
+      "Aqua/Water/Eau"
+    ]
+  },
+  "Caprylic/Capric Triglyceride": {
+    "score": 85,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Emoliente ligero derivado del aceite de coco. Proporciona hidratación sin sensación grasa, ideal para pieles sensibles y productos para bebés. Se absorbe rápidamente y no obstruye poros.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Petrolatum": {
+    "score": 60,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Oclusivo derivado del petróleo que forma una barrera sobre la piel. Puede sentirse pesado y obstruir poros en climas húmedos. Para bebés con dermatitis del pañal, recomendamos alternativas más ligeras como aceites vegetales o ceramidas.",
+    "categories": [
+      "skincare"
+    ]
+  },
+  "Potassium Phosphate": {
+    "score": 80,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Regulador de pH suave que ayuda a mantener el equilibrio ácido-base de la piel. Seguro para uso en productos para bebés cuando se usa en concentraciones apropiadas.",
+    "categories": [
+      "all"
+    ]
+  },
+  "Ceramide NP": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Ceramida tipo NP que refuerza la barrera cutánea natural. Ayuda a retener la humedad y protege la piel de irritantes. Ideal para piel seca o atópica en bebés.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Ceramide AP": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Ceramida tipo AP que fortalece la barrera cutánea y mejora la hidratación. Contribuye a la reparación de la piel dañada y es beneficiosa para eccema leve.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Ceramide EOP": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Ceramida tipo EOP que restaura la función de barrera de la piel. Ayuda a prevenir la pérdida de agua transepidérmica y calma la irritación. Recomendada para piel seca/atópica.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Sodium Lauroyl Lactylate": {
+    "score": 75,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Surfactante suave derivado del ácido láctico y ácido láurico. Proporciona limpieza suave sin resecar la piel. Apropiado para productos tear-free para bebés.",
+    "categories": [
+      "hair_care",
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Sodium Hyaluronate": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Sal sódica del ácido hialurónico, humectante potente que puede retener hasta 1000 veces su peso en agua. Hidrata profundamente sin sensación grasa, ideal para piel seca y deshidratada. Seguro para bebés.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Cholesterol": {
+    "score": 85,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Lípido natural que forma parte de la barrera cutánea. Ayuda a mantener la integridad de la piel y mejora la penetración de otros ingredientes activos. Seguro y beneficioso para la reparación de la barrera.",
+    "categories": [
+      "skincare"
+    ]
+  },
+  "Dipotassium Phosphate": {
+    "score": 80,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Regulador de pH y agente tampón que ayuda a mantener la estabilidad de la fórmula. Seguro para uso cosmético cuando se utiliza en concentraciones apropiadas.",
+    "categories": [
+      "all"
+    ]
+  },
+  "Phytosphingosine": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Lípido natural que refuerza la barrera cutánea y tiene propiedades antimicrobianas suaves. Ayuda a mantener el equilibrio del microbioma de la piel. Beneficioso para piel sensible y atópica.",
+    "categories": [
+      "skincare",
+      "baby_care"
+    ]
+  },
+  "Xanthan Gum": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Espesante natural derivado de la fermentación de azúcares. Proporciona textura suave y estabilidad a las fórmulas. Completamente seguro y biodegradable. Ideal para productos clean beauty y para bebés.",
+    "categories": [
+      "all"
+    ]
   }
 }
