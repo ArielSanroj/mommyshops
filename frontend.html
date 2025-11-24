@@ -2345,96 +2345,176 @@
         </div>
     </div>
 
-    <section class="site-section" id="bebes" style="padding:80px 24px;">
-        <div style="max-width:1200px;margin:0 auto;display:grid;gap:36px;">
+    <section class="site-section" id="bebes" style="padding:80px 24px;background:linear-gradient(180deg, #fdf8ff 0%, #f6f9ff 50%, #f9fffb 100%);">
+        <div style="max-width:1200px;margin:0 auto;display:grid;gap:48px;">
             <div style="text-align:center;">
                 <p class="lab-badge">Lanzamiento • Mommyshops Bebé</p>
-                <h2 style="font-size:2.6rem;margin:10px 0;line-height:1.2;">Sin lágrimas. Sin tóxicos. Sin disruptores endocrinos.</h2>
-                <p style="color:var(--color-muted);font-size:1.1rem;max-width:820px;margin:0 auto;">“El primer jabón-shampoo del mundo que cambia su fórmula según el clima, la ciudad y la piel de tu bebé.” IA que ajusta avena, karité, hamamelis, prebióticos y fragancia segura en tiempo real.</p>
+                <h2 style="font-size:2.6rem;margin:10px 0;line-height:1.2;font-weight:700;">Sin lágrimas. Sin tóxicos. Sin disruptores endocrinos.</h2>
+                <p style="color:var(--color-muted);font-size:1.1rem;max-width:820px;margin:16px auto 0;line-height:1.6;">"El primer jabón-shampoo que ajusta su fórmula con IA según clima, ciudad y piel del bebé."</p>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:22px;">
-                <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:22px;padding:24px;box-shadow:var(--shadow-soft);">
-                    <span class="lab-badge" style="display:inline-flex;">Piel Seca • “Nube de Avena”</span>
-                    <h3 style="font-size:1.4rem;margin:12px 0 6px;color:var(--color-dark);">Bebés con piel seca/atópica o clima seco</h3>
-                    <p style="color:var(--color-muted);margin-bottom:12px;">Avena coloidal 5 %, karité fair-trade, leche de almendra, glicerina, decil glucósido, caléndula CO2.</p>
-                    <ul style="list-style:none;padding:0;margin:0 0 14px;display:grid;gap:8px;font-weight:600;color:var(--color-dark);">
-                        <li>IA sube +30 % avena y karité si detecta sequedad o baja humedad.</li>
-                        <li>pH 5.5, 0 % ardor de ojos, microbiómica friendly.</li>
-                    </ul>
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-                        <strong style="font-size:1.6rem;color:var(--color-primary);">Cotizar</strong>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:28px;margin-top:32px;">
+                <!-- Nube de Avena - Beige/Crema -->
+                <div style="background:linear-gradient(135deg, #faf8f3 0%, #f5f1e8 100%);border:1px solid rgba(210, 180, 140, 0.2);border-radius:28px;padding:32px;box-shadow:0 20px 45px rgba(210, 180, 140, 0.14), 0 0 0 1px rgba(255,255,255,0.5) inset;position:relative;overflow:hidden;backdrop-filter:blur(10px);">
+                    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle, rgba(255,248,220,0.6), transparent);border-radius:50%;opacity:0.5;"></div>
+                    <div style="position:relative;z-index:1;">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                            <span style="font-size:2rem;">☁️🌾</span>
+                            <div>
+                                <span style="display:inline-block;background:rgba(210, 180, 140, 0.15);color:#8b6f47;padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Piel Seca</span>
+                                <h3 style="font-size:1.5rem;margin:8px 0 4px;color:#5c4a37;font-weight:700;">Nube de Avena</h3>
+                            </div>
+                        </div>
+                        <p style="color:#6b5d47;margin-bottom:16px;font-size:0.95rem;line-height:1.5;">Para piel seca/atópica o clima seco</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#6b5d47;">🌾 Avena 5%</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#6b5d47;">🧈 Karité</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#6b5d47;">🌻 Caléndula</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#6b5d47;">💧 pH 5.5</span>
+                        </div>
+                        <p style="background:rgba(255,248,220,0.6);padding:14px;border-radius:14px;margin-bottom:20px;font-size:0.9rem;line-height:1.5;color:#5c4a37;font-style:italic;">
+                            💛 "Tu bebé deja de sentir tirantez y resequedad desde el primer uso."
+                        </p>
+                        <button onclick="startMainFlow()" style="width:100%;padding:14px 24px;background:linear-gradient(135deg, #7C3AED, #EC4899);color:white;border:none;border-radius:999px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 8px 20px rgba(124, 58, 237, 0.25);">
+                            💜 Descubrir mezcla →
+                        </button>
                     </div>
                 </div>
 
-                <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:22px;padding:24px;box-shadow:var(--shadow-soft);">
-                    <span class="lab-badge" style="display:inline-flex;">Piel Húmeda/Grasosa • “Brisa de Té Verde”</span>
-                    <h3 style="font-size:1.4rem;margin:12px 0 6px;color:var(--color-dark);">Dermatitis de pañal, climas cálidos-húmedos</h3>
-                    <p style="color:var(--color-muted);margin-bottom:12px;">Té verde orgánico, hamamelis sin alcohol, aloe 99 %, coco-caprylate, coco + lauril glucósido.</p>
-                    <ul style="list-style:none;padding:0;margin:0 0 14px;display:grid;gap:8px;font-weight:600;color:var(--color-dark);">
-                        <li>IA reduce emolientes y sube hamamelis si humedad &gt;70 % o calor &gt;28 °C.</li>
-                        <li>Foam baby-safe, antioxidante suave sin obstruir poros.</li>
-                    </ul>
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-                        <strong style="font-size:1.6rem;color:var(--color-primary);">Cotizar</strong>
+                <!-- Brisa de Té Verde - Verde Menta -->
+                <div style="background:linear-gradient(135deg, #f0f9f4 0%, #e8f5ed 100%);border:1px solid rgba(76, 175, 80, 0.2);border-radius:28px;padding:32px;box-shadow:0 20px 45px rgba(76, 175, 80, 0.14), 0 0 0 1px rgba(255,255,255,0.5) inset;position:relative;overflow:hidden;backdrop-filter:blur(10px);">
+                    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle, rgba(200,230,201,0.6), transparent);border-radius:50%;opacity:0.5;"></div>
+                    <div style="position:relative;z-index:1;">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                            <span style="font-size:2rem;">🍃💧</span>
+                            <div>
+                                <span style="display:inline-block;background:rgba(76, 175, 80, 0.15);color:#2e7d32;padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Piel Húmeda</span>
+                                <h3 style="font-size:1.5rem;margin:8px 0 4px;color:#1b5e20;font-weight:700;">Brisa de Té Verde</h3>
+                            </div>
+                        </div>
+                        <p style="color:#4a7c59;margin-bottom:16px;font-size:0.95rem;line-height:1.5;">Para clima húmedo/caliente o dermatitis de pañal</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#4a7c59;">🍃 Té verde</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#4a7c59;">🍂 Hamamelis</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#4a7c59;">🌱 Aloe 99%</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#4a7c59;">💧 pH 5.5</span>
+                        </div>
+                        <p style="background:rgba(200,230,201,0.6);padding:14px;border-radius:14px;margin-bottom:20px;font-size:0.9rem;line-height:1.5;color:#1b5e20;font-style:italic;">
+                            💚 "Protege la piel cuando hace calor o humedad alta."
+                        </p>
+                        <button onclick="startMainFlow()" style="width:100%;padding:14px 24px;background:linear-gradient(135deg, #7C3AED, #EC4899);color:white;border:none;border-radius:999px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 8px 20px rgba(124, 58, 237, 0.25);">
+                            💜 Descubrir mezcla →
+                        </button>
                     </div>
                 </div>
 
-                <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:22px;padding:24px;box-shadow:var(--shadow-soft);">
-                    <span class="lab-badge" style="display:inline-flex;">Piel Normal/Mixta • “Equilibrio de Caléndula”</span>
-                    <h3 style="font-size:1.4rem;margin:12px 0 6px;color:var(--color-dark);">Mantenimiento diario y transición de estaciones</h3>
-                    <p style="color:var(--color-muted);margin-bottom:12px;">Caléndula orgánica 3 %, jojoba golden, manzanilla romana, glicerina, decil + coco glucósido.</p>
-                    <ul style="list-style:none;padding:0;margin:0 0 14px;display:grid;gap:8px;font-weight:600;color:var(--color-dark);">
-                        <li>IA ajusta caléndula/jojoba según edad y temporada.</li>
-                        <li>Fragancia natural 0.3 % o modo 0 % fragancia para ultra-sensitive.</li>
-                    </ul>
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-                        <strong style="font-size:1.6rem;color:var(--color-primary);">Cotizar</strong>
+                <!-- Equilibrio Caléndula - Amarillo Suave -->
+                <div style="background:linear-gradient(135deg, #fffef5 0%, #fffbea 100%);border:1px solid rgba(255, 193, 7, 0.2);border-radius:28px;padding:32px;box-shadow:0 20px 45px rgba(255, 193, 7, 0.14), 0 0 0 1px rgba(255,255,255,0.5) inset;position:relative;overflow:hidden;backdrop-filter:blur(10px);">
+                    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle, rgba(255,248,220,0.6), transparent);border-radius:50%;opacity:0.5;"></div>
+                    <div style="position:relative;z-index:1;">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                            <span style="font-size:2rem;">🌼☀️</span>
+                            <div>
+                                <span style="display:inline-block;background:rgba(255, 193, 7, 0.15);color:#f57c00;padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Piel Normal</span>
+                                <h3 style="font-size:1.5rem;margin:8px 0 4px;color:#e65100;font-weight:700;">Equilibrio Caléndula</h3>
+                            </div>
+                        </div>
+                        <p style="color:#8d6e63;margin-bottom:16px;font-size:0.95rem;line-height:1.5;">Para uso diario y piel normal/mixta</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#8d6e63;">🌼 Caléndula</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#8d6e63;">🟡 Jojoba</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#8d6e63;">🌿 Manzanilla</span>
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:6px 12px;border-radius:12px;font-size:0.85rem;color:#8d6e63;">💧 pH 5.5</span>
+                        </div>
+                        <p style="background:rgba(255,248,220,0.6);padding:14px;border-radius:14px;margin-bottom:20px;font-size:0.9rem;line-height:1.5;color:#e65100;font-style:italic;">
+                            🤍 "Rutina suave para todos los días."
+                        </p>
+                        <button onclick="startMainFlow()" style="width:100%;padding:14px 24px;background:linear-gradient(135deg, #7C3AED, #EC4899);color:white;border:none;border-radius:999px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 8px 20px rgba(124, 58, 237, 0.25);">
+                            💜 Descubrir mezcla →
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:18px;">
-                <div style="background:linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 233, 254, 0.9));border:1px solid rgba(124, 58, 237, 0.18);border-radius:20px;padding:22px;">
-                    <h3 style="margin-bottom:10px;color:var(--color-dark);">Características comunes</h3>
-                    <ul style="margin:0;padding-left:18px;color:var(--color-muted);line-height:1.5;">
-                        <li>100 % biodegradable (OECD 301B), pH 5.5, tear-free 2025.</li>
-                        <li>Microbiome Friendly Certified, cruelty-free, libre de alérgenos EU26.</li>
-                        <li>Prebióticos botánicos (inulina + alfa-glucano 0.4 %), bisabolol + β-glucano + centella.</li>
-                    </ul>
-                </div>
-                <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:20px;padding:22px;box-shadow:var(--shadow-soft);">
-                    <h3 style="margin-bottom:10px;color:var(--color-dark);">Activaciones inmediatas</h3>
-                    <ul style="margin:0;padding-left:18px;color:var(--color-muted);line-height:1.5;">
-                        <li>Modo recién nacido (0-3 m), modo viaje, ajuste por dureza del agua.</li>
-                        <li>Toggle 0 % fragancia para dermatitis atópica.</li>
-                    </ul>
-                </div>
-                <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:20px;padding:22px;box-shadow:var(--shadow-soft);">
-                    <h3 style="margin-bottom:10px;color:var(--color-dark);">Campaña y certificaciones</h3>
-                    <ul style="margin:0;padding-left:18px;color:var(--color-muted);line-height:1.5;">
-                        <li>Claim frontal XXL: EWG Verified | USDA Organic | Microbiome Friendly | Libre EU26 | OK Compost Home.</li>
-                        <li>Campaña “Mándame la foto del baño” → IA responde la fórmula exacta del día.</li>
-                        <li>32 % crecimiento en productos sostenibles; IA recomienda opciones eco.</li>
-                    </ul>
+            <!-- Características comunes visual -->
+            <div style="background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);border-radius:24px;padding:32px;box-shadow:0 20px 45px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.5);">
+                <h3 style="margin:0 0 24px;font-size:1.4rem;color:var(--color-dark);text-align:center;font-weight:700;">Características comunes</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:20px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">🌍</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">100% biodegradable</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">🧪</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">pH 5.5</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">🧡</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">Tear-free</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">🌱</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">Orgánico</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">🧬</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">Microbiome-friendly</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem;margin-bottom:8px;">♻️</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-muted);line-height:1.4;">Refill aluminio</p>
+                    </div>
                 </div>
             </div>
 
-            <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(124, 58, 237, 0.08));border:1px solid var(--color-border);border-radius:20px;padding:24px;display:grid;gap:12px;">
-                <div>
-                    <h3 style="margin:0 0 6px;color:var(--color-dark);">Claim técnico</h3>
-                    <p style="color:var(--color-muted);margin:0;">Las fórmulas Mommyshops Bebé —evaluadas con análisis IA y validadas por bases regulatorias SCCS (Europa), CIR (EE. UU.), ECHA Endocrine Disruptor List, EWG Skin Deep y estándares FDA— excluyen completamente todos los ingredientes cosméticos con evidencia o sospecha de actividad endocrina, incluyendo parabenos, ftalatos, fenoxietanol, triclosán, benzofenonas, fijadores sintéticos y fragancias con alérgenos EU26.”</p>
-                </div>
-                <div>
-                    <h4 style="margin:0 0 6px;color:var(--color-primary);">Legal-safe (UE/FDA)</h4>
-                    <p style="color:var(--color-muted);margin:0;">“Formulado sin ingredientes identificados por autoridades científicas internacionales (SCCS, CIR, ECHA) como sospechosos o confirmados disruptores endocrinos. Evaluado por IA con revisión automática de listas regulatorias vigentes.”</p>
-                </div>
-                <div>
-                    <h4 style="margin:0 0 6px;color:var(--color-primary);">Bloque técnico</h4>
-                    <p style="color:var(--color-muted);margin:0;">Cumple criterios EU Endocrine Disruptor 2025; excluye parabenos, ftalatos, fenoxietanol, triclosán, benzofenonas, PEGs, fijadores sintéticos o alérgenos EU26.</p>
+            <!-- Activaciones IA visual -->
+            <div style="background:linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));border-radius:24px;padding:32px;box-shadow:0 20px 45px rgba(124, 58, 237, 0.1);border:1px solid rgba(124, 58, 237, 0.15);">
+                <h3 style="margin:0 0 12px;font-size:1.4rem;color:var(--color-dark);text-align:center;font-weight:700;">"Tu bebé cambia, la fórmula cambia contigo."</h3>
+                <p style="text-align:center;color:var(--color-muted);margin-bottom:28px;font-size:0.95rem;">Ajustes automáticos de IA según:</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:20px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">🌤️</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Clima</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">👶</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Edad</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">💧</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Humedad</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">✈️</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Viaje</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">💖</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Sensibilidad</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;margin-bottom:8px;">🚿</div>
+                        <p style="margin:0;font-size:0.85rem;color:var(--color-dark);font-weight:600;">Agua dura</p>
+                    </div>
                 </div>
             </div>
+
+            <!-- Claim técnico (colapsable) -->
+            <details style="background:rgba(255,255,255,0.6);backdrop-filter:blur(10px);border-radius:20px;padding:24px;border:1px solid rgba(124, 58, 237, 0.1);">
+                <summary style="cursor:pointer;font-weight:600;color:var(--color-primary);font-size:1rem;margin-bottom:12px;">📋 Ver información técnica y legal</summary>
+                <div style="margin-top:20px;display:grid;gap:16px;">
+                    <div>
+                        <h4 style="margin:0 0 8px;color:var(--color-dark);font-size:0.95rem;font-weight:600;">Claim técnico</h4>
+                        <p style="color:var(--color-muted);margin:0;font-size:0.9rem;line-height:1.6;">Las fórmulas Mommyshops Bebé —evaluadas con análisis IA y validadas por bases regulatorias SCCS (Europa), CIR (EE. UU.), ECHA Endocrine Disruptor List, EWG Skin Deep y estándares FDA— excluyen completamente todos los ingredientes cosméticos con evidencia o sospecha de actividad endocrina, incluyendo parabenos, ftalatos, fenoxietanol, triclosán, benzofenonas, fijadores sintéticos y fragancias con alérgenos EU26.</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px;color:var(--color-primary);font-size:0.95rem;font-weight:600;">Legal-safe (UE/FDA)</h4>
+                        <p style="color:var(--color-muted);margin:0;font-size:0.9rem;line-height:1.6;">Formulado sin ingredientes identificados por autoridades científicas internacionales (SCCS, CIR, ECHA) como sospechosos o confirmados disruptores endocrinos. Evaluado por IA con revisión automática de listas regulatorias vigentes.</p>
+                    </div>
+                </div>
+            </details>
         </div>
+    </section>
 
     <section class="site-section" id="laboratorio">
         <div class="journey-section">
