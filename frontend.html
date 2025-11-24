@@ -2646,8 +2646,8 @@
             </div>
 
             <div class="tabs" id="analysisEntry">
-                <div class="tab active" onclick="switchTab('image', event)">📸 Image Analysis</div>
-                <div class="tab" onclick="switchTab('text', event)">📝 Text Analysis</div>
+                <div class="tab active" onclick="switchTab('image', event)">📸 Analizar Imagen </div>
+                <div class="tab" onclick="switchTab('text', event)">📝 Analizar Analysis</div>
             </div>
 
             <!-- Image Analysis Tab -->
@@ -2655,8 +2655,8 @@
                 <div class="upload-section">
                     <div class="upload-area">
                         <div class="upload-icon">📷</div>
-                        <h3>Upload Product Image</h3>
-                        <p>Take a photo or upload an image of your cosmetic product's ingredient list</p>
+                        <h3>Adjunta una imagen</h3>
+                        <p>Toma una foto de los ingredientes de tu producto</p>
                         <input type="file" id="imageInput" class="file-input" accept="image/jpeg,image/png,image/webp,image/jpg">
                         <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
                             Choose Image
@@ -4634,6 +4634,316 @@
             });
         }
 
+        function buildSimplifiedAnalysisCard(structuredReport, result, profileContext, alignment) {
+            const profile = profileContext && Object.keys(profileContext || {}).length
+                ? profileContext
+                : getProfileForRequest();
+            
+            const analysisSummary = structuredReport?.analysis_summary || {};
+            const compatibilityPercent = scoreToPercent(analysisSummary.score_global ?? analysisSummary.compatibility_score ?? result.compatibility_score) ?? 71;
+            const ecoPercent = scoreToPercent(analysisSummary.eco_score_avg ?? result.avg_eco_score) ?? 71;
+            
+            // Calcular frase corta basada en score
+            let scorePhrase = '';
+            let scoreEmoji = '⚠️';
+            if (compatibilityPercent >= 80) {
+                scorePhrase = 'Es un producto adecuado para tu bebé';
+                scoreEmoji = '✅';
+            } else if (compatibilityPercent >= 60) {
+                scorePhrase = 'Es un producto aceptable, pero no ideal para tu bebé';
+                scoreEmoji = '⚠️';
+            } else {
+                scorePhrase = 'No recomendamos este producto para tu bebé';
+                scoreEmoji = '❌';
+            }
+            
+            // Obtener ingredientes evaluados
+            const evaluated = normalizeEvaluatedIngredients(structuredReport?.ingredients_evaluated || []);
+            const safe = normalizeEvaluatedIngredients(structuredReport?.safety?.safe || []);
+            const problematic = normalizeEvaluatedIngredients(structuredReport?.safety?.problematic || []);
+            const allIngredients = [...evaluated, ...safe, ...problematic];
+            
+            // Identificar ingredientes buenos (máx 5)
+            const goodIngredients = [];
+            const ingredientEvaluations = new Map();
+            
+            allIngredients.forEach(ing => {
+                const evaluation = computeIngredientUtility(ing, profile);
+                const compat = determineIngredientCompatibility(ing, evaluation);
+                const name = ing.inci || ing.ingredient || ing.name || '';
+                if (name && compat.level === 'high' && evaluation.supports.length > 0) {
+                    ingredientEvaluations.set(name, {
+                        name,
+                        evaluation,
+                        compat,
+                        ing
+                    });
+                }
+            });
+            
+            // Ordenar por número de supports y tomar top 5
+            const sortedGood = Array.from(ingredientEvaluations.values())
+                .sort((a, b) => b.evaluation.supports.length - a.evaluation.supports.length)
+                .slice(0, 5);
+            
+            sortedGood.forEach(item => {
+                const supports = item.evaluation.supports.slice(0, 2).map(s => s.label).join(', ');
+                goodIngredients.push({
+                    name: item.name,
+                    reason: supports || item.compat.label
+                });
+            });
+            
+            // Identificar ingredientes problemáticos (máx 4)
+            const badIngredients = [];
+            const problematicMap = new Map();
+            
+            problematic.forEach(ing => {
+                const name = ing.inci || ing.ingredient || ing.name || '';
+                if (!name) return;
+                const evaluation = computeIngredientUtility(ing, profile);
+                const compat = determineIngredientCompatibility(ing, evaluation);
+                const conflicts = evaluation.conflicts.filter(c => c.type !== 'general');
+                
+                if (conflicts.length > 0 || compat.level === 'low') {
+                    problematicMap.set(name, {
+                        name,
+                        evaluation,
+                        compat,
+                        ing,
+                        conflicts
+                    });
+                }
+            });
+            
+            // También revisar ingredientes con riesgo alto
+            allIngredients.forEach(ing => {
+                const name = ing.inci || ing.ingredient || ing.name || '';
+                if (!name || problematicMap.has(name)) return;
+                const risk = (ing.risk || '').toLowerCase();
+                const ewg = ing.ewg_score ?? ing.ewg ?? 10;
+                if (risk === 'high' || ewg >= 6) {
+                    const evaluation = computeIngredientUtility(ing, profile);
+                    const conflicts = evaluation.conflicts.filter(c => c.type !== 'general');
+                    if (conflicts.length > 0) {
+                        problematicMap.set(name, {
+                            name,
+                            evaluation,
+                            conflicts,
+                            ing
+                        });
+                    }
+                }
+            });
+            
+            // Ordenar por severidad y tomar top 4
+            const sortedBad = Array.from(problematicMap.values())
+                .sort((a, b) => {
+                    const aSeverity = a.conflicts.length + (a.ing.ewg_score >= 6 ? 1 : 0);
+                    const bSeverity = b.conflicts.length + (b.ing.ewg_score >= 6 ? 1 : 0);
+                    return bSeverity - aSeverity;
+                })
+                .slice(0, 4);
+            
+            sortedBad.forEach(item => {
+                const conflictReason = item.conflicts.length > 0 
+                    ? item.conflicts[0].label 
+                    : (item.ing.comment || item.ing.analysis || 'No recomendado para tu perfil');
+                badIngredients.push({
+                    name: item.name,
+                    reason: conflictReason,
+                    severity: item.conflicts.length > 0 ? '🔴' : '🟡'
+                });
+            });
+            
+            // Generar resumen personalizado basado en cuestionario
+            let personalizedSummary = '';
+            if (profile && Object.keys(profile).length > 0) {
+                const skinType = profile.skin_type || '';
+                const climate = profile.face_shape || '';
+                const concerns = Array.isArray(profile.skin_concerns) ? profile.skin_concerns : [];
+                const age = profile.hair_type || '';
+                const goals = Array.isArray(profile.overall_goals) ? profile.overall_goals : [];
+                
+                const summaryParts = [];
+                const warnings = [];
+                
+                // Verificar problemas específicos del cuestionario
+                if (concerns.some(c => c.toLowerCase().includes('dermatitis') || c.toLowerCase().includes('pañal'))) {
+                    const hasProblematic = badIngredients.some(b => {
+                        const name = b.name.toLowerCase();
+                        return name.includes('phenoxy') || name.includes('petrol') || name.includes('ethylhexyl');
+                    });
+                    if (hasProblematic) {
+                        warnings.push('puede empeorar la dermatitis del pañal');
+                    }
+                }
+                
+                if (climate === 'clima_humedo_calor') {
+                    const hasOcclusive = badIngredients.some(b => {
+                        const name = b.name.toLowerCase();
+                        return name.includes('petrol') || name.includes('dimethicone') || name.includes('cetearyl');
+                    });
+                    if (hasOcclusive) {
+                        warnings.push('no es ideal para clima húmedo/calor');
+                    }
+                }
+                
+                if (skinType === 'seca_atopica') {
+                    if (goodIngredients.length >= 3) {
+                        summaryParts.push('tiene ingredientes beneficiosos para piel seca/atópica');
+                    }
+                    const hasIrritants = badIngredients.some(b => {
+                        const name = b.name.toLowerCase();
+                        return name.includes('alcohol denat') || name.includes('sulfato');
+                    });
+                    if (hasIrritants) {
+                        warnings.push('contiene ingredientes que pueden resecar más');
+                    }
+                }
+                
+                if (goals.some(g => g.toLowerCase().includes('prebiótico') || g.toLowerCase().includes('microbiome'))) {
+                    const hasPreservatives = badIngredients.some(b => {
+                        const name = b.name.toLowerCase();
+                        return name.includes('phenoxy') || name.includes('paraben');
+                    });
+                    if (hasPreservatives) {
+                        warnings.push('tiene conservantes que pueden afectar el microbioma');
+                    }
+                }
+                
+                // Construir resumen final
+                if (warnings.length > 0) {
+                    personalizedSummary = `Funciona, pero ${warnings.join(' y ')}.`;
+                } else if (summaryParts.length > 0) {
+                    personalizedSummary = `${summaryParts[0]}, aunque hay ingredientes que podríamos mejorar.`;
+                } else if (compatibilityPercent >= 60) {
+                    personalizedSummary = `Es aceptable para tu bebé, aunque hay ingredientes que podríamos mejorar.`;
+                } else {
+                    personalizedSummary = `No es ideal para el perfil de tu bebé según el cuestionario.`;
+                }
+            } else {
+                personalizedSummary = `Completa el cuestionario para obtener un resumen personalizado.`;
+            }
+            
+            // Recomendación de producto
+            const suggestedProduct = suggestBabyProduct(profile);
+            const productRecommendation = suggestedProduct ? `
+                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08)); border-radius: 20px; padding: 24px; margin-top: 20px; border: 2px solid rgba(124, 58, 237, 0.2);">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <span style="font-size: 1.5rem;">⭐</span>
+                        <h3 style="margin: 0; font-size: 1.3rem; color: var(--color-primary);">Recomendación Mommyshops</h3>
+                    </div>
+                    <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: start; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <h4 style="margin: 0 0 8px; font-size: 1.2rem; color: var(--color-dark);">🧴 ${escapeHtml(suggestedProduct.name)}</h4>
+                                <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.95rem;">${escapeHtml(suggestedProduct.subtitle)}</p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                    ${profile.skin_type ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(profile.skin_type)}</span>` : ''}
+                                    ${profile.face_shape ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(getFaceZoneLabel(profile.face_shape))}</span>` : ''}
+                                    ${profile.skin_concerns && profile.skin_concerns.length ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(profile.skin_concerns[0])}</span>` : ''}
+                                </div>
+                                <p style="margin: 0 0 12px; color: var(--color-dark); font-size: 0.9rem; line-height: 1.5;">
+                                    ${suggestedProduct.name === 'Nube de Avena' 
+                                        ? 'Hidratación intensiva para pieles muy secas o con eccema leve. Ajusta avena coloidal y karité según la sequedad detectada y mantiene el pH 5.5 tear-free.'
+                                        : suggestedProduct.name === 'Brisa de Té Verde'
+                                        ? 'Equilibra sebo en climas cálidos-húmedos, previene dermatitis del pañal y mantiene la piel fresca sin obstruir poros.'
+                                        : 'Mantenimiento diario para piel sana, adapta a transiciones estacionales y nutre sin exceso.'}
+                                </p>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--color-muted); font-size: 0.9rem; line-height: 1.6;">
+                                    ${suggestedProduct.name === 'Nube de Avena' 
+                                        ? '<li>+30 % avena y karité cuando hay baja humedad</li><li>Prebióticos que fortalecen el microbioma</li><li>Modo ultra-sensitive 0 % fragancia</li>'
+                                        : suggestedProduct.name === 'Brisa de Té Verde'
+                                        ? '<li>Reduce emolientes pesados en clima húmedo</li><li>Hamamelis sin alcohol para dermatitis</li><li>Antioxidante suave sin obstruir</li>'
+                                        : '<li>Ajuste automático según edad y estación</li><li>Fragancia natural 0.3% o 0%</li><li>Balance perfecto para piel normal/mixta</li>'}
+                                </ul>
+                            </div>
+                            <div style="flex: 0 0 auto; text-align: right;">
+                                <div style="font-size: 1.8rem; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">${escapeHtml(suggestedProduct.price)}</div>
+                                <button type="button" class="btn btn-primary" onclick="scrollToLabsResult()" style="width: 100%; margin-top: 12px;">Diseñar mi fórmula ideal</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
+            // Construir HTML
+            const goodHtml = goodIngredients.length > 0
+                ? goodIngredients.map(item => `
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 12px; background: rgba(16, 185, 129, 0.08); border-radius: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 1.2rem;">🟢</span>
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 4px;">${escapeHtml(item.name)}</strong>
+                            <span style="font-size: 0.9rem; color: var(--color-muted);">${escapeHtml(item.reason)}</span>
+                        </div>
+                    </div>
+                `).join('')
+                : '<p class="muted">No se detectaron ingredientes especialmente beneficiosos.</p>';
+            
+            const badHtml = badIngredients.length > 0
+                ? badIngredients.map(item => `
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 12px; background: rgba(239, 68, 68, 0.08); border-radius: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 1.2rem;">${item.severity}</span>
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 4px;">${escapeHtml(item.name)}</strong>
+                            <span style="font-size: 0.9rem; color: var(--color-muted);">${escapeHtml(item.reason)}</span>
+                        </div>
+                    </div>
+                `).join('')
+                : '<p class="muted">No se detectaron ingredientes problemáticos significativos.</p>';
+            
+            const bodyHtml = `
+                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05)); border-radius: 20px; padding: 24px; margin-bottom: 20px;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="font-size: 3rem; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">${compatibilityPercent}/100</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--color-dark); margin-bottom: 4px;">${scoreEmoji} ${scorePhrase}</div>
+                        ${profile && Object.keys(profile).length > 0 ? `
+                            <p style="margin: 0; color: var(--color-muted); font-size: 0.95rem;">
+                                Basado en tu perfil: ${escapeHtml(profile.skin_type || '—')} · ${escapeHtml(profile.hair_type || '—')} · ${escapeHtml(getFaceZoneLabel(profile.face_shape) || '—')}${profile.skin_concerns?.length ? ` · ${escapeHtml(profile.skin_concerns[0])}` : ''}${profile.hair_concerns?.length ? ` · ${escapeHtml(profile.hair_concerns[0])}` : ''}
+                            </p>
+                        ` : ''}
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--color-dark);">✔️ LO BUENO DEL PRODUCTO</h4>
+                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem;">${goodIngredients.length} ingrediente${goodIngredients.length !== 1 ? 's' : ''} positivo${goodIngredients.length !== 1 ? 's' : ''} detectado${goodIngredients.length !== 1 ? 's' : ''}</p>
+                        ${goodHtml}
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--color-dark);">⚠️ LO QUE NO ES IDEAL PARA EL PERFIL DE TU BEBÉ</h4>
+                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem;">${badIngredients.length} ingrediente${badIngredients.length !== 1 ? 's' : ''} que no recomendamos:</p>
+                        ${badHtml}
+                    </div>
+                    
+                    <div style="background: rgba(15, 23, 42, 0.05); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 8px; font-size: 1rem; color: var(--color-dark);">🌦️ Compatibilidad final para tu bebé</h4>
+                        <p style="margin: 0; color: var(--color-dark); font-size: 0.95rem; line-height: 1.5;">${compatibilityPercent}% adecuada → ${personalizedSummary}</p>
+                    </div>
+                    
+                    ${productRecommendation}
+                </div>
+                
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: var(--color-primary); padding: 12px; background: rgba(124, 58, 237, 0.08); border-radius: 12px;">
+                        🔽 Ver análisis técnico completo de los ${allIngredients.length} ingredientes
+                    </summary>
+                    <div style="margin-top: 16px;">
+                        ${buildIngredientsCard(structuredReport, profile)}
+                        ${buildCompatibilityCard(structuredReport, alignment, profile)}
+                    </div>
+                </details>
+            `;
+            
+            return buildCollapsibleCard({
+                title: '🌿 ANÁLISIS Mommyshops – Tu resultado en 10 segundos',
+                subtitle: '',
+                bodyHtml: bodyHtml,
+                defaultOpen: true
+            });
+        }
+
         function buildInsightsCard(structuredReport, result, profileContext, alignment) {
             const recommendationsBlock = structuredReport?.recommendations || null;
             const srRecommendations = Array.isArray(recommendationsBlock?.summary) ? recommendationsBlock.summary : [];
@@ -5705,11 +6015,9 @@
                     labsPlaceholder = '<div class="labs-card" id="labsFormulationMount"></div>';
                 }
                 const sections = [
-                    buildSummaryCard(structuredReport, result),
+                    buildSimplifiedAnalysisCard(structuredReport, result, activeProfile, alignment),
                     profileCardHtml,
                     result.extracted_text ? buildExtractedTextCard(result.extracted_text) : '',
-                    buildIngredientsCard(structuredReport, activeProfile),
-                    buildCompatibilityCard(structuredReport, alignment, activeProfile),
                     labsPlaceholder,
                 ].filter(Boolean);
 
