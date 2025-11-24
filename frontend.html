@@ -4634,6 +4634,73 @@
             });
         }
 
+        function humanizeIngredientBenefit(evaluation, profile) {
+            if (!evaluation || !evaluation.supports || evaluation.supports.length === 0) {
+                return 'Beneficioso para tu bebé';
+            }
+            
+            const supports = evaluation.supports.filter(s => s.type !== 'general');
+            if (supports.length === 0) return 'Beneficioso para tu bebé';
+            
+            const firstSupport = supports[0];
+            const label = firstSupport.label || '';
+            
+            // Humanizar según tipo
+            if (label.toLowerCase().includes('hidrat') || label.toLowerCase().includes('humect')) {
+                return 'Hidrata sin irritar';
+            }
+            if (label.toLowerCase().includes('barrera') || label.toLowerCase().includes('ceramid')) {
+                return 'Ayuda a reparar la piel atópica';
+            }
+            if (label.toLowerCase().includes('calm') || label.toLowerCase().includes('suave') || label.toLowerCase().includes('gentle')) {
+                return 'Suave y protector';
+            }
+            if (label.toLowerCase().includes('eccem') || label.toLowerCase().includes('atópica')) {
+                return 'Ayuda con piel seca/atópica';
+            }
+            if (label.toLowerCase().includes('bebé') || label.toLowerCase().includes('tear')) {
+                return 'Seguro para bebés, sin lágrimas';
+            }
+            if (label.toLowerCase().includes('prebio') || label.toLowerCase().includes('microbiome')) {
+                return 'Favorece el microbioma';
+            }
+            
+            // Simplificar texto técnico
+            return label
+                .replace(/proveer hidratación profunda/i, 'Hidratación profunda')
+                .replace(/combatir la deshidratación/i, 'Evita resequedad')
+                .replace(/mantenimiento diario suave/i, 'Suave para uso diario')
+                .replace(/modo bebé.*tear-free/i, 'Sin lágrimas')
+                .replace(/nutrir piel seca\/atópica/i, 'Ayuda piel seca/atópica')
+                .replace(/reforzar la barrera cutánea/i, 'Protege la piel')
+                .substring(0, 50);
+        }
+
+        function humanizeIngredientProblem(conflict, profile) {
+            if (!conflict) return 'No recomendado para tu bebé';
+            
+            const label = conflict.label || '';
+            
+            // Humanizar según tipo
+            if (label.toLowerCase().includes('dermatitis') || label.toLowerCase().includes('pañal')) {
+                return 'Puede empeorar la dermatitis del pañal';
+            }
+            if (label.toLowerCase().includes('clima húmedo') || label.toLowerCase().includes('pesado')) {
+                return 'Sensación pesada en clima húmedo/calor';
+            }
+            if (label.toLowerCase().includes('reseca') || label.toLowerCase().includes('irrit')) {
+                return 'Puede resecar o irritar más';
+            }
+            if (label.toLowerCase().includes('microbiome') || label.toLowerCase().includes('prebio')) {
+                return 'Puede afectar el microbioma';
+            }
+            if (label.toLowerCase().includes('fragancia') || label.toLowerCase().includes('sulfato')) {
+                return 'No ideal para bebés sensibles';
+            }
+            
+            return label.substring(0, 60);
+        }
+
         function buildSimplifiedAnalysisCard(structuredReport, result, profileContext, alignment) {
             const profile = profileContext && Object.keys(profileContext || {}).length
                 ? profileContext
@@ -4641,20 +4708,15 @@
             
             const analysisSummary = structuredReport?.analysis_summary || {};
             const compatibilityPercent = scoreToPercent(analysisSummary.score_global ?? analysisSummary.compatibility_score ?? result.compatibility_score) ?? 71;
-            const ecoPercent = scoreToPercent(analysisSummary.eco_score_avg ?? result.avg_eco_score) ?? 71;
             
             // Calcular frase corta basada en score
             let scorePhrase = '';
-            let scoreEmoji = '⚠️';
             if (compatibilityPercent >= 80) {
-                scorePhrase = 'Es un producto adecuado para tu bebé';
-                scoreEmoji = '✅';
+                scorePhrase = 'Adecuado para tu bebé';
             } else if (compatibilityPercent >= 60) {
-                scorePhrase = 'Es un producto aceptable, pero no ideal para tu bebé';
-                scoreEmoji = '⚠️';
+                scorePhrase = 'Aceptable, pero no ideal para tu bebé';
             } else {
                 scorePhrase = 'No recomendamos este producto para tu bebé';
-                scoreEmoji = '❌';
             }
             
             // Obtener ingredientes evaluados
@@ -4663,7 +4725,7 @@
             const problematic = normalizeEvaluatedIngredients(structuredReport?.safety?.problematic || []);
             const allIngredients = [...evaluated, ...safe, ...problematic];
             
-            // Identificar ingredientes buenos (máx 5)
+            // Identificar ingredientes buenos (máx 5) - basado en perfil bebé
             const goodIngredients = [];
             const ingredientEvaluations = new Map();
             
@@ -4671,30 +4733,46 @@
                 const evaluation = computeIngredientUtility(ing, profile);
                 const compat = determineIngredientCompatibility(ing, evaluation);
                 const name = ing.inci || ing.ingredient || ing.name || '';
+                
+                // Solo incluir si tiene alta compatibilidad Y supports relevantes para bebés
                 if (name && compat.level === 'high' && evaluation.supports.length > 0) {
-                    ingredientEvaluations.set(name, {
-                        name,
-                        evaluation,
-                        compat,
-                        ing
-                    });
+                    // Filtrar supports relevantes para bebés (no genéricos)
+                    const babyRelevantSupports = evaluation.supports.filter(s => 
+                        s.type !== 'general' && 
+                        (s.type === 'skin_concern' || s.type === 'skin_type' || s.type === 'hair_type' || s.type === 'goal')
+                    );
+                    
+                    if (babyRelevantSupports.length > 0 || evaluation.supports.length >= 2) {
+                        ingredientEvaluations.set(name, {
+                            name,
+                            evaluation,
+                            compat,
+                            ing,
+                            babyRelevantSupports
+                        });
+                    }
                 }
             });
             
-            // Ordenar por número de supports y tomar top 5
+            // Ordenar por relevancia para bebés y tomar top 5
             const sortedGood = Array.from(ingredientEvaluations.values())
-                .sort((a, b) => b.evaluation.supports.length - a.evaluation.supports.length)
+                .sort((a, b) => {
+                    // Priorizar supports específicos de bebé
+                    const aBabyScore = a.babyRelevantSupports.length * 2 + a.evaluation.supports.length;
+                    const bBabyScore = b.babyRelevantSupports.length * 2 + b.evaluation.supports.length;
+                    return bBabyScore - aBabyScore;
+                })
                 .slice(0, 5);
             
             sortedGood.forEach(item => {
-                const supports = item.evaluation.supports.slice(0, 2).map(s => s.label).join(', ');
+                const humanizedReason = humanizeIngredientBenefit(item.evaluation, profile);
                 goodIngredients.push({
                     name: item.name,
-                    reason: supports || item.compat.label
+                    reason: humanizedReason
                 });
             });
             
-            // Identificar ingredientes problemáticos (máx 4)
+            // Identificar ingredientes problemáticos (máx 3) - basado en perfil bebé
             const badIngredients = [];
             const problematicMap = new Map();
             
@@ -4702,70 +4780,69 @@
                 const name = ing.inci || ing.ingredient || ing.name || '';
                 if (!name) return;
                 const evaluation = computeIngredientUtility(ing, profile);
-                const compat = determineIngredientCompatibility(ing, evaluation);
                 const conflicts = evaluation.conflicts.filter(c => c.type !== 'general');
                 
-                if (conflicts.length > 0 || compat.level === 'low') {
+                if (conflicts.length > 0) {
                     problematicMap.set(name, {
                         name,
                         evaluation,
-                        compat,
                         ing,
-                        conflicts
+                        conflicts,
+                        severity: conflicts.length
                     });
                 }
             });
             
-            // También revisar ingredientes con riesgo alto
+            // También revisar ingredientes con riesgo alto específico para bebés
             allIngredients.forEach(ing => {
                 const name = ing.inci || ing.ingredient || ing.name || '';
                 if (!name || problematicMap.has(name)) return;
                 const risk = (ing.risk || '').toLowerCase();
                 const ewg = ing.ewg_score ?? ing.ewg ?? 10;
-                if (risk === 'high' || ewg >= 6) {
-                    const evaluation = computeIngredientUtility(ing, profile);
-                    const conflicts = evaluation.conflicts.filter(c => c.type !== 'general');
-                    if (conflicts.length > 0) {
-                        problematicMap.set(name, {
-                            name,
-                            evaluation,
-                            conflicts,
-                            ing
-                        });
-                    }
+                const evaluation = computeIngredientUtility(ing, profile);
+                const conflicts = evaluation.conflicts.filter(c => c.type !== 'general');
+                
+                // Priorizar ingredientes problemáticos para bebés
+                const nameLower = name.toLowerCase();
+                const isBabyProblematic = nameLower.includes('phenoxy') || 
+                                         nameLower.includes('petrol') || 
+                                         nameLower.includes('paraben') ||
+                                         nameLower.includes('dimethicone') ||
+                                         (risk === 'high' && ewg >= 6);
+                
+                if (isBabyProblematic && conflicts.length > 0) {
+                    problematicMap.set(name, {
+                        name,
+                        evaluation,
+                        conflicts,
+                        ing,
+                        severity: conflicts.length + (ewg >= 6 ? 1 : 0)
+                    });
                 }
             });
             
-            // Ordenar por severidad y tomar top 4
+            // Ordenar por severidad y relevancia para bebés, tomar top 3
             const sortedBad = Array.from(problematicMap.values())
-                .sort((a, b) => {
-                    const aSeverity = a.conflicts.length + (a.ing.ewg_score >= 6 ? 1 : 0);
-                    const bSeverity = b.conflicts.length + (b.ing.ewg_score >= 6 ? 1 : 0);
-                    return bSeverity - aSeverity;
-                })
-                .slice(0, 4);
+                .sort((a, b) => b.severity - a.severity)
+                .slice(0, 3);
             
             sortedBad.forEach(item => {
-                const conflictReason = item.conflicts.length > 0 
-                    ? item.conflicts[0].label 
-                    : (item.ing.comment || item.ing.analysis || 'No recomendado para tu perfil');
+                const conflict = item.conflicts[0];
+                const humanizedReason = humanizeIngredientProblem(conflict, profile);
                 badIngredients.push({
                     name: item.name,
-                    reason: conflictReason,
-                    severity: item.conflicts.length > 0 ? '🔴' : '🟡'
+                    reason: humanizedReason
                 });
             });
             
-            // Generar resumen personalizado basado en cuestionario
+            // Generar resumen personalizado basado en cuestionario (humanizado)
             let personalizedSummary = '';
             if (profile && Object.keys(profile).length > 0) {
                 const skinType = profile.skin_type || '';
                 const climate = profile.face_shape || '';
                 const concerns = Array.isArray(profile.skin_concerns) ? profile.skin_concerns : [];
-                const age = profile.hair_type || '';
                 const goals = Array.isArray(profile.overall_goals) ? profile.overall_goals : [];
                 
-                const summaryParts = [];
                 const warnings = [];
                 
                 // Verificar problemas específicos del cuestionario
@@ -4782,152 +4859,123 @@
                 if (climate === 'clima_humedo_calor') {
                     const hasOcclusive = badIngredients.some(b => {
                         const name = b.name.toLowerCase();
-                        return name.includes('petrol') || name.includes('dimethicone') || name.includes('cetearyl');
+                        return name.includes('petrol') || name.includes('dimethicone');
                     });
                     if (hasOcclusive) {
                         warnings.push('no es ideal para clima húmedo/calor');
                     }
                 }
                 
-                if (skinType === 'seca_atopica') {
-                    if (goodIngredients.length >= 3) {
-                        summaryParts.push('tiene ingredientes beneficiosos para piel seca/atópica');
-                    }
-                    const hasIrritants = badIngredients.some(b => {
-                        const name = b.name.toLowerCase();
-                        return name.includes('alcohol denat') || name.includes('sulfato');
-                    });
-                    if (hasIrritants) {
-                        warnings.push('contiene ingredientes que pueden resecar más');
-                    }
-                }
-                
-                if (goals.some(g => g.toLowerCase().includes('prebiótico') || g.toLowerCase().includes('microbiome'))) {
-                    const hasPreservatives = badIngredients.some(b => {
-                        const name = b.name.toLowerCase();
-                        return name.includes('phenoxy') || name.includes('paraben');
-                    });
-                    if (hasPreservatives) {
-                        warnings.push('tiene conservantes que pueden afectar el microbioma');
-                    }
-                }
-                
-                // Construir resumen final
+                // Construir resumen final (más simple y directo)
                 if (warnings.length > 0) {
                     personalizedSummary = `Funciona, pero ${warnings.join(' y ')}.`;
-                } else if (summaryParts.length > 0) {
-                    personalizedSummary = `${summaryParts[0]}, aunque hay ingredientes que podríamos mejorar.`;
                 } else if (compatibilityPercent >= 60) {
                     personalizedSummary = `Es aceptable para tu bebé, aunque hay ingredientes que podríamos mejorar.`;
                 } else {
-                    personalizedSummary = `No es ideal para el perfil de tu bebé según el cuestionario.`;
+                    personalizedSummary = `No es recomendable para el perfil de tu bebé.`;
                 }
             } else {
                 personalizedSummary = `Completa el cuestionario para obtener un resumen personalizado.`;
             }
             
-            // Recomendación de producto
+            // Recomendación de producto (simplificada y humanizada)
             const suggestedProduct = suggestBabyProduct(profile);
             const productRecommendation = suggestedProduct ? `
-                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08)); border-radius: 20px; padding: 24px; margin-top: 20px; border: 2px solid rgba(124, 58, 237, 0.2);">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08)); border-radius: 20px; padding: 24px; margin-top: 24px; border: 2px solid rgba(124, 58, 237, 0.2);">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                         <span style="font-size: 1.5rem;">⭐</span>
-                        <h3 style="margin: 0; font-size: 1.3rem; color: var(--color-primary);">Recomendación Mommyshops</h3>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--color-primary);">Recomendación Mommyshops Bebé</h3>
                     </div>
-                    <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: start; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 200px;">
-                                <h4 style="margin: 0 0 8px; font-size: 1.2rem; color: var(--color-dark);">🧴 ${escapeHtml(suggestedProduct.name)}</h4>
-                                <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.95rem;">${escapeHtml(suggestedProduct.subtitle)}</p>
-                                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                                    ${profile.skin_type ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(profile.skin_type)}</span>` : ''}
-                                    ${profile.face_shape ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(getFaceZoneLabel(profile.face_shape))}</span>` : ''}
-                                    ${profile.skin_concerns && profile.skin_concerns.length ? `<span style="background: rgba(124, 58, 237, 0.1); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--color-primary);">${escapeHtml(profile.skin_concerns[0])}</span>` : ''}
-                                </div>
-                                <p style="margin: 0 0 12px; color: var(--color-dark); font-size: 0.9rem; line-height: 1.5;">
-                                    ${suggestedProduct.name === 'Nube de Avena' 
-                                        ? 'Hidratación intensiva para pieles muy secas o con eccema leve. Ajusta avena coloidal y karité según la sequedad detectada y mantiene el pH 5.5 tear-free.'
-                                        : suggestedProduct.name === 'Brisa de Té Verde'
-                                        ? 'Equilibra sebo en climas cálidos-húmedos, previene dermatitis del pañal y mantiene la piel fresca sin obstruir poros.'
-                                        : 'Mantenimiento diario para piel sana, adapta a transiciones estacionales y nutre sin exceso.'}
-                                </p>
-                                <ul style="margin: 0; padding-left: 20px; color: var(--color-muted); font-size: 0.9rem; line-height: 1.6;">
-                                    ${suggestedProduct.name === 'Nube de Avena' 
-                                        ? '<li>+30 % avena y karité cuando hay baja humedad</li><li>Prebióticos que fortalecen el microbioma</li><li>Modo ultra-sensitive 0 % fragancia</li>'
-                                        : suggestedProduct.name === 'Brisa de Té Verde'
-                                        ? '<li>Reduce emolientes pesados en clima húmedo</li><li>Hamamelis sin alcohol para dermatitis</li><li>Antioxidante suave sin obstruir</li>'
-                                        : '<li>Ajuste automático según edad y estación</li><li>Fragancia natural 0.3% o 0%</li><li>Balance perfecto para piel normal/mixta</li>'}
-                                </ul>
-                            </div>
-                            <div style="flex: 0 0 auto; text-align: right;">
-                                <div style="font-size: 1.8rem; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">${escapeHtml(suggestedProduct.price)}</div>
-                                <button type="button" class="btn btn-primary" onclick="scrollToLabsResult()" style="width: 100%; margin-top: 12px;">Diseñar mi fórmula ideal</button>
-                            </div>
+                    <div style="background: white; border-radius: 16px; padding: 20px;">
+                        <h4 style="margin: 0 0 8px; font-size: 1.3rem; color: var(--color-dark);">🧴 ${escapeHtml(suggestedProduct.name)} – Microbiome Edition</h4>
+                        <p style="margin: 0 0 16px; color: var(--color-muted); font-size: 0.95rem; font-weight: 600;">La opción ideal para:</p>
+                        <ul style="margin: 0 0 16px; padding-left: 20px; color: var(--color-dark); font-size: 0.95rem; line-height: 1.8;">
+                            ${profile.skin_type ? `<li>${escapeHtml(profile.skin_type.replace('_', ' '))}</li>` : ''}
+                            ${profile.skin_concerns && profile.skin_concerns.length ? `<li>${escapeHtml(profile.skin_concerns[0])}</li>` : ''}
+                            ${profile.face_shape ? `<li>${escapeHtml(getFaceZoneLabel(profile.face_shape).toLowerCase())}</li>` : ''}
+                            ${profile.hair_concerns && profile.hair_concerns.some(c => c.toLowerCase().includes('prebio')) ? `<li>preferencia por prebióticos</li>` : ''}
+                        </ul>
+                        <p style="margin: 0 0 12px; color: var(--color-dark); font-size: 0.9rem; line-height: 1.5;">
+                            <strong>Ajustes IA:</strong>
+                        </p>
+                        <ul style="margin: 0 0 20px; padding-left: 20px; color: var(--color-muted); font-size: 0.9rem; line-height: 1.6;">
+                            ${suggestedProduct.name === 'Nube de Avena' 
+                                ? '<li>+30% avena + karité si tu clima está seco</li><li>pH 5.5 tear-free</li><li>versión ultra-sensitive sin fragancia</li>'
+                                : suggestedProduct.name === 'Brisa de Té Verde'
+                                ? '<li>Reduce emolientes pesados en clima húmedo</li><li>Hamamelis sin alcohol para dermatitis</li><li>pH 5.5 tear-free</li>'
+                                : '<li>Ajuste automático según edad y estación</li><li>Fragancia natural 0.3% o 0%</li><li>pH 5.5 tear-free</li>'}
+                        </ul>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">${escapeHtml(suggestedProduct.price)}</div>
+                            <button type="button" class="btn btn-primary" onclick="scrollToLabsResult()" style="flex: 1; min-width: 200px; padding: 14px 24px; font-size: 1rem;">👉 Diseñar la fórmula exacta para mi bebé</button>
                         </div>
                     </div>
                 </div>
             ` : '';
             
-            // Construir HTML
+            // Construir HTML simplificado y humanizado
+            const profileLine = profile && Object.keys(profile).length > 0
+                ? `Perfil aplicado: ${escapeHtml((profile.skin_type || '').replace('_', ' '))}, ${escapeHtml(profile.hair_type || '—')}, ${escapeHtml(getFaceZoneLabel(profile.face_shape) || '—')}${profile.skin_concerns?.length ? `, ${escapeHtml(profile.skin_concerns[0])}` : ''}${profile.hair_concerns?.length && profile.hair_concerns.some(c => c.toLowerCase().includes('prebio')) ? `, prebióticos` : ''}.`
+                : '';
+            
             const goodHtml = goodIngredients.length > 0
                 ? goodIngredients.map(item => `
-                    <div style="display: flex; align-items: start; gap: 10px; padding: 12px; background: rgba(16, 185, 129, 0.08); border-radius: 12px; margin-bottom: 8px;">
-                        <span style="font-size: 1.2rem;">🟢</span>
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(16, 185, 129, 0.1);">
+                        <span style="font-size: 1rem; flex-shrink: 0;">🟢</span>
                         <div style="flex: 1;">
-                            <strong style="display: block; margin-bottom: 4px;">${escapeHtml(item.name)}</strong>
-                            <span style="font-size: 0.9rem; color: var(--color-muted);">${escapeHtml(item.reason)}</span>
+                            <strong style="display: block; margin-bottom: 2px; font-size: 0.95rem;">${escapeHtml(item.name)}</strong>
+                            <span style="font-size: 0.85rem; color: var(--color-muted);">– ${escapeHtml(item.reason)}</span>
                         </div>
                     </div>
                 `).join('')
-                : '<p class="muted">No se detectaron ingredientes especialmente beneficiosos.</p>';
+                : '<p class="muted" style="font-size: 0.9rem;">No se detectaron ingredientes especialmente beneficiosos.</p>';
             
             const badHtml = badIngredients.length > 0
                 ? badIngredients.map(item => `
-                    <div style="display: flex; align-items: start; gap: 10px; padding: 12px; background: rgba(239, 68, 68, 0.08); border-radius: 12px; margin-bottom: 8px;">
-                        <span style="font-size: 1.2rem;">${item.severity}</span>
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(239, 68, 68, 0.1);">
+                        <span style="font-size: 1rem; flex-shrink: 0;">🔴</span>
                         <div style="flex: 1;">
-                            <strong style="display: block; margin-bottom: 4px;">${escapeHtml(item.name)}</strong>
-                            <span style="font-size: 0.9rem; color: var(--color-muted);">${escapeHtml(item.reason)}</span>
+                            <strong style="display: block; margin-bottom: 2px; font-size: 0.95rem;">${escapeHtml(item.name)}</strong>
+                            <span style="font-size: 0.85rem; color: var(--color-muted);">${escapeHtml(item.reason)}</span>
                         </div>
                     </div>
                 `).join('')
-                : '<p class="muted">No se detectaron ingredientes problemáticos significativos.</p>';
+                : '<p class="muted" style="font-size: 0.9rem;">No se detectaron ingredientes problemáticos significativos.</p>';
             
             const bodyHtml = `
-                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05)); border-radius: 20px; padding: 24px; margin-bottom: 20px;">
-                    <div style="text-align: center; margin-bottom: 24px;">
-                        <div style="font-size: 3rem; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">${compatibilityPercent}/100</div>
-                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--color-dark); margin-bottom: 4px;">${scoreEmoji} ${scorePhrase}</div>
-                        ${profile && Object.keys(profile).length > 0 ? `
-                            <p style="margin: 0; color: var(--color-muted); font-size: 0.95rem;">
-                                Basado en tu perfil: ${escapeHtml(profile.skin_type || '—')} · ${escapeHtml(profile.hair_type || '—')} · ${escapeHtml(getFaceZoneLabel(profile.face_shape) || '—')}${profile.skin_concerns?.length ? ` · ${escapeHtml(profile.skin_concerns[0])}` : ''}${profile.hair_concerns?.length ? ` · ${escapeHtml(profile.hair_concerns[0])}` : ''}
-                            </p>
-                        ` : ''}
+                <div style="background: white; border-radius: 20px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid rgba(124, 58, 237, 0.1);">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">${compatibilityPercent}/100</div>
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--color-dark); margin-bottom: 8px;">— ${scorePhrase}</div>
+                        ${profileLine ? `<p style="margin: 0; color: var(--color-muted); font-size: 0.9rem;">${profileLine}</p>` : ''}
                     </div>
                     
                     <div style="margin-bottom: 24px;">
-                        <h4 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--color-dark);">✔️ LO BUENO DEL PRODUCTO</h4>
-                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem;">${goodIngredients.length} ingrediente${goodIngredients.length !== 1 ? 's' : ''} positivo${goodIngredients.length !== 1 ? 's' : ''} detectado${goodIngredients.length !== 1 ? 's' : ''}</p>
+                        <h4 style="margin: 0 0 12px; font-size: 1rem; color: var(--color-dark); font-weight: 600;">✔️ Lo bueno del producto</h4>
+                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.85rem;">${goodIngredients.length} ingrediente${goodIngredients.length !== 1 ? 's' : ''} positivo${goodIngredients.length !== 1 ? 's' : ''} para tu bebé:</p>
                         ${goodHtml}
                     </div>
                     
                     <div style="margin-bottom: 24px;">
-                        <h4 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--color-dark);">⚠️ LO QUE NO ES IDEAL PARA EL PERFIL DE TU BEBÉ</h4>
-                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem;">${badIngredients.length} ingrediente${badIngredients.length !== 1 ? 's' : ''} que no recomendamos:</p>
+                        <h4 style="margin: 0 0 12px; font-size: 1rem; color: var(--color-dark); font-weight: 600;">⚠️ Lo que no es ideal</h4>
+                        <p style="margin: 0 0 12px; color: var(--color-muted); font-size: 0.85rem;">${badIngredients.length} ingrediente${badIngredients.length !== 1 ? 's' : ''} importante${badIngredients.length !== 1 ? 's' : ''} a revisar:</p>
                         ${badHtml}
                     </div>
                     
-                    <div style="background: rgba(15, 23, 42, 0.05); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 8px; font-size: 1rem; color: var(--color-dark);">🌦️ Compatibilidad final para tu bebé</h4>
-                        <p style="margin: 0; color: var(--color-dark); font-size: 0.95rem; line-height: 1.5;">${compatibilityPercent}% adecuada → ${personalizedSummary}</p>
+                    <div style="background: rgba(15, 23, 42, 0.03); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 8px; font-size: 0.95rem; color: var(--color-dark); font-weight: 600;">🌦️ Compatibilidad para tu bebé</h4>
+                        <p style="margin: 0; color: var(--color-dark); font-size: 0.9rem; line-height: 1.5;">
+                            <strong>${compatibilityPercent}% adecuada</strong><br>
+                            ${personalizedSummary}
+                        </p>
                     </div>
                     
                     ${productRecommendation}
                 </div>
                 
                 <details style="margin-top: 20px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: var(--color-primary); padding: 12px; background: rgba(124, 58, 237, 0.08); border-radius: 12px;">
-                        🔽 Ver análisis técnico completo de los ${allIngredients.length} ingredientes
+                    <summary style="cursor: pointer; font-weight: 600; color: var(--color-primary); padding: 12px; background: rgba(124, 58, 237, 0.08); border-radius: 12px; font-size: 0.9rem;">
+                        🔽 Ver análisis técnico de los ${allIngredients.length} ingredientes
                     </summary>
                     <div style="margin-top: 16px;">
                         ${buildIngredientsCard(structuredReport, profile)}
@@ -4937,7 +4985,7 @@
             `;
             
             return buildCollapsibleCard({
-                title: '🌿 ANÁLISIS Mommyshops – Tu resultado en 10 segundos',
+                title: '🌿 Mommyshops – Análisis rápido para tu bebé',
                 subtitle: '',
                 bodyHtml: bodyHtml,
                 defaultOpen: true
@@ -6016,7 +6064,6 @@
                 }
                 const sections = [
                     buildSimplifiedAnalysisCard(structuredReport, result, activeProfile, alignment),
-                    profileCardHtml,
                     result.extracted_text ? buildExtractedTextCard(result.extracted_text) : '',
                     labsPlaceholder,
                 ].filter(Boolean);
