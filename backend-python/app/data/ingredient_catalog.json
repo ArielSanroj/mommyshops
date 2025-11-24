@@ -552,5 +552,465 @@
     "eco": false,
     "description": "Puede causar alergias y sensibilización cutánea. No es adecuado para la piel grasa y rizada.",
     "categories": []
+  },
+  "Ethylparaben": {
+    "score": 50,
+    "ewg": 7,
+    "risk": "moderate",
+    "eco": false,
+    "description": "El etilparabeno es similar al metilparabeno, puede causar reacciones alérgicas, irritación cutánea y problemas respiratorios. El EWG clasifica como cancerígeno.",
+    "categories": []
+  },
+  "Ácido hialurónico": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El ácido hialurónico es un polímero natural que se encuentra en las membranas mucosas y epitélios de los seres vivos. Es conocido por sus propiedades hidratantes y emolientes.",
+    "categories": []
+  },
+  "Revinage": {
+    "score": 80,
+    "ewg": 2,
+    "risk": "moderate",
+    "eco": true,
+    "description": "El revinage es un aceite vegetal derivado del coco que se utiliza como emoliente y hidratante. Sin embargo, puede contener pequeñas cantidades de químicos residuales.",
+    "categories": []
+  },
+  "Olus oil": {
+    "score": 85,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El aceite de oliva (olus oil) es rico en ácidos grasos insaturados y vitamina E. Es un ingrediente comúnmente utilizado en productos cosméticos.",
+    "categories": []
+  },
+  "Manteca de Karité": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La manteca de karité (shea butter) es un tipo de aceite vegetal que se extrae del fruto del árbol de karité. Es rica en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Mantequilla de Mango": {
+    "score": 85,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La mantequilla de mango es un tipo de aceite vegetal que se extrae del fruto del mango. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Manteca de Cacao": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La manteca de cacao es un tipo de aceite vegetal que se extrae del fruto del cacao. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Aceite de jojoba": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El aceite de jojoba es un tipo de aceite vegetal que se extrae del fruto del árbol de jojoba. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Aceite de Oliva": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El aceite de oliva (olive oil) es rico en ácidos grasos insaturados y vitamina E. Es un ingrediente comúnmente utilizado en productos cosméticos.",
+    "categories": []
+  },
+  "Hemp": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "moderate",
+    "eco": true,
+    "description": "La fibra de hemp es un ingrediente natural que se utiliza en productos cosméticos. Sin embargo, puede contener pequeñas cantidades de químicos residuales.",
+    "categories": []
+  },
+  "Agua de rosas": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La agua de rosas es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Caléndula": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La caléndula es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Aloe Vera": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La aloe vera es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Árnica": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La árnica es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
+    "categories": []
+  },
+  "Titanium Dioxide": {
+    "score": 80,
+    "ewg": 6,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Es un pigmento blanco que proporciona iluminación en productos cosméticos. Aunque no es tóxico, puede generar preocupaciones sobre la seguridad a largo plazo.",
+    "categories": []
+  },
+  "Hyaluronic Acid": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un polímero natural que retiene humedad en la piel. Es biocompatible y no presenta riesgos significativos.",
+    "categories": []
+  },
+  "Silica": {
+    "score": 85,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Es un mineral natural que proporciona textura y maticidad. Puede generar preocupaciones sobre la exposición a partículas finas.",
+    "categories": []
+  },
+  "Olive Oil": {
+    "score": 98,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Shea Butter": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Mango Butter": {
+    "score": 90,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Cocoa Butter": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en flavonoides y ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Antioxidants and Anti-Aging Ingredients": {
+    "score": 92,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Incluyen extractos de plantas como resveratrol, quercetin y catequinas que presentan beneficios anti-envejecimiento.",
+    "categories": []
+  },
+  "Jojoba Oil": {
+    "score": 98,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Hemp Seed Oil": {
+    "score": 98,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
+    "categories": []
+  },
+  "Calendula Extract": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un extracto natural que presenta beneficios para la piel y puede ser utilizado como agente anti-inflamatorio.",
+    "categories": []
+  },
+  "Arnica Extract": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Es un extracto natural que presenta beneficios para la piel y puede ser utilizado como agente anti-inflamatorio.",
+    "categories": []
+  },
+  "Olive Squalane": {
+    "score": 100,
+    "ewg": 0,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Es un emoliente natural que hidrata y protege la piel. No presenta riesgos para la salud o el medio ambiente.",
+    "categories": []
+  },
+  "Vitamin E": {
+    "score": 100,
+    "ewg": 0,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Es un antioxidant natural que protege la piel de daños oxidativos. No presenta riesgos para la salud o el medio ambiente.",
+    "categories": []
+  },
+  "Rose Water": {
+    "score": 100,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Es un líquido natural que hidrata y calma la piel. No presenta riesgos para la salud o el medio ambiente.",
+    "categories": []
+  },
+  "Aloe Vera Gel": {
+    "score": 100,
+    "ewg": 0,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Es un gel natural que hidrata y protege la piel. No presenta riesgos para la salud o el medio ambiente.",
+    "categories": []
+  },
+  "Acidic Hyaluronic": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El ácido hialurónico es un polímero natural que retiene el agua y ayuda a hidratar la piel. Es seguro y no tiene efectos secundarios significativos. Ayuda a regular el pH de la piel y puede ser beneficiosa para las personas con acné.",
+    "categories": []
+  },
+  "Olus Oil": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El aceite de oliva (Olus Oil) es rico en antioxidantes y ácidos grasos insaturados, lo que lo hace beneficioso para la piel y el cabello. Es seguro y no tiene efectos secundarios significativos.",
+    "categories": []
+  },
+  "Karité Butter": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "La mantequilla de karité es rica en ácidos grasos insaturados y vitamina E, lo que la hace beneficia para la piel. Sin embargo, puede causar alergia en algunas personas.",
+    "categories": []
+  },
+  "Hemp Seed": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La semilla de cannabis (hemp seed) es rica en ácidos grasos insaturados y proteínas, lo que la hace beneficia para la piel y el cabello. Es seguro y no tiene efectos secundarios significativos.",
+    "categories": []
+  },
+  "Calendula": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La calendula es un extracto natural que puede ser beneficiosa para la piel. Sin embargo, su composición variable puede llevar a problemas de alergia y reacciones adversas en algunas personas.",
+    "categories": []
+  },
+  "Arnica": {
+    "score": 80,
+    "ewg": 2,
+    "risk": "low",
+    "eco": false,
+    "description": "El arnica es un extracto natural que puede ser beneficiosa para la piel. Sin embargo, su composición variable puede llevar a problemas de alergia y reacciones adversas en algunas personas.",
+    "categories": []
+  },
+  "Sodium Lauryl Sulfate (SLS)": {
+    "score": 40,
+    "ewg": 6,
+    "risk": "high",
+    "eco": false,
+    "description": "La SLS puede causar irritación cutánea y alergias. También puede ser tóxico para peces.",
+    "categories": []
+  },
+  "Tetrasodium EDTA": {
+    "score": 20,
+    "ewg": 8,
+    "risk": "high",
+    "eco": false,
+    "description": "El Tetrasodium EDTA es un potente agente anti-inflamatorio, pero puede ser tóxico para los peces y causar problemas renales en humanos.",
+    "categories": []
+  },
+  "Synthetic Fragrance": {
+    "score": 30,
+    "ewg": 7,
+    "risk": "high",
+    "eco": false,
+    "description": "Los fragancias sintéticas pueden causar alergias y irritación cutánea. También pueden ser tóxicos para los animales.",
+    "categories": []
+  },
+  "Butyl Methoxydibenzoylmethane": {
+    "score": 80,
+    "ewg": 6,
+    "risk": "moderate",
+    "eco": false,
+    "description": "El Butyl Methoxydibenzoylmethane es un compuesto químico que se utiliza como protectante solar. Tiene beneficios en cuanto a la protección contra el daño UV, pero puede tener efectos adversos en la piel y los ojos. Debe ser utilizado con precaución.",
+    "categories": []
+  },
+  "Triethanolamine": {
+    "score": 70,
+    "ewg": 5,
+    "risk": "moderate",
+    "eco": false,
+    "description": "La Triethanolamine es un humectante químico que se utiliza en productos cosméticos. Puede causar irritación cutánea y alergias, especialmente en individuos con piel sensibilizada.",
+    "categories": []
+  },
+  "Tocopherol": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La vitamina E es un potente antioxidante natural que ayuda a proteger la piel de los daños oxidativos. Es segura y bien tolerada.",
+    "categories": []
+  },
+  "Camellia Sinensis Leaf Extract": {
+    "score": 95,
+    "ewg": 0,
+    "risk": "low",
+    "eco": true,
+    "description": "El extracto de hoja de té verde es rico en antioxidantes y polifenoles, lo que lo hace beneficioso para la piel. Es seguro y bien tolerado.",
+    "categories": []
+  },
+  "Butylene Glycol": {
+    "score": 85,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "El Butylene Glycol es un humectante naturalmente derivado del azúcar que ayuda a mantener la hidratación de la piel. Es considerado seguro para uso cutáneo y no tiene efectos adversos notificados.",
+    "categories": []
+  },
+  "Carbomer": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "El Carbomer es un polímero que se utiliza como espesante y emulsificante en productos cosméticos. Es considerado seguro para uso cutáneo y no tiene efectos adversos notificados.",
+    "categories": []
+  },
+  "Triethanolamine (TEA)": {
+    "score": 60,
+    "ewg": 7,
+    "risk": "moderate",
+    "eco": false,
+    "description": "La TEA es una amina utilizada como emoliente y humectante en productos cosméticos. Sin embargo, se ha relacionado con la sensibilización cutánea y alergia.",
+    "categories": []
+  },
+  "Diazolidinyl Urea": {
+    "score": 70,
+    "ewg": 4,
+    "risk": "low",
+    "eco": false,
+    "description": "El Diazolidinyl Urea es un conservante comúnmente utilizado en productos cosméticos. Aunque no hay evidencia de efectos adversos a corto plazo, algunos estudios sugieren que su uso crónico puede causar problemas de salud reproductiva.",
+    "categories": []
+  },
+  "Fragrance": {
+    "score": 20,
+    "ewg": 8,
+    "risk": "high",
+    "eco": false,
+    "description": "El aroma o fragrance es un término que puede englobar una amplia variedad de sustancias químicas. Aunque no se sabe exactamente qué sustancias se encuentran en algunos productos de cuidado personal, el término 'fragrance' ha sido asociado con reacciones alérgicas y posibles efectos negativos en la salud humana.",
+    "categories": []
+  },
+  "DMDM Hydantoin": {
+    "score": 50,
+    "ewg": 5,
+    "risk": "moderate",
+    "eco": false,
+    "description": "El DMDM hidantoína es un conservante común en productos de cuidado personal. Aunque no se ha demostrado que sea tóxico para los humanos, puede ser irritante para la piel y los ojos.",
+    "categories": []
+  },
+  "Fragrance (Parfum)": {
+    "score": 25,
+    "ewg": 10,
+    "risk": "high",
+    "eco": false,
+    "description": "El fragrance puede contener sustancias químicas no declaradas que pueden ser tóxicas o alérgicas. La exposición crónica a estos químicos puede aumentar el riesgo de problemas respiratorios y dermatológicos.",
+    "categories": []
+  },
+  "PVP": {
+    "score": 50,
+    "ewg": 6,
+    "risk": "moderate",
+    "eco": false,
+    "description": "El PVP es un polímero que puede ser irritante y causar reacciones alérgicas. También puede contener residuos de petróleo.",
+    "categories": []
+  },
+  "Ceramides": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Los ceramidas son una clase de lipídicos naturales que ayudan a reparar y renovar la barrera natural del estrato córneo. Mejoran la hidratación, reducen las arrugas y suavizan la piel.",
+    "categories": []
+  },
+  "Water": {
+    "score": 100,
+    "ewg": 0,
+    "risk": "high",
+    "eco": false,
+    "description": "Es un líquido inorgánico natural y generalmente seguro para la piel humana, pero puede causar irritación en ciertos individuos.",
+    "categories": []
+  },
+  "Nube de Avena": {
+    "score": 98,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Blend Mommyshops Bebé Piel Seca. Avena coloidal 5 %, karité fair-trade, leche de almendra, glicerina, decil glucósido, caléndula CO2 y prebióticos que calman eccema, sellan hidratación y fortalecen la barrera en climas secos.",
+    "categories": [
+      "mommyshops_bebe",
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
+  },
+  "Brisa de Té Verde": {
+    "score": 97,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Blend Mommyshops Bebé Piel Húmeda/Grasosa. Té verde orgánico, hamamelis sin alcohol, aloe 99 %, coco-caprylate, coco + lauril glucósido y prebióticos que balancean sebo, evitan dermatitis del pañal y mantienen la piel fresca en climas húmedos.",
+    "categories": [
+      "mommyshops_bebe",
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
+  },
+  "Equilibrio de Caléndula": {
+    "score": 96,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Blend Mommyshops Bebé Piel Normal/Mixta. Caléndula orgánica 3 %, jojoba golden, manzanilla romana, glicerina, decil + coco glucósido y prebióticos que nutren sin exceso, adaptan el balance según edad/estación y mantienen la piel resiliente.",
+    "categories": [
+      "mommyshops_bebe",
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
   }
 }
