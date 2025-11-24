@@ -2288,7 +2288,6 @@
                 <a href="#inicio">Inicio</a>
                 <a href="#solucion">Productos</a>
                 <a href="#laboratorio">Laboratorio</a>
-                <a href="#planes">Planes</a>
                 <a href="#recursos">Recursos</a>
             </div>
             <div class="nav-cta">
@@ -2441,8 +2440,8 @@
         <div class="journey-section">
             <div style="text-align:center;margin-bottom:48px;">
                 <p class="lab-badge">Flujo guiado</p>
-                <h2 style="font-size:2.5rem;margin-bottom:16px;line-height:1.2;">Del producto comercial, a un producto diseñado para ti</h2>
-                <p style="color:var(--color-muted);font-size:1.1rem;max-width:700px;margin:0 auto;">Cada bloque se ajusta a tu perfil (mamá, marca o laboratorio) con seguimiento en tiempo real. Transformamos ingredientes comerciales en fórmulas personalizadas y seguras.</p>
+                <h2 style="font-size:2.5rem;margin-bottom:16px;line-height:1.2;">Del producto de tienda, a un producto diseñado 100% para las necesidades de tu bebé</h2>
+                <p style="color:var(--color-muted);font-size:1.1rem;max-width:700px;margin:0 auto;">Con seguimiento en tiempo real transformamos ingredientes comerciales en fórmulas personalizadas y seguras.</p>
             </div>
             <div class="journey-grid">
                 <div class="journey-card">
@@ -2471,7 +2470,7 @@
                     <div class="journey-icon">🔍</div>
                     <span>03 • Diagnóstico</span>
                     <strong>Compatibilidad personalizada</strong>
-                    <p>Metrics, alertas y recomendaciones claras para cada necesidad. Análisis profundo con estándares OMS, FDA, CIR y SCCS.</p>
+                    <p>Métricas, alertas y recomendaciones claras para cada necesidad. Análisis profundo con estándares OMS, FDA, CIR y SCCS.</p>
                     <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
                         <li>Análisis de compatibilidad</li>
                         <li>Alertas de seguridad</li>
@@ -2480,7 +2479,7 @@
                 </div>
                 <div class="journey-card">
                     <div class="journey-icon">🧪</div>
-                    <span>04 • Fórmula Mommyshops</span>
+                    <span>04 • Fórmula Mommyshops Lbas</span>
                     <strong>Blend listo para fabricar</strong>
                     <p>Ingredientes sustitutos, porcentajes y producto hiper personalizados con inteligencia artificial. Fórmula completa lista para producción.</p>
                     <ul style="margin-top:12px;padding-left:20px;font-size:0.9rem;color:var(--color-muted);">
@@ -2496,15 +2495,13 @@
         </div>
     </section>
 
-
-
     <div class="container" id="analizador">
         <div class="header">
             <div class="app-brand">
                 <img src="/frontend/assets/mommyshops-logo.svg" alt="Mommyshops logo" class="brand-logo">
             </div>
             <h1 class="sr-only">MommyShops Análisis de Productos de Bebés</h1>
-            <p>Cosmetic Ingredient Analyzer & Safety Checker</p>
+            <p>Análisis de Productos de Bebés</p>
         </div>
 
         <div class="app-shell">
@@ -2746,6 +2743,55 @@
             step: 1,
             data: defaultProfileData()
         };
+
+        const BABY_PRODUCTS = {
+            nube_avena: {
+                name: 'Nube de Avena',
+                subtitle: 'Piel seca/atópica o clima seco/AC',
+                price: '$11.90 (refill $6.90)',
+                description: 'Hidratación intensiva para pieles muy secas o con eccema leve. Ajusta avena coloidal y karité según la sequedad detectada y mantiene el pH 5.5 tear-free.',
+                bullets: [
+                    '+30 % avena y karité cuando hay baja humedad',
+                    'Prebióticos que fortalecen el microbioma',
+                    'Modo ultra-sensitive 0 % fragancia'
+                ]
+            },
+            brisa_te: {
+                name: 'Brisa de Té Verde',
+                subtitle: 'Piel húmeda/grasosa o clima húmedo/cálido',
+                price: '$11.90 (refill $6.90)',
+                description: 'Equilibra sebo y previene dermatitis del pañal en climas cálidos. Reduce emolientes pesados y aumenta hamamelis cuando la humedad supera 70 %.',
+                bullets: [
+                    'Hamamelis sin alcohol y aloe 99 %',
+                    'Foam baby-safe que no obstruye poros',
+                    'IA ajusta limpieza ligera vs. balance'
+                ]
+            },
+            equilibrio_calendula: {
+                name: 'Equilibrio de Caléndula',
+                subtitle: 'Piel normal/mixta, transición estacional',
+                price: '$10.90 (refill $5.90)',
+                description: 'Blend diario para bebés sin problemas específicos. Nutre sin exceso y adapta caléndula/jojoba según edad y estación.',
+                bullets: [
+                    'Caléndula orgánica 3 % + jojoba golden',
+                    'Modo fragancia natural 0.3 % o 0 %',
+                    'Soporta cambios de clima sin irritar'
+                ]
+            }
+        };
+
+        function suggestBabyProduct(profile) {
+            if (!profile) return null;
+            const skin = (profile.skin_type || '').toLowerCase();
+            const climate = (profile.face_shape || '').toLowerCase();
+            if (skin === 'seca_atopica' || climate === 'clima_seco_ac') {
+                return BABY_PRODUCTS.nube_avena;
+            }
+            if (skin === 'humeda_grasosa' || climate === 'clima_humedo_calor') {
+                return BABY_PRODUCTS.brisa_te;
+            }
+            return BABY_PRODUCTS.equilibrio_calendula;
+        }
 
         function startMainFlow() {
             const analyzerSection = document.getElementById('analizador');
@@ -4788,196 +4834,55 @@
             const mount = document.getElementById('builderMount');
             if (!mount) return;
 
-            const evaluated = normalizeEvaluatedIngredients(structuredReport?.ingredients_evaluated);
-            let problematic = normalizeEvaluatedIngredients(structuredReport?.safety?.problematic);
-            if (!problematic.length && evaluated.length) {
-                problematic = evaluated
-                    .filter(item => item.state === 'conflict' || item.state === 'replace' || (Array.isArray(item.risk_flags) && item.risk_flags.length))
-                    .map(item => ({
-                        ingredient: item.ingredient,
-                        analysis: item.comment || item.analysis || 'Recomendamos sustituirlo para tu perfil.'
-                    }));
-            }
+            const suggestedProduct = suggestBabyProduct(activeProfile || getProfileForRequest());
+            builderState = null;
 
-            const intelligentFormula = structuredReport?.intelligent_formula || null;
-            const replacements = Array.isArray(intelligentFormula?.replacements) ? intelligentFormula.replacements : [];
-            if (!problematic.length && replacements.length) {
-                problematic = replacements.map(rep => ({
-                    ingredient: rep.from || rep.original || '',
-                    analysis: rep.reason || 'Mommyshops recomienda sustituir este ingrediente.'
-                })).filter(entry => entry.ingredient);
-            }
-
-            const recommendedSubstitutes = Array.isArray(intelligentFormula?.recommended_substitutes)
-                ? intelligentFormula.recommended_substitutes
-                : [];
-
-            const substitutesMap = new Map();
-            replacements.forEach(rep => {
-                const key = (rep.from || rep.original || '').trim();
-                if (!key) return;
-                const alternatives = [];
-                if (rep.to) {
-                    alternatives.push({
-                        name: rep.to.inci || rep.to.name || 'Sustituto propuesto',
-                        reason: buildReplacementReason(rep.to)
-                    });
-                }
-                if (!alternatives.length && recommendedSubstitutes.length) {
-                    recommendedSubstitutes.slice(0, 2).forEach(sub => {
-                        alternatives.push({
-                            name: sub.inci || sub.name,
-                            reason: buildRecommendedReason(sub)
-                        });
-                    });
-                }
-                substitutesMap.set(key, alternatives);
-            });
-
-            if (!substitutesMap.size && Array.isArray(structuredReport?.substitutes)) {
-                structuredReport.substitutes.forEach(entry => {
-                    if (entry && entry.for) {
-                        substitutesMap.set(entry.for, Array.isArray(entry.alternatives) ? entry.alternatives : []);
-                    }
-                });
-            }
-
-            const defaultAlternatives = recommendedSubstitutes.slice(0, 3).map(sub => ({
-                name: sub.inci || sub.name,
-                reason: buildRecommendedReason(sub)
-            }));
-
-            const safeFromFormula = extractBaseIngredientNamesFromFormula(intelligentFormula);
-            const safeFromSafety = Array.isArray(structuredReport?.safety?.safe)
-                ? structuredReport.safety.safe.map(item => item.ingredient || item.name || '').filter(Boolean)
-                : [];
-            const safeIngredients = uniqueStrings(safeFromFormula.length ? safeFromFormula : safeFromSafety);
-            const baseProductName = structuredReport.product_name || analysisResult.product_name || 'Producto personalizado';
-            const seenProblematic = new Set();
-            problematic = problematic.filter(item => {
-                const key = (item.ingredient || item.name || '').toLowerCase();
-                if (!key || seenProblematic.has(key)) {
-                    return false;
-                }
-                seenProblematic.add(key);
-                return true;
-            });
-
-            const progressBadgesHtml = `
-                <div class="progress-badges">
-                    <span class="progress-badge">🧪 Clean-lab listo</span>
-                    <span class="progress-badge">💚 Riesgo controlado</span>
-                    <span class="progress-badge">📦 Entrega 5-7 días</span>
-                </div>
-            `;
-
-            if (!problematic.length) {
-                builderState = null;
-                mount.innerHTML = '';
-                setStepStatus(4, 'completed');
-                setStepStatus(5, 'completed');
-                setStepStatus(6, 'active');
+            if (!suggestedProduct) {
+                mount.innerHTML = `
+                    <div class="recommendations-card">
+                        <p class="muted">Completa tu perfil para recomendar la versión exacta de Mommyshops Bebé.</p>
+                        <button type="button" class="btn btn-primary" onclick="openProfileWizard()">Configurar perfil</button>
+                    </div>
+                `;
+                setStepStatus(5, 'pending');
+                setStepStatus(6, 'pending');
                 return;
             }
 
-            builderState = {
-                baseProductName,
-                safeIngredients,
-                items: problematic.map(problematicItem => {
-                    const ingredientName = problematicItem.ingredient || problematicItem.name || '';
-                    if (!ingredientName) return null;
-                    const mappedAlternatives = substitutesMap.get(ingredientName) || [];
-                    const normalizedAlternatives = mappedAlternatives.length
-                        ? mappedAlternatives
-                        : defaultAlternatives;
-                    const selectedIndex = normalizedAlternatives.length ? 0 : '__original__';
-                    return {
-                        original: ingredientName,
-                        description: problematicItem.analysis || problematicItem.description || 'Sustituye este ingrediente para reducir riesgos.',
-                        alternatives: normalizedAlternatives,
-                        selectedIndex,
-                    };
-                }).filter(Boolean),
-                profile: activeProfile || getProfileForRequest(),
-            };
+            const benefits = (suggestedProduct.bullets || []).map(point => `<li style="margin-bottom:4px;">${escapeHtml(point)}</li>`).join('');
 
-            if (intelligentFormula) {
-                if (Array.isArray(intelligentFormula.new_formula) && intelligentFormula.new_formula.length) {
-                    builderState.labsFormula = intelligentFormula.new_formula;
-                }
-                builderState.labsSummary = intelligentFormula.summary || {
-                    compatibility_before: intelligentFormula.compatibility_before,
-                    compatibility_after: intelligentFormula.compatibility_after,
-                    optimization_focus: intelligentFormula.optimization_focus
-                };
-                builderState.labsMockup = intelligentFormula.mockup || null;
-            }
-            syncBuilderWithLabs();
-
-            const ingredientCards = builderState.items.map((item, index) => {
-                const alternatives = item.alternatives.length ? item.alternatives : [{ name: 'Mantener ingrediente original', reason: 'Sin alternativa disponible' }];
-                const options = alternatives.map((alt, altIndex) => {
-                    const optionValue = item.alternatives.length ? altIndex.toString() : '__original__';
-                    const selectedAttr = (item.alternatives.length ? item.selectedIndex === altIndex : true) ? 'selected' : '';
-                    const cleanName = (alt.name || alt || '').toString()
-                        .replace(/\n/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .replace(/\(ej\.\s*/g, '')
-                        .replace(/^\s*Alternativas naturales certificadas\s*:?\s*/i, '')
-                        .trim();
-                    const cleanReason = (alt.reason || '').toString()
-                        .replace(/\n/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim();
-                    const label = cleanName + (cleanReason ? ' — ' + escapeHtml(cleanReason) : '');
-                    return `<option value="${optionValue}" ${selectedAttr}>${escapeHtml(label)}</option>`;
-                }).join('');
-                if (item.alternatives.length) {
-                    const keepSelected = item.selectedIndex === '__original__' ? 'selected' : '';
-                    const keepOption = `<option value="__original__" ${keepSelected}>Mantener ingrediente original</option>`;
-                    return `
-                        <div class="builder-card">
-                            <h4>${escapeHtml(item.original)}</h4>
-                            <p>${escapeHtml(item.description || 'Sustituye este ingrediente para reducir riesgos.')}</p>
-                            <select onchange="handleBuilderSelection(${index}, this.value)">
-                                ${keepOption}
-                                ${options}
-                            </select>
+            const productCard = `
+                <div class="labs-result-card">
+                    <div class="labs-result-header">
+                        <div>
+                            <span class="lab-badge">Mommyshops Bebé</span>
+                            <h4>🧴 ${escapeHtml(suggestedProduct.name)}</h4>
+                            <p class="muted">${escapeHtml(suggestedProduct.subtitle)}</p>
                         </div>
-                    `;
-                }
-                return `
-                    <div class="builder-card">
-                        <h4>${escapeHtml(item.original)}</h4>
-                        <p>${escapeHtml(item.description || 'Sustituye este ingrediente para reducir riesgos.')}</p>
-                        <select onchange="handleBuilderSelection(${index}, this.value)">
-                            ${options}
-                        </select>
+                        <div class="score-badge">${escapeHtml(suggestedProduct.price)}</div>
                     </div>
-                `;
-            }).join('');
-
-            const body = `
-                <p class="muted" style="margin-bottom:16px;">Estamos puliendo tu blend contigo. Elige sustitutos empáticos con tu piel y nosotros nos encargamos del resto.</p>
-                ${progressBadgesHtml}
-                <div class="builder-grid">
-                    ${ingredientCards}
-                </div>
-                <div class="builder-summary" id="builderSummary"></div>
-                <div class="builder-actions">
-                    <button type="button" onclick="updateBuilderSummary('Resumen actualizado')">Actualizar resumen</button>
-                    <button type="button" class="primary" onclick="submitCustomProduct()">Guardar y solicitar</button>
+                    <div class="labs-result-body" style="grid-template-columns:1fr;">
+                        <p>${escapeHtml(suggestedProduct.description)}</p>
+                        <ul style="padding-left:20px;margin:0;color:var(--color-dark);font-weight:500;">
+                            ${benefits}
+                        </ul>
+                    </div>
+                    <div class="recommendations-cta">
+                        <button type="button" class="btn btn-primary" onclick="openSignupModal()">Solicitar esta fórmula</button>
+                        <button type="button" class="btn btn-secondary" onclick="startMainFlow()">Compartir nuevos ingredientes</button>
+                    </div>
                 </div>
             `;
 
             mount.innerHTML = buildCollapsibleCard({
                 title: '🧪 Diseña tu fórmula alternativa',
-                subtitle: 'Sustituye ingredientes críticos con mejores opciones.',
-                bodyHtml: body
+                subtitle: 'Recomendamos el blend Mommyshops Bebé ideal para tu perfil.',
+                bodyHtml: productCard
             });
 
             setStepStatus(4, 'completed');
-            setStepStatus(5, 'active');
+            setStepStatus(5, 'completed');
+            setStepStatus(6, 'active');
         }
 
         function extractDetectedIngredientNames(structuredReport) {
@@ -5371,7 +5276,14 @@
 
         async function submitCustomProduct() {
             if (!builderState) {
-                alert('Necesitamos un análisis activo para preparar tu blend. Escanea o carga tu INCI primero 💜.');
+                const profile = getProfileForRequest();
+                const suggestedProduct = suggestBabyProduct(profile);
+                if (suggestedProduct) {
+                    alert(`Recomendamos ${suggestedProduct.name}. Completa la solicitud para recibir la versión personalizada 💜.`);
+                    openSignupModal();
+                } else {
+                    alert('Completa tu perfil y escanea un producto para solicitar tu fórmula Mommyshops.');
+                }
                 return;
             }
 
@@ -5797,7 +5709,6 @@
                     profileCardHtml,
                     result.extracted_text ? buildExtractedTextCard(result.extracted_text) : '',
                     buildIngredientsCard(structuredReport, activeProfile),
-                    buildInsightsCard(structuredReport, result, activeProfile, alignment),
                     buildCompatibilityCard(structuredReport, alignment, activeProfile),
                     labsPlaceholder,
                 ].filter(Boolean);
@@ -6191,22 +6102,7 @@
                         Explorar biblioteca →
                     </a>
                 </div>
-                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
-                    <div style="font-size:2.5rem;margin-bottom:16px;">📖</div>
-                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Documentación API</h3>
-                    <p style="color:var(--color-muted);margin-bottom:20px;">Integra Mommyshops Labs en tu aplicación con nuestra API completa y documentación detallada.</p>
-                    <a href="https://mommyshops.notion.site" target="_blank" rel="noopener" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
-                        Ver documentación →
-                    </a>
-                </div>
-                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
-                    <div style="font-size:2.5rem;margin-bottom:16px;">🎓</div>
-                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Guías y tutoriales</h3>
-                    <p style="color:var(--color-muted);margin-bottom:20px;">Aprende a usar todas las funcionalidades de Mommyshops Labs con guías paso a paso.</p>
-                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
-                        Ver tutoriales →
-                    </a>
-                </div>
+        
                 <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
                     <div style="font-size:2.5rem;margin-bottom:16px;">🔬</div>
                     <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Estándares regulatorios</h3>
@@ -6222,15 +6118,7 @@
                     <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
                         Leer blog →
                     </a>
-                </div>
-                <div style="background:var(--color-card);border-radius:20px;padding:32px;box-shadow:var(--shadow-soft);border:1px solid var(--color-border);transition:transform 0.2s;">
-                    <div style="font-size:2.5rem;margin-bottom:16px;">🤝</div>
-                    <h3 style="font-size:1.5rem;margin-bottom:12px;color:var(--color-dark);">Soporte y comunidad</h3>
-                    <p style="color:var(--color-muted);margin-bottom:20px;">Únete a nuestra comunidad, resuelve dudas y comparte experiencias con otros usuarios.</p>
-                    <a href="#analizador" style="color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;gap:8px;">
-                        Unirse a comunidad →
-                    </a>
-                </div>
+                </div>                
             </div>
         </div>
     </section>
@@ -6313,9 +6201,7 @@
             <button type="button" class="assistant-toggle" onclick="event.preventDefault(); toggleAssistPanel();" aria-label="Contraer o expandir panel">
                 <span id="toggleIcon">−</span>
             </button>
-            <strong>¿Necesitas ayuda?</strong>
-            <span>¿Necesitas ayuda en conocer más sobre tu rutina y productos de belleza?</span>
-        </summary>
+            <strong>¿Quieres conocer más?</strong>
         <div class="assistant-actions">
             <button type="button" onclick="openSignupModal()">habla con mommyshops</button>
         </div>
