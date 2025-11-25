@@ -3,7 +3,7 @@ Analysis router
 Handles product analysis, ingredient analysis, and recommendations
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List, Dict, Any
 import logging
@@ -78,6 +78,98 @@ def _merge_profiles(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str,
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
+CLIMATE_PRESETS = [
+    {
+        "country": "Colombia",
+        "city": "Bogotá",
+        "emoji": "🏔️",
+        "humidity": 35,
+        "temperature_c": 18,
+        "condition": "Clima seco + altitud",
+        "ia_adjustment": "+20% avena y karité",
+        "compatibility_hint": "Necesitas fórmulas más nutritivas (Nube de Avena)."
+    },
+    {
+        "country": "Colombia",
+        "city": "Cartagena",
+        "emoji": "🌴",
+        "humidity": 78,
+        "temperature_c": 30,
+        "condition": "Clima cálido + humedad alta",
+        "ia_adjustment": "Reducimos emolientes y subimos té verde/hamamelis",
+        "compatibility_hint": "Ideal activar Brisa de Té Verde para controlar humedad."
+    },
+    {
+        "country": "México",
+        "city": "CDMX",
+        "emoji": "🌤️",
+        "humidity": 45,
+        "temperature_c": 22,
+        "condition": "Clima templado + altura",
+        "ia_adjustment": "Balanceamos avena/caléndula según temporada",
+        "compatibility_hint": "Equilibrio de Caléndula funciona perfecto todo el año."
+    },
+    {
+        "country": "Argentina",
+        "city": "Buenos Aires",
+        "emoji": "🌦️",
+        "humidity": 60,
+        "temperature_c": 20,
+        "condition": "Clima templado con humedad media",
+        "ia_adjustment": "Ajustamos jojoba/caléndula en transición estacional",
+        "compatibility_hint": "Equilibrio Caléndula mantiene la piel suave a diario."
+    },
+    {
+        "country": "Estados Unidos",
+        "city": "Miami",
+        "emoji": "☀️",
+        "humidity": 75,
+        "temperature_c": 32,
+        "condition": "Clima tropical húmedo",
+        "ia_adjustment": "Activamos modo anti-humedad (hamamelis + aloe)",
+        "compatibility_hint": "Brisa de Té Verde previene dermatitis por calor."
+    }
+]
+
+
+def _normalize_location_value(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = (
+        value.strip()
+        .lower()
+        .replace("á", "a")
+        .replace("é", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ú", "u")
+    )
+    return normalized or None
+
+
+CLIMATE_LOOKUP = {
+    (_normalize_location_value(entry["country"]), _normalize_location_value(entry["city"])): entry
+    for entry in CLIMATE_PRESETS
+}
+
+
+@router.get("/climate", response_model=ClimateResponse)
+async def get_climate_profile(
+    country: str = Query(..., min_length=2, description="Country name"),
+    city: str = Query(..., min_length=2, description="City name"),
+):
+    """
+    Retrieve climate profile for a given city/country combination.
+    """
+    country_key = _normalize_location_value(country)
+    city_key = _normalize_location_value(city)
+    if not country_key or not city_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="País y ciudad son requeridos")
+    context = CLIMATE_LOOKUP.get((country_key, city_key))
+    if not context:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No tenemos datos climáticos para esa ubicación")
+    return context
+
 
 class AnalysisRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=10000, description="Text to analyze")
@@ -103,6 +195,18 @@ class AnalysisRequest(BaseModel):
             v = re.sub(r'<[^>]+>', '', v)  # Remove HTML tags
             return v.strip()
         return v
+
+class ClimateResponse(BaseModel):
+    country: str
+    city: str
+    emoji: str
+    humidity: float
+    temperature_c: float
+    condition: str
+    ia_adjustment: str
+    compatibility_hint: str
+    source: str = "mommyshops_preset"
+
 
 class AnalysisResponse(BaseModel):
     success: bool
@@ -235,7 +339,12 @@ Normalized ingredient list:"""
         )
         
         # Option 2: Enhance ingredient analysis with Ollama
-        if ollama_service.available and result.get("success") and result.get("ingredients"):
+        if (
+            ollama_service.available
+            and result.get("success")
+            and result.get("ingredients")
+            and not result.get("ollama_skipped")
+        ):
             try:
                 logger.info("Enhancing ingredient analysis with Ollama...")
                 ingredient_names = [ing.get("name", "") for ing in result.get("ingredients", []) if ing.get("name")]
