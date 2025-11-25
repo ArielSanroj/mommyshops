@@ -2897,7 +2897,8 @@
             hair_concerns: [],
             overall_goals: [],
             location_country: null,
-            location_city: null
+            location_city: null,
+            climate_context: null
         });
         let profileWizardState = {
             step: 1,
@@ -3021,6 +3022,7 @@
             map[key].push(preset);
             return map;
         }, {});
+        const CLIMATE_CACHE = {};
 
         function normalizeLocationValue(value) {
             return (value || '')
@@ -3060,6 +3062,23 @@
                 .join('');
         }
 
+        function getClimateCacheKey(country, city) {
+            if (!country || !city) return null;
+            return `${normalizeLocationValue(country)}__${normalizeLocationValue(city)}`;
+        }
+
+        function cacheClimateContext(country, city, context) {
+            const key = getClimateCacheKey(country, city);
+            if (!key || !context) return;
+            CLIMATE_CACHE[key] = context;
+        }
+
+        function getCachedClimateContext(country, city) {
+            const key = getClimateCacheKey(country, city);
+            if (!key) return null;
+            return CLIMATE_CACHE[key] || null;
+        }
+
         function setupLocationInputs() {
             const countryInput = document.getElementById('locationCountry');
             const cityInput = document.getElementById('locationCity');
@@ -3067,19 +3086,71 @@
             countryInput.addEventListener('input', () => {
                 updateCityOptionsForCountry(countryInput.value);
                 cityInput.value = '';
+                profileWizardState.data.location_country = countryInput.value || null;
+                profileWizardState.data.location_city = null;
+                profileWizardState.data.climate_context = null;
             });
+            cityInput.addEventListener('change', () => handleLocationSelection(countryInput.value, cityInput.value));
+            cityInput.addEventListener('blur', () => handleLocationSelection(countryInput.value, cityInput.value));
+        }
+
+        function presetToClimateContext(preset) {
+            if (!preset) return null;
+            return {
+                country: preset.country,
+                city: preset.city,
+                emoji: preset.climate.emoji,
+                humidity: preset.climate.humidity,
+                temperature_c: Number(String(preset.climate.temperature).replace(/[^\d.]/g, '')) || null,
+                condition: preset.climate.condition,
+                ia_adjustment: preset.climate.ia_adjustment,
+                compatibility_hint: preset.climate.compatibility_hint,
+                source: 'preset'
+            };
+        }
+
+        async function handleLocationSelection(country, city) {
+            if (!country || !city) return;
+            const context = await fetchClimateContext(country, city);
+            if (context) {
+                profileWizardState.data.location_country = country;
+                profileWizardState.data.location_city = city;
+                profileWizardState.data.climate_context = context;
+                cacheClimateContext(country, city, context);
+            }
+        }
+
+        async function fetchClimateContext(country, city) {
+            const cached = getCachedClimateContext(country, city);
+            if (cached) return cached;
+            try {
+                const params = new URLSearchParams({ country: country || '', city: city || '' });
+                const response = await fetch(`${API_BASE}/analysis/climate?${params.toString()}`);
+                if (!response.ok) {
+                    console.warn('Climate API responded with', response.status);
+                    return presetToClimateContext(findLocationPreset(country, city));
+                }
+                const data = await response.json();
+                cacheClimateContext(country, city, data);
+                return data;
+            } catch (error) {
+                console.warn('Climate fetch failed', error);
+                return presetToClimateContext(findLocationPreset(country, city));
+            }
         }
 
         function getClimateContextFromProfile(profile) {
             if (!profile) return null;
+            if (profile.climate_context) {
+                return profile.climate_context;
+            }
+            const cached = getCachedClimateContext(profile.location_country, profile.location_city);
+            if (cached) return cached;
             const preset = findLocationPreset(profile.location_country, profile.location_city);
             if (!preset) return null;
-            return {
-                ...preset,
-                humidityLabel: `${preset.climate.humidity}% HR`,
-                compatibility: preset.climate.compatibility_hint,
-                adjustment: preset.climate.ia_adjustment
-            };
+            const context = presetToClimateContext(preset);
+            cacheClimateContext(profile.location_country, profile.location_city, context);
+            return context;
         }
 
         function suggestBabyProduct(profile) {
@@ -4493,6 +4564,10 @@
                 hair_concerns: getCheckedValues('hairConcernsGroup'),
                 overall_goals: getCheckedValues('overallGoalsGroup'),
             };
+            const cachedClimate = getCachedClimateContext(profile.location_country, profile.location_city);
+            if (cachedClimate) {
+                profile.climate_context = cachedClimate;
+            }
 
             // Remove empty arrays/strings
             Object.keys(profile).forEach(key => {
@@ -4522,6 +4597,9 @@
             }
             if (cityInput) {
                 cityInput.value = profile?.location_city || '';
+            }
+            if (profile?.climate_context && profile.location_country && profile.location_city) {
+                cacheClimateContext(profile.location_country, profile.location_city, profile.climate_context);
             }
 
             const syncCheckboxes = (containerId, values = []) => {
@@ -4722,6 +4800,7 @@
                     face_shape: stored.face_shape || null,
                     location_country: stored.location_country || null,
                     location_city: stored.location_city || null,
+                    climate_context: stored.climate_context || null,
                     skin_concerns: [...(stored.skin_concerns || [])],
                     hair_concerns: [...(stored.hair_concerns || [])],
                     overall_goals: [...(stored.overall_goals || [])]
@@ -4775,12 +4854,16 @@
         }
 
         function buildProfileFromWizard() {
+            const countryValue = document.getElementById('locationCountry')?.value || profileWizardState.data.location_country || null;
+            const cityValue = document.getElementById('locationCity')?.value || profileWizardState.data.location_city || null;
+            const cachedClimate = getCachedClimateContext(countryValue, cityValue);
             return {
                 skin_type: profileWizardState.data.skin_type,
                 hair_type: profileWizardState.data.hair_type,
                 face_shape: profileWizardState.data.face_shape,
-                location_country: document.getElementById('locationCountry')?.value || profileWizardState.data.location_country || null,
-                location_city: document.getElementById('locationCity')?.value || profileWizardState.data.location_city || null,
+                location_country: countryValue,
+                location_city: cityValue,
+                climate_context: cachedClimate || profileWizardState.data.climate_context || null,
                 skin_concerns: profileWizardState.data.skin_concerns || [],
                 hair_concerns: profileWizardState.data.hair_concerns || [],
                 overall_goals: profileWizardState.data.overall_goals || [],
@@ -5251,7 +5334,7 @@
             if (profile?.skin_type) profileLineParts.push(`piel ${profile.skin_type}`);
             if (profile?.hair_type) profileLineParts.push(`edad ${profile.hair_type}`);
             if (profile?.face_shape) profileLineParts.push(`clima ${profile.face_shape}`);
-            if (profile?.location_city && profile?.location_country) profileLineParts.push(`${profile.location_city}, ${profile.location_country}`);
+            if (profile?.location_city && profile?.location_country) profileLineParts.push(`${titleCase(profile.location_city)}, ${titleCase(profile.location_country)}`);
             if (profile?.skin_concerns?.length) profileLineParts.push(`prioridad ${profile.skin_concerns[0]}`);
             if (profile?.hair_concerns?.some(c => c.toLowerCase().includes('prebio'))) profileLineParts.push('prefiere prebióticos');
             const profileLine = profileLineParts.length
@@ -5260,12 +5343,16 @@
             const climateHtml = climateContext ? `
                     <div style="background:rgba(124,58,237,0.06);border-radius:16px;padding:16px;margin-bottom:20px;">
                         <div style="display:flex;align-items:center;gap:10px;font-weight:600;color:var(--color-dark);margin-bottom:6px;">
-                            <span style="font-size:1.3rem;">${climateContext.climate.emoji}</span>
-                            <span>${escapeHtml(climateContext.label)}</span>
+                            <span style="font-size:1.3rem;">${escapeHtml(climateContext.emoji || '🌦️')}</span>
+                            <span>${escapeHtml(climateContext.city || '')}${climateContext.country ? `, ${escapeHtml(climateContext.country)}` : ''}</span>
                         </div>
-                        <p style="margin:0;color:var(--color-dark);font-size:0.9rem;">${escapeHtml(climateContext.climate.condition)} · ${escapeHtml(climateContext.climate.temperature)} · ${escapeHtml(climateContext.humidityLabel)}</p>
-                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);"><strong>IA:</strong> ${escapeHtml(climateContext.adjustment)}</p>
-                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);">${escapeHtml(climateContext.compatibility)}</p>
+                        <p style="margin:0;color:var(--color-dark);font-size:0.9rem;">
+                            ${escapeHtml(climateContext.condition || '')}
+                            ${climateContext.temperature_c != null ? ` · ${escapeHtml(String(climateContext.temperature_c))} °C` : ''}
+                            ${climateContext.humidity != null ? ` · ${escapeHtml(String(climateContext.humidity))}% HR` : ''}
+                        </p>
+                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);"><strong>IA:</strong> ${escapeHtml(climateContext.ia_adjustment || 'Ajustamos tu fórmula según este clima')}</p>
+                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);">${escapeHtml(climateContext.compatibility_hint || '')}</p>
                     </div>
             ` : '';
             
