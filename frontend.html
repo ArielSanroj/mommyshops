@@ -4985,9 +4985,8 @@
                                 ? '<li>Reduce emolientes pesados en clima húmedo</li><li>Hamamelis sin alcohol para dermatitis</li><li>pH 5.5 tear-free</li>'
                                 : '<li>Ajuste automático según edad y estación</li><li>Fragancia natural 0.3% o 0%</li><li>pH 5.5 tear-free</li>'}
                         </ul>
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">${escapeHtml(suggestedProduct.price)}</div>
-                            <button type="button" class="btn btn-primary" onclick="scrollToLabsResult()" style="flex: 1; min-width: 200px; padding: 14px 24px; font-size: 1rem;">👉 Diseñar la fórmula exacta para mi bebé</button>
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-primary" onclick="scrollToLabsResult()" style="flex: 1; min-width: 200px; padding: 14px 24px; font-size: 1rem;">💜 Pide ahora</button>
                         </div>
                     </div>
                 </div>
@@ -6137,45 +6136,23 @@
                     profileCardHtml = renderProfileResult(activeProfile);
                 }
                 const alignment = computeProfileIngredientAlignment(structuredReport, activeProfile);
-                const inlineFormula = structuredReport.intelligent_formula || null;
-                let labsPlaceholder = buildLabsFormulationPlaceholder(structuredReport);
-                if (inlineFormula && !labsPlaceholder) {
-                    labsPlaceholder = '<div class="labs-card" id="labsFormulationMount"></div>';
-                }
                 const sections = [
                     buildSimplifiedAnalysisCard(structuredReport, result, activeProfile, alignment),
                     result.extracted_text ? buildExtractedTextCard(result.extracted_text) : '',
-                    labsPlaceholder,
                 ].filter(Boolean);
 
                 resultsContent.innerHTML = `
                     <div class="success">✅ ¡Análisis completado! Personalizamos tus resultados.</div>
                     <div class="results-wrapper">
                         ${sections.join('\n')}
-                        <div id="builderMount"></div>
-                        </div>
-                                `;
+                    </div>
+                `;
 
-                renderProductBuilder(structuredReport, result, activeProfile);
                 requestAnimationFrame(() => {
                     if (document.querySelector('[data-ingredient-filter]')) {
                         filterIngredientCards('all');
                     }
                 });
-                if (inlineFormula) {
-                    labsFormulationState.lastResult = inlineFormula;
-                    syncBuilderWithLabs();
-                    const mount = document.getElementById('labsFormulationMount');
-                    if (mount) {
-                        const inlineBase = extractBaseIngredientNamesFromFormula(inlineFormula);
-                        const fallbackBase = inlineBase.length ? inlineBase : extractDetectedIngredientNames(structuredReport);
-                        renderLabsFormulationCard(mount, inlineFormula, fallbackBase);
-                    }
-                }
-                const needsAsyncFormula = !inlineFormula || !(Array.isArray(inlineFormula.new_formula) && inlineFormula.new_formula.length);
-                if (needsAsyncFormula) {
-                    triggerLabsFormulation(structuredReport, activeProfile, result.product_name);
-                }
                 setupJourneyNavigation();
                 return;
             }
