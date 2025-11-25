@@ -2749,6 +2749,20 @@
 
                     <div class="profile-columns">
                         <div class="form-group">
+                            <label for="locationCountry">País donde viven</label>
+                            <input type="text" id="locationCountry" list="locationCountryOptions" placeholder="Ej. Colombia" autocomplete="off">
+                            <small class="muted" style="display:block;margin-top:6px;font-size:0.8rem;">Usamos tu país/ciudad para ajustar clima y humedad en tiempo real.</small>
+                            <datalist id="locationCountryOptions"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="locationCity">Ciudad</label>
+                            <input type="text" id="locationCity" list="locationCityOptions" placeholder="Ej. Bogotá" autocomplete="off">
+                            <datalist id="locationCityOptions"></datalist>
+                        </div>
+                    </div>
+
+                    <div class="profile-columns">
+                        <div class="form-group">
                             <label>Preocupaciones de la piel del bebé</label>
                             <div class="checkbox-group" id="skinConcernsGroup">
                                 <label class="checkbox-pill"><input type="checkbox" value="eccema leve" onchange="togglePill(this)">Eccema leve</label>
@@ -2881,7 +2895,9 @@
             face_shape: null,
             skin_concerns: [],
             hair_concerns: [],
-            overall_goals: []
+            overall_goals: [],
+            location_country: null,
+            location_city: null
         });
         let profileWizardState = {
             step: 1,
@@ -2923,6 +2939,148 @@
                 ]
             }
         };
+
+        const LOCATION_PRESETS = [
+            {
+                country: 'Colombia',
+                city: 'Bogotá',
+                label: 'Bogotá, Colombia',
+                slug: 'bogota_colombia',
+                climate: {
+                    emoji: '🏔️',
+                    humidity: 35,
+                    temperature: '18 °C',
+                    condition: 'Clima seco + altitud',
+                    ia_adjustment: '+20% avena y karité',
+                    compatibility_hint: 'Necesitas fórmulas más nutritivas (Nube de Avena).'
+                }
+            },
+            {
+                country: 'Colombia',
+                city: 'Cartagena',
+                label: 'Cartagena, Colombia',
+                slug: 'cartagena_colombia',
+                climate: {
+                    emoji: '🌴',
+                    humidity: 78,
+                    temperature: '30 °C',
+                    condition: 'Clima cálido + humedad alta',
+                    ia_adjustment: 'Reducimos emolientes y subimos té verde/hamamelis',
+                    compatibility_hint: 'Ideal activar Brisa de Té Verde para controlar humedad.'
+                }
+            },
+            {
+                country: 'México',
+                city: 'CDMX',
+                label: 'Ciudad de México, México',
+                slug: 'cdmx_mexico',
+                climate: {
+                    emoji: '🌤️',
+                    humidity: 45,
+                    temperature: '22 °C',
+                    condition: 'Clima templado + altura',
+                    ia_adjustment: 'Balanceamos avena/caléndula según temporada',
+                    compatibility_hint: 'Equilibrio de Caléndula funciona perfecto todo el año.'
+                }
+            },
+            {
+                country: 'Argentina',
+                city: 'Buenos Aires',
+                label: 'Buenos Aires, Argentina',
+                slug: 'buenosaires_argentina',
+                climate: {
+                    emoji: '🌦️',
+                    humidity: 60,
+                    temperature: '20 °C',
+                    condition: 'Clima templado con humedad media',
+                    ia_adjustment: 'Ajustamos jojoba/caléndula en transición estacional',
+                    compatibility_hint: 'Equilibrio Caléndula mantiene la piel suave a diario.'
+                }
+            },
+            {
+                country: 'Estados Unidos',
+                city: 'Miami',
+                label: 'Miami, Estados Unidos',
+                slug: 'miami_usa',
+                climate: {
+                    emoji: '☀️',
+                    humidity: 75,
+                    temperature: '32 °C',
+                    condition: 'Clima tropical húmedo',
+                    ia_adjustment: 'Activamos modo anti-humedad (hamamelis + aloe)',
+                    compatibility_hint: 'Brisa de Té Verde previene dermatitis por calor.'
+                }
+            }
+        ];
+
+        const LOCATION_CITY_MAP = LOCATION_PRESETS.reduce((map, preset) => {
+            const key = normalizeLocationValue(preset.country);
+            if (!map[key]) {
+                map[key] = [];
+            }
+            map[key].push(preset);
+            return map;
+        }, {});
+
+        function normalizeLocationValue(value) {
+            return (value || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function findLocationPreset(country, city) {
+            if (!country || !city) return null;
+            const countryKey = normalizeLocationValue(country);
+            const cityKey = normalizeLocationValue(city);
+            const options = LOCATION_CITY_MAP[countryKey] || [];
+            return options.find(option => normalizeLocationValue(option.city) === cityKey) || null;
+        }
+
+        function populateLocationOptions() {
+            const countryDatalist = document.getElementById('locationCountryOptions');
+            if (!countryDatalist) return;
+            const uniqueCountries = Array.from(new Set(LOCATION_PRESETS.map(item => item.country)));
+            countryDatalist.innerHTML = uniqueCountries
+                .sort()
+                .map(country => `<option value="${country}"></option>`)
+                .join('');
+            updateCityOptionsForCountry(document.getElementById('locationCountry')?.value || '');
+        }
+
+        function updateCityOptionsForCountry(countryValue) {
+            const cityDatalist = document.getElementById('locationCityOptions');
+            if (!cityDatalist) return;
+            const countryKey = normalizeLocationValue(countryValue);
+            const options = LOCATION_CITY_MAP[countryKey] || LOCATION_PRESETS;
+            cityDatalist.innerHTML = options
+                .map(option => `<option value="${option.city}"></option>`)
+                .join('');
+        }
+
+        function setupLocationInputs() {
+            const countryInput = document.getElementById('locationCountry');
+            const cityInput = document.getElementById('locationCity');
+            if (!countryInput || !cityInput) return;
+            countryInput.addEventListener('input', () => {
+                updateCityOptionsForCountry(countryInput.value);
+                cityInput.value = '';
+            });
+        }
+
+        function getClimateContextFromProfile(profile) {
+            if (!profile) return null;
+            const preset = findLocationPreset(profile.location_country, profile.location_city);
+            if (!preset) return null;
+            return {
+                ...preset,
+                humidityLabel: `${preset.climate.humidity}% HR`,
+                compatibility: preset.climate.compatibility_hint,
+                adjustment: preset.climate.ia_adjustment
+            };
+        }
 
         function suggestBabyProduct(profile) {
             if (!profile) return null;
@@ -4329,6 +4487,8 @@
                 skin_type: document.getElementById('skinType').value || null,
                 hair_type: document.getElementById('hairType').value || null,
                 face_shape: document.getElementById('faceShape').value || null,
+                location_country: document.getElementById('locationCountry')?.value || null,
+                location_city: document.getElementById('locationCity')?.value || null,
                 skin_concerns: getCheckedValues('skinConcernsGroup'),
                 hair_concerns: getCheckedValues('hairConcernsGroup'),
                 overall_goals: getCheckedValues('overallGoalsGroup'),
@@ -4350,10 +4510,19 @@
             const skinSelect = document.getElementById('skinType');
             const hairSelect = document.getElementById('hairType');
             const faceSelect = document.getElementById('faceShape');
+            const countryInput = document.getElementById('locationCountry');
+            const cityInput = document.getElementById('locationCity');
 
             skinSelect.value = profile?.skin_type || '';
             hairSelect.value = profile?.hair_type || '';
             faceSelect.value = profile?.face_shape || '';
+            if (countryInput) {
+                countryInput.value = profile?.location_country || '';
+                updateCityOptionsForCountry(profile?.location_country || '');
+            }
+            if (cityInput) {
+                cityInput.value = profile?.location_city || '';
+            }
 
             const syncCheckboxes = (containerId, values = []) => {
                 const inputs = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
@@ -4396,6 +4565,9 @@
             if (profile.skin_type) summaryParts.push(`piel ${profile.skin_type}`);
             if (profile.face_shape) summaryParts.push(`clima ${profile.face_shape}`);
             if (profile.hair_type) summaryParts.push(`edad ${profile.hair_type}`);
+            if (profile.location_city && profile.location_country) {
+                summaryParts.push(`${profile.location_city}, ${profile.location_country}`);
+            }
             hint.textContent = summaryParts.length
                 ? `Basado en ${summaryParts.join(' y ')}, preferencias y objetivos declarados.`
                 : 'Tus datos nos permiten personalizar cada resultado.';
@@ -4404,6 +4576,9 @@
             if (profile.skin_type) chipTexts.push(`Piel: ${titleCase(profile.skin_type.replace(/_/g, ' '))}`);
             if (profile.face_shape) chipTexts.push(`Clima: ${getFaceZoneLabel(profile.face_shape)}`);
             if (profile.hair_type) chipTexts.push(`Edad: ${titleCase(profile.hair_type.replace(/_/g, ' '))}`);
+            if (profile.location_city && profile.location_country) {
+                chipTexts.push(`Ubicación: ${titleCase(profile.location_city)}, ${titleCase(profile.location_country)}`);
+            }
             (profile.skin_concerns || []).slice(0, 3).forEach(item => chipTexts.push(`Piel: ${titleCase(item)}`));
             (profile.hair_concerns || []).slice(0, 3).forEach(item => chipTexts.push(`Preferencia: ${titleCase(item)}`));
             (profile.overall_goals || []).slice(0, 4).forEach(item => chipTexts.push(titleCase(item)));
@@ -4545,6 +4720,8 @@
                     skin_type: stored.skin_type || null,
                     hair_type: stored.hair_type || null,
                     face_shape: stored.face_shape || null,
+                    location_country: stored.location_country || null,
+                    location_city: stored.location_city || null,
                     skin_concerns: [...(stored.skin_concerns || [])],
                     hair_concerns: [...(stored.hair_concerns || [])],
                     overall_goals: [...(stored.overall_goals || [])]
@@ -4602,6 +4779,8 @@
                 skin_type: profileWizardState.data.skin_type,
                 hair_type: profileWizardState.data.hair_type,
                 face_shape: profileWizardState.data.face_shape,
+                location_country: document.getElementById('locationCountry')?.value || profileWizardState.data.location_country || null,
+                location_city: document.getElementById('locationCity')?.value || profileWizardState.data.location_city || null,
                 skin_concerns: profileWizardState.data.skin_concerns || [],
                 hair_concerns: profileWizardState.data.hair_concerns || [],
                 overall_goals: profileWizardState.data.overall_goals || [],
@@ -4869,6 +5048,7 @@
             } else {
                 scorePhrase = 'No recomendamos este producto para tu bebé';
             }
+            const climateContext = getClimateContextFromProfile(profile);
             
             // Obtener ingredientes evaluados
             const evaluated = normalizeEvaluatedIngredients(structuredReport?.ingredients_evaluated || []);
@@ -4997,7 +5177,7 @@
                 const warnings = [];
                 
                 // Verificar problemas específicos del cuestionario
-                if (concerns.some(c => c.toLowerCase().includes('dermatitis') || c.toLowerCase().includes('pañal'))) {
+            if (concerns.some(c => c.toLowerCase().includes('dermatitis') || c.toLowerCase().includes('pañal'))) {
                     const hasProblematic = badIngredients.some(b => {
                         const name = b.name.toLowerCase();
                         return name.includes('phenoxy') || name.includes('petrol') || name.includes('ethylhexyl');
@@ -5007,7 +5187,7 @@
                     }
                 }
                 
-                if (climate === 'clima_humedo_calor') {
+                if (climate === 'clima_humedo_calor' || (climateContext && climateContext.climate.humidity >= 70)) {
                     const hasOcclusive = badIngredients.some(b => {
                         const name = b.name.toLowerCase();
                         return name.includes('petrol') || name.includes('dimethicone');
@@ -5015,6 +5195,9 @@
                     if (hasOcclusive) {
                         warnings.push('no es ideal para clima húmedo/calor');
                     }
+                }
+                if (climate === 'clima_seco_ac' || (climateContext && climateContext.climate.humidity <= 40)) {
+                    warnings.push('tu clima es seco: activamos modo hidratación (más avena/karité)');
                 }
                 
                 // Construir resumen final (más simple y directo)
@@ -5064,9 +5247,27 @@
             ` : '';
             
             // Construir HTML simplificado y humanizado
-            const profileLine = profile && Object.keys(profile).length > 0
-                ? `Perfil aplicado: ${escapeHtml((profile.skin_type || '').replace('_', ' '))}, ${escapeHtml(profile.hair_type || '—')}, ${escapeHtml(getFaceZoneLabel(profile.face_shape) || '—')}${profile.skin_concerns?.length ? `, ${escapeHtml(profile.skin_concerns[0])}` : ''}${profile.hair_concerns?.length && profile.hair_concerns.some(c => c.toLowerCase().includes('prebio')) ? `, prebióticos` : ''}.`
+            const profileLineParts = [];
+            if (profile?.skin_type) profileLineParts.push(`piel ${profile.skin_type}`);
+            if (profile?.hair_type) profileLineParts.push(`edad ${profile.hair_type}`);
+            if (profile?.face_shape) profileLineParts.push(`clima ${profile.face_shape}`);
+            if (profile?.location_city && profile?.location_country) profileLineParts.push(`${profile.location_city}, ${profile.location_country}`);
+            if (profile?.skin_concerns?.length) profileLineParts.push(`prioridad ${profile.skin_concerns[0]}`);
+            if (profile?.hair_concerns?.some(c => c.toLowerCase().includes('prebio'))) profileLineParts.push('prefiere prebióticos');
+            const profileLine = profileLineParts.length
+                ? `Perfil aplicado: ${profileLineParts.map(part => escapeHtml(part.replace(/_/g, ' '))).join(' · ')}`
                 : '';
+            const climateHtml = climateContext ? `
+                    <div style="background:rgba(124,58,237,0.06);border-radius:16px;padding:16px;margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;font-weight:600;color:var(--color-dark);margin-bottom:6px;">
+                            <span style="font-size:1.3rem;">${climateContext.climate.emoji}</span>
+                            <span>${escapeHtml(climateContext.label)}</span>
+                        </div>
+                        <p style="margin:0;color:var(--color-dark);font-size:0.9rem;">${escapeHtml(climateContext.climate.condition)} · ${escapeHtml(climateContext.climate.temperature)} · ${escapeHtml(climateContext.humidityLabel)}</p>
+                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);"><strong>IA:</strong> ${escapeHtml(climateContext.adjustment)}</p>
+                        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--color-muted);">${escapeHtml(climateContext.compatibility)}</p>
+                    </div>
+            ` : '';
             
             const goodHtml = goodIngredients.length > 0
                 ? goodIngredients.map(item => `
@@ -5120,6 +5321,7 @@
                         </p>
                     </div>
                     
+                    ${climateHtml}
                     ${productRecommendation}
                 </div>
                 
@@ -6527,6 +6729,8 @@
             initializeImageInput();
 
             setupProductTypeListeners();
+            populateLocationOptions();
+            setupLocationInputs();
             
             // Initialize journey steps
             initializeJourneySteps();
