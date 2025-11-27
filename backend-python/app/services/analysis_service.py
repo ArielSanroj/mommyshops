@@ -3,6 +3,7 @@ Analysis service
 Handles product analysis business logic
 """
 
+import asyncio
 from sqlalchemy.orm import Session
 from typing import Dict, List, Any, Optional
 import logging
@@ -26,6 +27,11 @@ class AnalysisService:
         self.db = db
         self.ingredient_service = IngredientService(db)
         self.ocr_service = OCRService()
+        try:
+            self.formulation_service = FormulationService()
+        except Exception as exc:  # pragma: no cover
+            logger.warning(f"FormulationService initialization failed: {exc}")
+            self.formulation_service = None
         try:
             self.ollama_service = OllamaService()
         except Exception as exc:  # pragma: no cover
@@ -85,12 +91,18 @@ class AnalysisService:
                     ingredients=ingredients,
                     user_id=user_id,
                     user_concerns=user_concerns or None,
-                    product_type=product_type
+                    product_type=product_type,
+                    profile=profile or {},
                 )
+                analysis_result["ollama_skipped"] = True
             else:
                 logger.info(f"Ollama analysis successful with {len(analysis_result.get('ingredients_analysis', []))} ingredients")
 
-            ingredients_analysis_data = analysis_result.get("ingredients_analysis", [])
+            ingredients_analysis_data = self._ensure_baby_metadata(
+                analysis_result.get("ingredients_analysis", []),
+                profile or {},
+            )
+            analysis_result["ingredients_analysis"] = ingredients_analysis_data
             eco_friendly_percentage = 0.0
             avg_ewg_score = 0.0
             if ingredients_analysis_data:
@@ -116,27 +128,36 @@ class AnalysisService:
             else:
                 risk_level = "low"
             overall_score_val = float(analysis_result.get("overall_score") or 0)
+            baby_report = self._build_baby_report(
+                profile=profile or {},
+                ingredients=ingredients_analysis_data,
+                base_score=overall_score_val,
+            )
             analysis_summary = {
                 "compatibility_score": round(overall_score_val / 100.0, 2),
                 "eco_score": eco_friendly_percentage,
                 "risk_level": risk_level,
                 "ingredient_count": total_count,
             }
+            if baby_report:
+                analysis_summary["baby_score"] = baby_report.get("baby_score")
+                analysis_summary["baby_summary"] = baby_report.get("emotional_summary")
+                analysis_summary["climate_context"] = baby_report.get("climate_context")
 
             # Generate intelligent formula (Labs) using detected ingredients + profile
-            try:
-                formulation_service = FormulationService()
-                detected_names = [i.get("name") for i in ingredients_analysis_data if i.get("name")]
-                intelligent_formula = formulation_service.generate_formula(
-                    profile=profile or {},
-                    detected_ingredients=detected_names,
-                    variant=None,
-                    product_name=product_name,
-                    budget=None,
-                )
-            except Exception as exc:
-                logger.warning(f"Formulation generation failed: {exc}")
-                intelligent_formula = None
+            intelligent_formula = None
+            if self.formulation_service:
+                try:
+                    detected_names = [i.get("name") for i in ingredients_analysis_data if i.get("name")]
+                    intelligent_formula = self.formulation_service.generate_formula(
+                        profile=profile or {},
+                        detected_ingredients=detected_names,
+                        variant=None,
+                        product_name=product_name,
+                        budget=None,
+                    )
+                except Exception as exc:
+                    logger.warning(f"Formulation generation failed: {exc}")
             
             # Persist product if schema supports it; otherwise continue without failing
             product_name_final = product_name or "Unknown Product"
@@ -196,6 +217,8 @@ class AnalysisService:
                 "profile": profile or {},
                 "analysis_summary": analysis_summary,
                 "intelligent_formula": intelligent_formula,
+                "baby_report": baby_report,
+                "ollama_skipped": analysis_result.get("ollama_skipped", False),
             }
             if product_type:
                 result["product_type"] = product_type
@@ -223,12 +246,23 @@ class AnalysisService:
         if not self.ollama_service or not getattr(self.ollama_service, "available", False):
             return None
         
+        # Aggressive timeout: 15 seconds max for Ollama analysis
+        timeout_seconds = 15
         try:
-            structured = await self.ollama_service.analyze_ingredients_structured(
-                ingredients=ingredients,
-                user_conditions=[user_need] if user_need else [],
-                profile_context=user_profile or {}
+            structured = await asyncio.wait_for(
+                self.ollama_service.analyze_ingredients_structured(
+                    ingredients=ingredients,
+                    user_conditions=[user_need] if user_need else [],
+                    profile_context=user_profile or {}
+                ),
+                timeout=timeout_seconds,
             )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Ollama structured analysis timed out after %s seconds; using local analysis fallback",
+                timeout_seconds,
+            )
+            return None
         except Exception as exc:  # pragma: no cover
             logger.warning(f"Ollama structured analysis unavailable: {exc}")
             return None
@@ -303,6 +337,7 @@ class AnalysisService:
         if not combined:
             return None
         
+        combined = self._ensure_baby_metadata(combined, user_profile or {})
         overall_score = sum(item["score"] for item in combined) / len(combined)
         recommendations: List[str] = []
         if high_risk:
@@ -416,10 +451,8 @@ class AnalysisService:
         cleaned: List[str] = []
         seen = set()
         for candidate in candidates:
-            t = candidate.strip(" -\t")
+            t = candidate.strip()
             t = re.sub(r"\s+", " ", t)
-            # Remove orphan parentheses (e.g., "Parabens)" -> "Parabens")
-            t = t.rstrip(")").lstrip("(")
             t = t.strip().strip(".;:")
             if not t:
                 continue
@@ -460,6 +493,212 @@ class AnalysisService:
             return "moderate"
         else:
             return "poor"
+
+    def _ensure_baby_metadata(
+        self,
+        ingredients: List[Dict[str, Any]],
+        profile: Optional[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        if not ingredients:
+            return []
+        enriched: List[Dict[str, Any]] = []
+        for item in ingredients:
+            if item.get("baby_risk") and item.get("compatibility_score") is not None:
+                enriched.append(item)
+                continue
+            enriched.append(self.ingredient_service.enrich_with_baby_metadata(item, profile))
+        return enriched
+
+    def _build_baby_report(
+        self,
+        profile: Dict[str, Any],
+        ingredients: List[Dict[str, Any]],
+        base_score: float,
+    ) -> Dict[str, Any]:
+        if not ingredients:
+            return {}
+
+        profile_ctx = self._build_baby_profile_context(profile)
+        positives: List[Dict[str, Any]] = []
+        negatives: List[Dict[str, Any]] = []
+
+        for item in ingredients:
+            baby_risk = (item.get("baby_risk") or "").lower()
+            benefits_raw = item.get("benefits") or []
+            warnings_raw = item.get("warnings") or []
+
+            if isinstance(benefits_raw, str):
+                benefits_list = [benefits_raw]
+            elif isinstance(benefits_raw, list):
+                benefits_list = benefits_raw
+            else:
+                benefits_list = []
+
+            if isinstance(warnings_raw, str):
+                warnings_list = [warnings_raw]
+            elif isinstance(warnings_raw, list):
+                warnings_list = warnings_raw
+            else:
+                warnings_list = []
+            summary_text = (
+                benefits_list[0]
+                if benefits_list
+                else warnings_list[0]
+                if warnings_list
+                else item.get("baby_summary")
+            )
+            highlight = {
+                "ingredient": item.get("name"),
+                "score": item.get("compatibility_score"),
+                "summary": summary_text,
+            }
+            if baby_risk in {"good", "ok"}:
+                positives.append(highlight)
+            elif baby_risk in {"caution", "bad"} or item.get("avoid_reasons"):
+                highlight["flags"] = item.get("baby_flags_triggered")
+                negatives.append(highlight)
+
+        positives = positives[:5]
+        negatives = negatives[:4]
+
+        if not positives and not negatives:
+            return {}
+
+        baby_score = self._score_baby_compatibility(base_score, positives, negatives, profile_ctx)
+        score_label = (
+            "Ideal" if baby_score >= 85 else "Aceptable" if baby_score >= 70 else "Ajustable"
+            if baby_score >= 55
+            else "No recomendado"
+        )
+
+        emotional_summary = self._compose_emotional_summary(profile_ctx, positives, negatives, baby_score)
+        recommendation = self._recommend_mommyshops_blend(profile_ctx)
+
+        return {
+            "baby_score": baby_score,
+            "score_label": score_label,
+            "emotional_summary": emotional_summary,
+            "positives": positives,
+            "negatives": negatives,
+            "climate_context": profile_ctx.get("climate_context"),
+            "product_recommendation": recommendation,
+        }
+
+    def _build_baby_profile_context(self, profile: Dict[str, Any]) -> Dict[str, Any]:
+        profile = profile or {}
+        climate_ctx = profile.get("climate_context") or {}
+        humidity = climate_ctx.get("humidity")
+        temperature = climate_ctx.get("temperature_c")
+
+        skin_type = profile.get("skin_type") or "piel sensible"
+        skin_label = skin_type.replace("_", " ").replace("-", " ").lower()
+        concern = None
+        if profile.get("diaper_dermatitis"):
+            concern = "dermatitis del pañal"
+        elif profile.get("eczema_level"):
+            concern = "brotes atópicos"
+
+        climate_phrase = None
+        if humidity is not None:
+            try:
+                humidity_val = float(humidity)
+                if humidity_val >= 70:
+                    climate_phrase = "Requiere alivio anti-humedad."
+                elif humidity_val <= 40:
+                    climate_phrase = "Necesita refuerzos nutritivos por clima seco."
+            except (TypeError, ValueError):
+                pass
+        if not climate_phrase and temperature:
+            try:
+                temp_val = float(temperature)
+                if temp_val >= 28:
+                    climate_phrase = "Ajustamos para calor intenso."
+            except (TypeError, ValueError):
+                pass
+
+        return {
+            "raw": profile,
+            "skin_label": skin_label,
+            "primary_concern": concern,
+            "climate_context": climate_ctx,
+            "climate_phrase": climate_phrase,
+            "humidity": humidity,
+        }
+
+    def _score_baby_compatibility(
+        self,
+        base_score: float,
+        positives: List[Dict[str, Any]],
+        negatives: List[Dict[str, Any]],
+        profile_ctx: Dict[str, Any],
+    ) -> int:
+        score = base_score or 0
+        if score <= 1:
+            score = 60
+        score += min(12, len(positives) * 3)
+        score -= min(24, len(negatives) * 6)
+
+        humidity = profile_ctx.get("humidity")
+        try:
+            if humidity is not None:
+                humidity_val = float(humidity)
+                if humidity_val >= 70:
+                    score -= 4
+                elif humidity_val <= 40:
+                    score += 3
+        except (TypeError, ValueError):
+            pass
+
+        if profile_ctx.get("primary_concern") == "dermatitis del pañal" and negatives:
+            score -= 5
+
+        return int(max(0, min(100, round(score))))
+
+    def _compose_emotional_summary(
+        self,
+        profile_ctx: Dict[str, Any],
+        positives: List[Dict[str, Any]],
+        negatives: List[Dict[str, Any]],
+        baby_score: int,
+    ) -> str:
+        skin_label = profile_ctx.get("skin_label") or "la piel de tu bebé"
+        climate_phrase = profile_ctx.get("climate_phrase") or ""
+        concern = profile_ctx.get("primary_concern")
+
+        if negatives:
+            warning = negatives[0].get("summary") or "algunos ingredientes no acompañan su piel"
+            summary = f"Funciona parcialmente para {skin_label}, pero {warning.lower()}."
+        else:
+            benefit = positives[0].get("summary") if positives else "mantiene la piel equilibrada"
+            summary = f"Seguro para {skin_label}; {benefit.lower()}."
+
+        if concern and concern not in summary:
+            summary += f" Cuidado especial para {concern}."
+        if climate_phrase:
+            summary += f" {climate_phrase}"
+        summary += f" (Compatibilidad bebé: {baby_score}/100)"
+        return summary.strip()
+
+    def _recommend_mommyshops_blend(self, profile_ctx: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if not self.formulation_service:
+            return None
+        try:
+            baby_formula = self.formulation_service.generate_baby_formula(profile_ctx.get("raw"))
+        except Exception as exc:  # pragma: no cover
+            logger.warning(f"Baby formulation failed: {exc}")
+            return None
+        if not baby_formula:
+            return None
+        return {
+            "blend": baby_formula.get("display_name"),
+            "persona": baby_formula.get("persona"),
+            "reasons": baby_formula.get("reasons"),
+            "cta": baby_formula.get("cta", "Pide ahora"),
+            "adjusted_ingredients": baby_formula.get("adjusted_ingredients"),
+            "adjustments": baby_formula.get("adjustments"),
+            "climate_hint": baby_formula.get("climate_hint"),
+            "ai_mode": baby_formula.get("ai_mode"),
+        }
 
     def _build_structured_report(
         self,

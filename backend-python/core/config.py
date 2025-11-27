@@ -40,9 +40,9 @@ class Settings(BaseSettings):
     
     # Ollama
     OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    OLLAMA_MODEL: str = Field(default="llama3:latest", env="OLLAMA_MODEL")
+    OLLAMA_MODEL: str = Field(default="llama3.2:1b", env="OLLAMA_MODEL")
     OLLAMA_VISION_MODEL: str = Field(default="llava", env="OLLAMA_VISION_MODEL")
-    OLLAMA_TIMEOUT: int = Field(default=120, env="OLLAMA_TIMEOUT")
+    OLLAMA_TIMEOUT: int = Field(default=15, env="OLLAMA_TIMEOUT")
     
     # Analysis
     ANALYSIS_CONFIDENCE_THRESHOLD: int = Field(default=70, env="ANALYSIS_CONFIDENCE_THRESHOLD")

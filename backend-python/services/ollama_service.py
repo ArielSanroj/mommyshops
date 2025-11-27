@@ -27,19 +27,50 @@ class OllamaService:
         self.vision_model = getattr(self.settings, 'OLLAMA_VISION_MODEL', 'llava')
         self.timeout = getattr(self.settings, 'OLLAMA_TIMEOUT', 120)
         self.available = False
+        self.available_models: List[str] = []
         self._check_availability()
     
     def _check_availability(self):
         """
-        Check if Ollama service is available
+        Check if Ollama service is available and pick a valid model automatically.
         """
         try:
-            # This would check if Ollama is running
-            # For now, assume it's available
-            self.available = True
-        except Exception as e:
-            logger.error(f"Ollama not available: {e}")
+            with httpx.Client(timeout=2.0) as client:
+                response = client.get(f"{self.base_url}/api/tags")
+        except Exception as exc:
+            logger.error(f"Ollama not available: {exc}")
             self.available = False
+            self.available_models = []
+            return
+
+        if response.status_code != 200:
+            logger.error(f"Ollama health check failed: HTTP {response.status_code}")
+            self.available = False
+            self.available_models = []
+            return
+
+        data = response.json()
+        models = [
+            (model or {}).get("name", "").strip()
+            for model in data.get("models", [])
+        ]
+        self.available_models = [m for m in models if m]
+
+        if not self.available_models:
+            logger.error("Ollama responded without installed models.")
+            self.available = False
+            return
+
+        selected_model = self._pick_available_model(self.available_models)
+        if selected_model != self.model:
+            logger.warning(
+                "Configured Ollama model '%s' unavailable, switching to '%s'.",
+                self.model,
+                selected_model,
+            )
+            self.model = selected_model
+
+        self.available = True
     
     async def get_status(self) -> Dict[str, Any]:
         """
@@ -143,6 +174,24 @@ class OllamaService:
                 "raw": "",
                 "error": str(exc)
             }
+    
+    def _pick_available_model(self, candidates: List[str]) -> str:
+        """
+        Select the best available model following a preferred order.
+        """
+        preferred_order = [
+            self.model,
+            "llama3:latest",
+            "llama3.2:latest",
+            "llama3.2:1b",
+            "llama3.1",
+            "llama3",
+            "tinyllama:1.1b",
+        ]
+        for name in preferred_order:
+            if name and name in candidates:
+                return name
+        return candidates[0]
     
     async def analyze_ingredients(self, ingredients: List[str], user_conditions: List[str], analysis_type: str) -> Dict[str, Any]:
         """

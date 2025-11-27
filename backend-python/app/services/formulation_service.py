@@ -5,6 +5,7 @@ Translates detected ingredients + profile context into a proposed formula.
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import unicodedata
@@ -16,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "labs_functional_catalog.json"
+CLIMATE_MATRIX_PATH = Path(__file__).resolve().parent.parent / "data" / "climate_profiles.json"
 
 DEFAULT_NEEDS = ["hidratacion", "control_grasa", "antiinflamatorio", "anticaspa"]
 
@@ -48,6 +50,86 @@ FUNCTION_LABELS = {
     "proteccion_solar": "Protección solar",
 }
 
+DEFAULT_FAMILY_WEIGHTS = {
+    "humectantes": 1.0,
+    "emolientes": 1.0,
+    "emolientes_ligeros": 1.0,
+    "tensioactivos": 1.0,
+    "calmantes": 1.0,
+    "prebioticos": 1.0,
+    "astringentes": 1.0,
+}
+
+INGREDIENT_FAMILY_MAP = {
+    "avena": "calmantes",
+    "karite": "emolientes",
+    "almendra": "emolientes",
+    "glicerina": "humectantes",
+    "prebioticos": "prebioticos",
+    "calendula": "calmantes",
+    "beta_glucano": "calmantes",
+    "base_surfactante": "tensioactivos",
+    "te_verde": "astringentes",
+    "hamamelis": "astringentes",
+    "aloe": "humectantes",
+    "coco_caprylate": "emolientes_ligeros",
+    "bisabolol": "calmantes",
+    "jojoba": "emolientes",
+    "manzanilla": "calmantes"
+}
+
+BABY_BASE_BLENDS = {
+    "nube_avena": {
+        "display_name": "Nube de Avena – Microbiome Edition",
+        "persona": "Bebés con piel seca/atópica o climas secos/aire acondicionado",
+        "cta": "Pide ahora",
+        "ai_mode": "Modo hidratación profunda",
+        "base_key": "base_surfactante",
+        "base": [
+            {"key": "avena", "ingredient": "Avena coloidal orgánica", "percent": 5.0, "role": "Calma eccema"},
+            {"key": "karite", "ingredient": "Karité fair-trade", "percent": 8.0, "role": "Sella hidratación"},
+            {"key": "almendra", "ingredient": "Leche de almendra dulce", "percent": 4.0, "role": "Nutrición ligera"},
+            {"key": "glicerina", "ingredient": "Glicerina vegetal", "percent": 6.0, "role": "Humectante tear-free"},
+            {"key": "prebioticos", "ingredient": "Prebióticos (inulina + alfa-glucano)", "percent": 0.4, "role": "Equilibrio microbioma"},
+            {"key": "calendula", "ingredient": "Caléndula CO2 + bisabolol", "percent": 0.8, "role": "Reparación"},
+            {"key": "beta_glucano", "ingredient": "β-glucano de avena + centella", "percent": 0.6, "role": "Refuerzo barrera"},
+            {"key": "base_surfactante", "ingredient": "Base tear-free (Decyl + Coco Glucoside + agua)", "percent": 75.2, "role": "Limpieza suave pH 5.5"},
+        ],
+    },
+    "brisa_te": {
+        "display_name": "Brisa de Té Verde – Microbiome Edition",
+        "persona": "Piel húmeda/grasosa, climas cálidos o con dermatitis del pañal",
+        "cta": "Pide ahora",
+        "ai_mode": "Modo anti-humedad",
+        "base_key": "base_surfactante",
+        "base": [
+            {"key": "te_verde", "ingredient": "Infusión de té verde orgánico", "percent": 4.5, "role": "Antioxidante"},
+            {"key": "hamamelis", "ingredient": "Hamamelis sin alcohol", "percent": 3.5, "role": "Control humedad"},
+            {"key": "aloe", "ingredient": "Aloe vera 99%", "percent": 6.0, "role": "Calma calor"},
+            {"key": "coco_caprylate", "ingredient": "Coco-caprylate ligero", "percent": 3.0, "role": "Emoliente seco"},
+            {"key": "prebioticos", "ingredient": "Prebióticos (inulina + alfa-glucano)", "percent": 0.4, "role": "Microbioma"},
+            {"key": "bisabolol", "ingredient": "Bisabolol + centella", "percent": 0.6, "role": "Antiinflamatorio"},
+            {"key": "base_surfactante", "ingredient": "Base micelar (Decyl + Coco Glucoside + Lauryl Glucoside)", "percent": 82.0, "role": "Limpieza fresca"},
+        ],
+    },
+    "equilibrio_calendula": {
+        "display_name": "Equilibrio de Caléndula – Microbiome Edition",
+        "persona": "Uso diario para piel normal/mixta y transiciones estacionales",
+        "cta": "Pide ahora",
+        "ai_mode": "Modo balance diario",
+        "base_key": "base_surfactante",
+        "base": [
+            {"key": "calendula", "ingredient": "Caléndula orgánica 3%", "percent": 3.0, "role": "Calma diaria"},
+            {"key": "jojoba", "ingredient": "Aceite de jojoba golden", "percent": 4.5, "role": "Balancea sebo"},
+            {"key": "manzanilla", "ingredient": "Manzanilla romana", "percent": 2.0, "role": "Relaja y suaviza"},
+            {"key": "glicerina", "ingredient": "Glicerina vegetal", "percent": 5.5, "role": "Humectante"},
+            {"key": "aloe", "ingredient": "Aloe vera 99%", "percent": 5.0, "role": "Hidratación ligera"},
+            {"key": "prebioticos", "ingredient": "Prebióticos (inulina + alfa-glucano)", "percent": 0.4, "role": "Microbioma"},
+            {"key": "bisabolol", "ingredient": "Bisabolol + β-glucano", "percent": 0.6, "role": "Barrera"},
+            {"key": "base_surfactante", "ingredient": "Base suave (Decyl + Coco Glucoside + agua)", "percent": 79.0, "role": "Limpieza equilibrada"},
+        ],
+    },
+}
 
 def _normalize_text(value: Optional[str]) -> str:
     if not value:
@@ -90,6 +172,10 @@ class FormulationService:
         self.catalog_path = catalog_path or CATALOG_PATH
         self.catalog, self.synonyms = self._load_catalog()
         self.function_keys = self._collect_function_keys()
+        self.climate_matrix = self._load_climate_matrix()
+        self.climate_profiles = self.climate_matrix.get("profiles", {})
+        self.city_lookup = self._build_city_lookup(self.climate_matrix.get("cities", []))
+        self.blend_modulations = self.climate_matrix.get("blend_modulations", {})
 
     # -----------------------------
     # Public API
@@ -146,6 +232,360 @@ class FormulationService:
             "mockup": self._build_mockup(summary, formula_items, product_name),
         }
 
+    def generate_baby_formula(self, profile: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Return an adjusted Mommyshops baby blend tailored to climate and edad."""
+        context = self._build_baby_context(profile or {})
+        blend_key = self._select_baby_blend(context)
+        base = BABY_BASE_BLENDS[blend_key]
+        adjusted = self._adjust_blend_for_conditions(blend_key, context)
+        reasons = self._compose_blend_reasons(blend_key, context)
+
+        return {
+            "blend_key": blend_key,
+            "display_name": base["display_name"],
+            "persona": base["persona"],
+            "cta": base.get("cta", "Pide ahora"),
+            "ai_mode": base.get("ai_mode"),
+            "adjusted_ingredients": adjusted["ingredients"],
+            "adjustments": adjusted["notes"],
+            "climate_hint": adjusted["climate_hint"],
+            "reasons": reasons,
+        }
+
+    def _build_baby_context(self, profile: Dict[str, Any]) -> Dict[str, Any]:
+        profile = profile or {}
+        climate_ctx = profile.get("climate_context") or {}
+        humidity = climate_ctx.get("humidity")
+        temperature = climate_ctx.get("temperature_c")
+        location_country = profile.get("location_country")
+        location_city = profile.get("location_city")
+        city_key = self._normalize_location(location_city)
+        city_entry = self._lookup_city_entry(location_country, location_city)
+        season = (profile.get("season") or "").lower()
+        climate_profile_tag = self._resolve_climate_profile(city_entry, season)
+        skin_type = (profile.get("skin_type") or "").lower()
+        age_group = (profile.get("age_group") or "").lower()
+        eczema = (profile.get("eczema_level") or "").lower()
+        concern = (profile.get("diaper_dermatitis") or "").lower()
+
+        return {
+            "raw": profile,
+            "skin_type": skin_type,
+            "age_group": age_group,
+            "humidity": humidity,
+            "temperature": temperature,
+            "eczema": eczema,
+            "diaper": concern,
+            "climate_context": climate_ctx,
+            "city_entry": city_entry,
+            "climate_profile_tag": climate_profile_tag,
+            "season": season,
+            "extra_factors": (city_entry or {}).get("extra_factors") or {},
+            "city_key": city_key,
+        }
+
+    def _lookup_city_entry(self, country: Optional[str], city: Optional[str]) -> Optional[Dict[str, Any]]:
+        country_key = self._normalize_location(country)
+        city_key = self._normalize_location(city)
+        if not country_key or not city_key:
+            return None
+        return self.city_lookup.get((country_key, city_key))
+
+    def _resolve_climate_profile(self, city_entry: Optional[Dict[str, Any]], season: Optional[str]) -> Optional[str]:
+        if not city_entry:
+            return None
+        overrides = city_entry.get("season_profile_override")
+        if season and isinstance(overrides, dict):
+            override_tag = overrides.get(season)
+            if override_tag and override_tag != "none":
+                return override_tag
+        if isinstance(overrides, str) and overrides != "none":
+            return overrides
+        return city_entry.get("climate_profile")
+
+    def _family_weights_for_context(self, blend_key: str, context: Dict[str, Any]) -> Dict[str, float]:
+        weights = dict(DEFAULT_FAMILY_WEIGHTS)
+        tag = context.get("climate_profile_tag")
+        if tag and tag in self.climate_profiles:
+            profile_weights = self.climate_profiles[tag].get("family_weights", {})
+            for family, multiplier in profile_weights.items():
+                base_value = weights.get(family, 1.0)
+                weights[family] = round(base_value * float(multiplier), 4)
+
+        weights = self._apply_extra_factors(weights, context.get("extra_factors") or {})
+        weights = self._apply_blend_modulation(blend_key, context, weights)
+
+        humidity = context.get("humidity")
+        try:
+            if humidity is not None:
+                humidity_val = float(humidity)
+                if humidity_val >= 70:
+                    weights["emolientes"] *= 0.85
+                    weights["tensioactivos"] *= 1.05
+                    weights["astringentes"] *= 1.15
+                    weights["prebioticos"] *= 1.15
+                elif humidity_val <= 40:
+                    weights["humectantes"] *= 1.2
+                    weights["emolientes"] *= 1.15
+                    weights["tensioactivos"] *= 0.9
+                    weights["calmantes"] *= 1.15
+        except (TypeError, ValueError):
+            pass
+
+        temperature = context.get("temperature")
+        try:
+            if temperature is not None and float(temperature) >= 28:
+                weights["calmantes"] *= 1.1
+                weights["astringentes"] *= 1.1
+        except (TypeError, ValueError):
+            pass
+
+        return weights
+
+    def _apply_extra_factors(self, weights: Dict[str, float], factors: Dict[str, Any]) -> Dict[str, float]:
+        adjusted = dict(weights)
+
+        def scale(family: str, factor: float, intensity: float):
+            base = adjusted.get(family, 1.0)
+            adjusted[family] = round(base * (1 + intensity * factor), 4)
+
+        dermatitis = float(factors.get("dermatitis_risk", 0) or 0)
+        if dermatitis:
+            scale("calmantes", dermatitis, 0.2)
+            scale("prebioticos", dermatitis, 0.15)
+            scale("tensioactivos", dermatitis, -0.1)
+
+        sweat = float(factors.get("sweat_risk", 0) or 0)
+        if sweat:
+            scale("emolientes", sweat, -0.2)
+            scale("tensioactivos", sweat, 0.1)
+            scale("astringentes", sweat, 0.2)
+            scale("prebioticos", sweat, 0.1)
+
+        wind = float(factors.get("wind_irritation", 0) or 0)
+        if wind:
+            scale("calmantes", wind, 0.15)
+            scale("humectantes", wind, 0.1)
+
+        uv = float(factors.get("uv_stress", 0) or 0)
+        if uv:
+            scale("calmantes", uv, 0.12)
+            scale("prebioticos", uv, 0.1)
+
+        barrier = float(factors.get("barrier_damage_risk", 0) or 0)
+        if barrier:
+            scale("humectantes", barrier, 0.18)
+            scale("emolientes", barrier, 0.15)
+            scale("calmantes", barrier, 0.12)
+
+        return adjusted
+
+    def _apply_blend_modulation(
+        self,
+        blend_key: str,
+        context: Dict[str, Any],
+        weights: Dict[str, float],
+    ) -> Dict[str, float]:
+        adjusted = dict(weights)
+        blend_data = self.blend_modulations.get(blend_key)
+        if not blend_data:
+            return adjusted
+
+        city_key = context.get("city_key")
+        city_mod = blend_data.get(city_key or "")
+        if not city_mod:
+            return adjusted
+
+        season = self._normalize_season(context.get("season"))
+        season_weights = None
+        if season and season in city_mod:
+            season_weights = city_mod[season]
+        elif "all_year" in city_mod:
+            season_weights = city_mod["all_year"]
+
+        if not season_weights:
+            return adjusted
+
+        for family, multiplier in season_weights.items():
+            if family not in adjusted:
+                adjusted[family] = 1.0
+            adjusted[family] = round(adjusted[family] * float(multiplier), 4)
+
+        return adjusted
+
+    def _normalize_season(self, season: Optional[str]) -> Optional[str]:
+        if not season:
+            return None
+        season = season.strip().lower()
+        if "/" in season:
+            season = season.split("/")[0].strip()
+        mappings = {
+            "invierno": "winter",
+            "winter": "winter",
+            "verano": "summer",
+            "summer": "summer",
+            "primavera": "spring",
+            "spring": "spring",
+            "otoño": "autumn",
+            "otono": "autumn",
+            "autumn": "autumn",
+            "fall": "autumn",
+        }
+        return mappings.get(season, season)
+
+    def _apply_family_weights(
+        self, items: List[Dict[str, Any]], weights: Dict[str, float]
+    ) -> List[Dict[str, Any]]:
+        adjusted = copy.deepcopy(items)
+        total = 0.0
+        for item in adjusted:
+            family = INGREDIENT_FAMILY_MAP.get(item["key"])
+            multiplier = weights.get(family, 1.0)
+            item["percent"] = round(item["percent"] * multiplier, 4)
+            total += item["percent"]
+
+        if total <= 0:
+            return adjusted
+
+        normalization = 100.0 / total
+        for item in adjusted:
+            item["percent"] = round(item["percent"] * normalization, 2)
+        return adjusted
+
+    def _select_baby_blend(self, context: Dict[str, Any]) -> str:
+        humidity = context.get("humidity")
+        skin = context.get("skin_type", "")
+        eczema = context.get("eczema", "")
+        diaper = context.get("diaper", "")
+        city_entry = context.get("city_entry") or {}
+        climate_profile_tag = context.get("climate_profile_tag")
+
+        if city_entry and climate_profile_tag != "variable_estaciones":
+            primary = city_entry.get("primary_blend")
+            if primary:
+                return primary
+
+        try:
+            humidity_val = float(humidity) if humidity is not None else None
+        except (TypeError, ValueError):
+            humidity_val = None
+
+        if "seca" in skin or "atop" in skin or eczema in {"alto", "moderado"} or (humidity_val is not None and humidity_val < 45):
+            return "nube_avena"
+
+        if (
+            "humeda" in skin
+            or "gras" in skin
+            or diaper in {"si", "true", "alto"}
+            or (humidity_val is not None and humidity_val >= 65)
+        ):
+            return "brisa_te"
+
+        return "equilibrio_calendula"
+
+    def _adjust_blend_for_conditions(self, blend_key: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        base = BABY_BASE_BLENDS[blend_key]
+        items = copy.deepcopy(base["base"])
+        family_weights = self._family_weights_for_context(blend_key, context)
+        items = self._apply_family_weights(items, family_weights)
+        notes: List[str] = []
+        humidity = context.get("humidity")
+        temperature = context.get("temperature")
+        age_group = context.get("age_group") or ""
+        diaper = context.get("diaper") or ""
+
+        def adjust_percent(key: str, delta: float):
+            for item in items:
+                if item["key"] == key:
+                    item["percent"] = round(max(0.1, item["percent"] + delta), 2)
+                    return delta
+            return 0.0
+
+        base_key = base.get("base_key", "base_surfactante")
+
+        humidity_val = None
+        try:
+            if humidity is not None:
+                humidity_val = float(humidity)
+        except (TypeError, ValueError):
+            humidity_val = None
+
+        temp_val = None
+        try:
+            if temperature is not None:
+                temp_val = float(temperature)
+        except (TypeError, ValueError):
+            temp_val = None
+
+        total_delta = 0.0
+        if blend_key == "nube_avena" and humidity_val is not None and humidity_val < 45:
+            total_delta += adjust_percent("avena", 1.5)
+            total_delta += adjust_percent("karite", 1.0)
+            notes.append("+ karité y avena por clima seco")
+        if blend_key == "brisa_te" and humidity_val is not None and humidity_val >= 70:
+            total_delta += adjust_percent("hamamelis", 1.0)
+            total_delta += adjust_percent("te_verde", 0.5)
+            total_delta -= adjust_percent("coco_caprylate", 0.5)
+            notes.append("Activamos modo anti-humedad (más hamamelis)")
+        if blend_key == "equilibrio_calendula" and temp_val is not None and temp_val >= 28:
+            total_delta += adjust_percent("aloe", 1.0)
+            notes.append("Aumentamos aloe por calor alto")
+        if "0" in age_group:
+            notes.append("Modo recién nacido: mantenemos 0 % fragancia")
+        if diaper in {"si", "alto", "true"}:
+            notes.append("Refuerzo anti-dermatitis del pañal")
+
+        # Balance base surfactante para mantener 100%
+        if abs(total_delta) > 0.01:
+            for item in items:
+                if item["key"] == base_key:
+                    item["percent"] = round(max(0.0, item["percent"] - total_delta), 2)
+                    break
+
+        total = sum(item["percent"] for item in items)
+        if total != 100.0 and base_key:
+            for item in items:
+                if item["key"] == base_key:
+                    item["percent"] = round(max(0.0, item["percent"] + (100.0 - total)), 2)
+                    break
+
+        climate_hint = None
+        if humidity_val is not None:
+            if humidity_val >= 70:
+                climate_hint = "Optimizado para humedad alta"
+            elif humidity_val <= 40:
+                climate_hint = "Modo clima seco activado"
+        if not climate_hint and context.get("climate_profile_tag"):
+            profile_meta = self.climate_profiles.get(context["climate_profile_tag"], {})
+            if profile_meta.get("label"):
+                climate_hint = profile_meta["label"]
+
+        return {"ingredients": items, "notes": notes, "climate_hint": climate_hint}
+
+    def _compose_blend_reasons(self, blend_key: str, context: Dict[str, Any]) -> List[str]:
+        reasons: List[str] = []
+        skin = context.get("skin_type", "")
+        humidity = context.get("humidity")
+        diaper = context.get("diaper", "")
+
+        if blend_key == "nube_avena":
+            reasons.append("Refuerza barrera con avena coloidal y karité.")
+            if "seca" in skin:
+                reasons.append("Calma tirantez constante en piel seca/atópica.")
+            if humidity is not None:
+                reasons.append("IA sube emolientes cuando la humedad cae.")
+        elif blend_key == "brisa_te":
+            reasons.append("Controla brillo y brotes en clima húmedo.")
+            if diaper:
+                reasons.append("Hamamelis y aloe protegen zonas con pañal.")
+            reasons.append("Espuma micro-micelar tear-free.")
+        else:
+            reasons.append("Rutina equilibrada para todos los días.")
+            reasons.append("Caléndula y jojoba se adaptan a cambios de estación.")
+            reasons.append("Prebióticos mantienen microbioma estable.")
+
+        return reasons[:3]
+
     # -----------------------------
     # Catalog + normalization helpers
     # -----------------------------
@@ -182,6 +622,34 @@ class FormulationService:
                     synonyms[syn_key] = key
 
         return entries, synonyms
+
+    def _load_climate_matrix(self) -> Dict[str, Any]:
+        if not CLIMATE_MATRIX_PATH.exists():
+            logger.warning("Climate matrix file not found at %s", CLIMATE_MATRIX_PATH)
+            return {"cities": [], "profiles": {}}
+        try:
+            return json.loads(CLIMATE_MATRIX_PATH.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            logger.warning("Invalid climate matrix JSON: %s", exc)
+            return {"cities": [], "profiles": {}}
+
+    def _build_city_lookup(self, cities: List[Dict[str, Any]]) -> Dict[Tuple[str, str], Dict[str, Any]]:
+        lookup: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        for entry in cities or []:
+            country = self._normalize_location(entry.get("country"))
+            city = self._normalize_location(entry.get("city"))
+            if country and city:
+                lookup[(country, city)] = entry
+        return lookup
+
+    def _normalize_location(self, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        value = unicodedata.normalize("NFKD", value)
+        value = "".join(ch for ch in value if not unicodedata.combining(ch))
+        value = value.strip().lower()
+        value = value.replace(".", "")
+        return value or None
 
     def _resolve_ingredients(self, items: List[str]) -> Tuple[List[Dict[str, Any]], List[str]]:
         resolved: List[Dict[str, Any]] = []

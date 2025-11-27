@@ -2749,20 +2749,6 @@
 
                     <div class="profile-columns">
                         <div class="form-group">
-                            <label for="locationCountry">País donde viven</label>
-                            <input type="text" id="locationCountry" list="locationCountryOptions" placeholder="Ej. Colombia" autocomplete="off">
-                            <small class="muted" style="display:block;margin-top:6px;font-size:0.8rem;">Usamos tu país/ciudad para ajustar clima y humedad en tiempo real.</small>
-                            <datalist id="locationCountryOptions"></datalist>
-                        </div>
-                        <div class="form-group">
-                            <label for="locationCity">Ciudad</label>
-                            <input type="text" id="locationCity" list="locationCityOptions" placeholder="Ej. Bogotá" autocomplete="off">
-                            <datalist id="locationCityOptions"></datalist>
-                        </div>
-                    </div>
-
-                    <div class="profile-columns">
-                        <div class="form-group">
                             <label>Preocupaciones de la piel del bebé</label>
                             <div class="checkbox-group" id="skinConcernsGroup">
                                 <label class="checkbox-pill"><input type="checkbox" value="eccema leve" onchange="togglePill(this)">Eccema leve</label>
@@ -5270,7 +5256,7 @@
                     }
                 }
                 
-                if (climate === 'clima_humedo_calor' || (climateContext && climateContext.climate.humidity >= 70)) {
+                if (climate === 'clima_humedo_calor' || (climateContext && climateContext.humidity >= 70)) {
                     const hasOcclusive = badIngredients.some(b => {
                         const name = b.name.toLowerCase();
                         return name.includes('petrol') || name.includes('dimethicone');
@@ -5279,7 +5265,7 @@
                         warnings.push('no es ideal para clima húmedo/calor');
                     }
                 }
-                if (climate === 'clima_seco_ac' || (climateContext && climateContext.climate.humidity <= 40)) {
+                if (climate === 'clima_seco_ac' || (climateContext && climateContext.humidity <= 40)) {
                     warnings.push('tu clima es seco: activamos modo hidratación (más avena/karité)');
                 }
                 
@@ -6921,6 +6907,16 @@
                     <button type="button" class="wizard-chip" data-field="face_shape" data-value="transicion_estacional" data-mode="single" onclick="handleWizardChip(this)">🍂 Transición estacional</button>
                     <button type="button" class="wizard-chip" data-field="face_shape" data-value="agua_dura" data-mode="single" onclick="handleWizardChip(this)">💧 Agua dura</button>
                     <button type="button" class="wizard-chip" data-field="face_shape" data-value="modo_viaje" data-mode="single" onclick="handleWizardChip(this)">🧳 Modo viaje</button>
+                </div>
+                <div class="form-group" style="margin-top:18px;">
+                    <label for="locationCountry" style="font-weight:600;color:var(--color-dark);display:block;margin-bottom:6px;">📍 ¿Dónde viven?</label>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+                        <input type="text" id="locationCountry" list="locationCountryOptions" placeholder="País · Ej. Colombia" autocomplete="off" style="padding:12px;border-radius:16px;border:1px solid rgba(124,58,237,0.2);">
+                        <input type="text" id="locationCity" list="locationCityOptions" placeholder="Ciudad · Ej. Bogotá" autocomplete="off" style="padding:12px;border-radius:16px;border:1px solid rgba(124,58,237,0.2);">
+                    </div>
+                    <small class="muted" style="display:block;margin-top:6px;font-size:0.8rem;">Personalizamos humedad, temperatura y alertas según tu ciudad.</small>
+                    <datalist id="locationCountryOptions"></datalist>
+                    <datalist id="locationCityOptions"></datalist>
                 </div>
                 <h4 style="margin-top:18px;">🌿 Preocupaciones</h4>
                 <div class="wizard-chip-group">

@@ -56,6 +56,16 @@ def _user_profile_dict(user: Optional[User]) -> Dict[str, Any]:
         "skin_concerns": user.goals_face or [],
         "hair_concerns": user.goals_hair or [],
         "overall_goals": user.conditions or [],
+        "climate": getattr(user, "climate", None),
+        "location_country": getattr(user, "country", None),
+        "location_city": getattr(user, "city", None),
+        "water_hardness": getattr(user, "water_hardness", None),
+        "ultra_sensitive": getattr(user, "ultra_sensitive", None),
+        "age_group": getattr(user, "age_group", None),
+        "eczema_level": getattr(user, "eczema_level", None),
+        "diaper_dermatitis": getattr(user, "diaper_dermatitis", None),
+        "fragrance_preferences": getattr(user, "fragrance_preferences", None),
+        "microbiome_preference": getattr(user, "microbiome_preference", None),
     }
 
 
@@ -153,6 +163,18 @@ CLIMATE_LOOKUP = {
 }
 
 
+class ClimateResponse(BaseModel):
+    country: str
+    city: str
+    emoji: str
+    humidity: float
+    temperature_c: float
+    condition: str
+    ia_adjustment: str
+    compatibility_hint: str
+    source: str = "mommyshops_preset"
+
+
 @router.get("/climate", response_model=ClimateResponse)
 async def get_climate_profile(
     country: str = Query(..., min_length=2, description="Country name"),
@@ -196,18 +218,6 @@ class AnalysisRequest(BaseModel):
             return v.strip()
         return v
 
-class ClimateResponse(BaseModel):
-    country: str
-    city: str
-    emoji: str
-    humidity: float
-    temperature_c: float
-    condition: str
-    ia_adjustment: str
-    compatibility_hint: str
-    source: str = "mommyshops_preset"
-
-
 class AnalysisResponse(BaseModel):
     success: bool
     product_name: Optional[str] = None
@@ -221,6 +231,7 @@ class AnalysisResponse(BaseModel):
     profile: Optional[dict] = None
     analysis_summary: Optional[dict] = None
     intelligent_formula: Optional[dict] = None
+    baby_report: Optional[dict] = None
     processing_time: float
 
 class IngredientAnalysisRequest(BaseModel):
@@ -294,40 +305,9 @@ async def analyze_text(
             elif merged_profile.get("hair_concerns"):
                 effective_user_need = ", ".join(merged_profile["hair_concerns"])
         
-        # Option 1: Enhance text with Ollama (normalize and clean ingredient text)
-        ollama_service = OllamaService()
+        # Skip Ollama text pre-processing to speed up analysis
+        # The main analysis will handle ingredient extraction
         enhanced_text = request.text
-        if ollama_service.available:
-            try:
-                logger.info("Enhancing input text with Ollama...")
-                # For manual text input, enhance by normalizing ingredient format
-                import httpx
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    prompt = f"""Normalize and clean the following cosmetic ingredient list. 
-Format it properly, one ingredient per line or comma-separated. Remove any formatting errors.
-
-Original text:
-{request.text}
-
-Normalized ingredient list:"""
-                    
-                    response = await client.post(
-                        f"{ollama_service.base_url}/api/generate",
-                        json={
-                            "model": ollama_service.model,
-                            "prompt": prompt,
-                            "stream": False
-                        }
-                    )
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        cleaned_text = data.get("response", "").strip()
-                        if cleaned_text:
-                            enhanced_text = cleaned_text
-                            logger.info("Input text normalized with Ollama")
-            except Exception as e:
-                logger.warning(f"Ollama text enhancement failed: {e}")
         
         result = await analysis_service.analyze_text(
             text=enhanced_text,
@@ -338,41 +318,8 @@ Normalized ingredient list:"""
             profile=merged_profile
         )
         
-        # Option 2: Enhance ingredient analysis with Ollama
-        if (
-            ollama_service.available
-            and result.get("success")
-            and result.get("ingredients")
-            and not result.get("ollama_skipped")
-        ):
-            try:
-                logger.info("Enhancing ingredient analysis with Ollama...")
-                ingredient_names = [ing.get("name", "") for ing in result.get("ingredients", []) if ing.get("name")]
-                if ingredient_names:
-                    ollama_analysis = await ollama_service.analyze_ingredients(
-                        ingredients=ingredient_names,
-                        user_conditions=[effective_user_need] if effective_user_need else merged_profile.get("overall_goals", []),
-                        analysis_type="safety_analysis"
-                    )
-                    
-                    # Merge Ollama insights into recommendations
-                    if ollama_analysis.get("recommendations"):
-                        ollama_recommendations = ollama_analysis.get("recommendations", "")
-                        existing_recommendations = result.get("recommendations", [])
-                        if isinstance(ollama_recommendations, str) and ollama_recommendations:
-                            ollama_recommendations_list = [
-                                line.strip() for line in ollama_recommendations.split('\n')
-                                if line.strip() and not line.strip().startswith('#')
-                            ]
-                            result["recommendations"] = existing_recommendations + ollama_recommendations_list[:3]
-                        
-                        ollama_confidence = ollama_analysis.get("confidence", 0.0)
-                        if ollama_confidence > 0.5:
-                            result["ollama_enhanced"] = True
-                            result["ollama_confidence"] = ollama_confidence
-                            logger.info(f"Analysis enhanced with Ollama (confidence: {ollama_confidence})")
-            except Exception as e:
-                logger.warning(f"Ollama ingredient analysis enhancement failed: {e}")
+        # Skip secondary Ollama enhancement to avoid double processing
+        # The main analysis already uses Ollama if available
         
         processing_time = time.time() - start_time
         
@@ -463,45 +410,9 @@ async def analyze_image(
                 detail="Could not extract text from image"
             )
         
-        # Option 1: Enhance OCR text with Ollama
-        ollama_service = OllamaService()
+        # Skip Ollama OCR enhancement to speed up analysis
+        # The main analysis will handle ingredient extraction
         enhanced_text = extracted_text
-        if ollama_service.available:
-            try:
-                logger.info("Enhancing OCR text with Ollama...")
-                # Use Ollama to clean and normalize OCR-extracted text
-                # For OCR text enhancement, we'll use a simpler approach
-                import httpx
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    prompt = f"""Clean and normalize the following OCR-extracted text from a cosmetic product label. 
-Extract only the ingredient list, removing any errors, extra characters, or formatting issues.
-Return only the cleaned ingredient list, one ingredient per line or comma-separated.
-
-Original text:
-{extracted_text}
-
-Cleaned ingredient list:"""
-                    
-                    response = await client.post(
-                        f"{ollama_service.base_url}/api/generate",
-                        json={
-                            "model": ollama_service.model,
-                            "prompt": prompt,
-                            "stream": False
-                        }
-                    )
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        cleaned_text = data.get("response", "").strip()
-                        if cleaned_text and len(cleaned_text) > len(extracted_text) * 0.3:  # At least 30% of original length
-                            enhanced_text = cleaned_text
-                            logger.info("OCR text enhanced with Ollama")
-            except Exception as e:
-                logger.warning(f"Ollama text enhancement failed, using original text: {e}")
-                enhanced_text = extracted_text
-        else:
-            logger.info("Ollama not available, using original OCR text")
         
         # Analyze extracted text
         analysis_service = AnalysisService(db)
@@ -535,39 +446,8 @@ Cleaned ingredient list:"""
             profile=merged_profile
         )
         
-        # Option 2: Enhance ingredient analysis with Ollama
-        if ollama_service.available and result.get("success") and result.get("ingredients"):
-            try:
-                logger.info("Enhancing ingredient analysis with Ollama...")
-                ingredient_names = [ing.get("name", "") for ing in result.get("ingredients", []) if ing.get("name")]
-                if ingredient_names:
-                    ollama_analysis = await ollama_service.analyze_ingredients(
-                        ingredients=ingredient_names,
-                        user_conditions=[effective_user_need] if effective_user_need else merged_profile.get("overall_goals", []),
-                        analysis_type="safety_analysis"
-                    )
-                    
-                    # Merge Ollama insights into recommendations
-                    if ollama_analysis.get("recommendations"):
-                        ollama_recommendations = ollama_analysis.get("recommendations", "")
-                        existing_recommendations = result.get("recommendations", [])
-                        if isinstance(ollama_recommendations, str) and ollama_recommendations:
-                            # Add Ollama recommendations
-                            ollama_recommendations_list = [
-                                line.strip() for line in ollama_recommendations.split('\n')
-                                if line.strip() and not line.strip().startswith('#')
-                            ]
-                            result["recommendations"] = existing_recommendations + ollama_recommendations_list[:3]
-                        
-                        # Update analysis confidence if available
-                        ollama_confidence = ollama_analysis.get("confidence", 0.0)
-                        if ollama_confidence > 0.5:
-                            result["ollama_enhanced"] = True
-                            result["ollama_confidence"] = ollama_confidence
-                            logger.info(f"Analysis enhanced with Ollama (confidence: {ollama_confidence})")
-            except Exception as e:
-                logger.warning(f"Ollama ingredient analysis enhancement failed: {e}")
-                # Continue without Ollama enhancement
+        # Skip secondary Ollama enhancement to avoid double processing
+        # The main analysis already uses Ollama if available
         
         processing_time = time.time() - start_time
         

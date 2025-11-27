@@ -41,7 +41,7 @@ pytesseract==0.3.10
 
 # Data Processing
 pandas==2.1.4
-numpy==1.25.2
+numpy==1.26.4
 
 # Environment
 python-dotenv==1.0.0
