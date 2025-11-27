@@ -1,0 +1,738 @@
+{
+  "seasons": [
+    "winter",
+    "spring",
+    "summer",
+    "autumn"
+  ],
+  "cities": [
+    {
+      "city": "Madrid",
+      "country": "España",
+      "humidity": "40-60%",
+      "temperature": "5-32 °C",
+      "altitude_m": 667,
+      "wind": "Vientos secos",
+      "uv": "Alta en verano",
+      "skin_effect": "Resequedad, irritación, piel seca en invierno",
+      "climate_profile": "seco_frio_altitud",
+      "primary_blend": "nube_avena",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": {
+        "winter": "seco_frio_altitud",
+        "summer": "humedo_calido",
+        "spring": "templado_humedo",
+        "autumn": "templado_humedo"
+      },
+      "extra_factors": {
+        "dermatitis_risk": 0.55,
+        "sweat_risk": 0.25,
+        "wind_irritation": 0.75,
+        "uv_stress": 0.65,
+        "barrier_damage_risk": 0.7
+      }
+    },
+    {
+      "city": "Bogotá",
+      "country": "Colombia",
+      "humidity": "70-85%",
+      "temperature": "7-20 °C",
+      "altitude_m": 2640,
+      "wind": "Viento frío moderado",
+      "uv": "Muy alta por altitud",
+      "skin_effect": "Piel seca + irritación por frío + riesgo de dermatitis",
+      "climate_profile": "seco_frio_altitud",
+      "primary_blend": "nube_avena",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": {
+        "winter": "seco_frio_altitud",
+        "summer": "templado_humedo",
+        "spring": "templado_humedo",
+        "autumn": "seco_frio_altitud"
+      },
+      "extra_factors": {
+        "dermatitis_risk": 0.8,
+        "sweat_risk": 0.2,
+        "wind_irritation": 0.85,
+        "uv_stress": 0.9,
+        "barrier_damage_risk": 0.85
+      }
+    },
+    {
+      "city": "New York",
+      "country": "Estados Unidos",
+      "humidity": "50-70%",
+      "temperature": "-3 a 30 °C",
+      "altitude_m": 10,
+      "wind": "Viento fuerte estacional",
+      "uv": "Media",
+      "skin_effect": "Piel seca en invierno, piel grasa en verano",
+      "climate_profile": "variable_estaciones",
+      "primary_blend": "nube_avena",
+      "secondary_blend": "brisa_te",
+      "season_profile_override": {
+        "winter": "seco_frio_altitud",
+        "summer": "humedo_calido",
+        "spring": "templado_humedo",
+        "autumn": "templado_humedo"
+      },
+      "extra_factors": {
+        "dermatitis_risk": 0.6,
+        "sweat_risk": 0.5,
+        "wind_irritation": 0.7,
+        "uv_stress": 0.5,
+        "barrier_damage_risk": 0.65
+      }
+    },
+    {
+      "city": "Miami",
+      "country": "Estados Unidos",
+      "humidity": "70-90%",
+      "temperature": "20-33 °C",
+      "altitude_m": 2,
+      "wind": "Baja",
+      "uv": "Muy alta",
+      "skin_effect": "Sudor, humedad → piel grasa, riesgo de rozaduras",
+      "climate_profile": "humedo_calido",
+      "primary_blend": "brisa_te",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": "none",
+      "extra_factors": {
+        "dermatitis_risk": 0.75,
+        "sweat_risk": 0.95,
+        "wind_irritation": 0.2,
+        "uv_stress": 0.85,
+        "barrier_damage_risk": 0.55
+      }
+    },
+    {
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "humidity": "60-75%",
+      "temperature": "10-30 °C",
+      "altitude_m": 25,
+      "wind": "Moderado",
+      "uv": "Media",
+      "skin_effect": "Piel normal-mixta, brotes por sudor en verano",
+      "climate_profile": "templado_humedo",
+      "primary_blend": "equilibrio_calendula",
+      "secondary_blend": "nube_avena",
+      "season_profile_override": {
+        "winter": "seco_frio_altitud",
+        "summer": "humedo_calido",
+        "spring": "templado_humedo",
+        "autumn": "templado_humedo"
+      },
+      "extra_factors": {
+        "dermatitis_risk": 0.45,
+        "sweat_risk": 0.55,
+        "wind_irritation": 0.4,
+        "uv_stress": 0.5,
+        "barrier_damage_risk": 0.5
+      }
+    },
+    {
+      "city": "Bucaramanga",
+      "country": "Colombia",
+      "humidity": "70-85%",
+      "temperature": "20-28 °C",
+      "altitude_m": 959,
+      "wind": "Baja",
+      "uv": "Alta",
+      "skin_effect": "Piel húmeda, tendencia a dermatitis por calor",
+      "climate_profile": "humedo_calido",
+      "primary_blend": "brisa_te",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": "none",
+      "extra_factors": {
+        "dermatitis_risk": 0.7,
+        "sweat_risk": 0.85,
+        "wind_irritation": 0.3,
+        "uv_stress": 0.7,
+        "barrier_damage_risk": 0.6
+      }
+    },
+    {
+      "city": "Cali",
+      "country": "Colombia",
+      "humidity": "70-80%",
+      "temperature": "18-32 °C",
+      "altitude_m": 1000,
+      "wind": "Baja",
+      "uv": "Alta",
+      "skin_effect": "Piel húmeda, riesgo de sudoración y brotes",
+      "climate_profile": "humedo_calido",
+      "primary_blend": "brisa_te",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": "none",
+      "extra_factors": {
+        "dermatitis_risk": 0.65,
+        "sweat_risk": 0.8,
+        "wind_irritation": 0.25,
+        "uv_stress": 0.65,
+        "barrier_damage_risk": 0.55
+      }
+    },
+    {
+      "city": "Cartagena",
+      "country": "Colombia",
+      "humidity": "80-95%",
+      "temperature": "26-32 °C",
+      "altitude_m": 2,
+      "wind": "Baja",
+      "uv": "Alta",
+      "skin_effect": "Piel muy húmeda, grasa, dermatitis por calor",
+      "climate_profile": "humedo_calido_extremo",
+      "primary_blend": "brisa_te",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": "none",
+      "extra_factors": {
+        "dermatitis_risk": 0.9,
+        "sweat_risk": 1.0,
+        "wind_irritation": 0.2,
+        "uv_stress": 0.85,
+        "barrier_damage_risk": 0.6
+      }
+    },
+    {
+      "city": "Barranquilla",
+      "country": "Colombia",
+      "humidity": "75-90%",
+      "temperature": "26-32 °C",
+      "altitude_m": 18,
+      "wind": "Brisa constante",
+      "uv": "Alta",
+      "skin_effect": "Piel húmeda-grasa, sudoración, irritaciones",
+      "climate_profile": "humedo_calido",
+      "primary_blend": "brisa_te",
+      "secondary_blend": "equilibrio_calendula",
+      "season_profile_override": "none",
+      "extra_factors": {
+        "dermatitis_risk": 0.8,
+        "sweat_risk": 0.9,
+        "wind_irritation": 0.35,
+        "uv_stress": 0.8,
+        "barrier_damage_risk": 0.55
+      }
+    }
+  ],
+  "profiles": {
+    "seco_frio_altitud": {
+      "label": "Seco/Frío con altitud o viento",
+      "family_weights": {
+        "humectantes": 1.3,
+        "emolientes": 1.3,
+        "tensioactivos": 0.85,
+        "calmantes": 1.3,
+        "prebioticos": 1.1,
+        "astringentes": 0.7
+      },
+      "guidance": [
+        "Agregar mantecas y humectantes adicionales",
+        "Priorizar avena, caléndula, bisabolol y centella",
+        "Reducir tensioactivos para sensación de crema lavante"
+      ]
+    },
+    "seco_templado": {
+      "label": "Seco templado estacional",
+      "family_weights": {
+        "humectantes": 1.15,
+        "emolientes": 1.15,
+        "tensioactivos": 0.95,
+        "calmantes": 1.1,
+        "prebioticos": 1.05,
+        "astringentes": 0.9
+      },
+      "guidance": [
+        "Mantener equilibrio pero con refuerzo de barrera",
+        "Ajustar mantecas y humectantes principalmente en invierno"
+      ]
+    },
+    "humedo_calido": {
+      "label": "Húmedo cálido (sudor + calor)",
+      "family_weights": {
+        "humectantes": 1.0,
+        "emolientes": 0.8,
+        "tensioactivos": 1.05,
+        "calmantes": 1.15,
+        "prebioticos": 1.25,
+        "astringentes": 1.2
+      },
+      "guidance": [
+        "Ligerar fase grasa y evitar oclusión",
+        "Refuerzo de prebióticos y activos antirrozaduras",
+        "Incrementar té verde/hamamelis para manejar sebo y sudor"
+      ]
+    },
+    "humedo_calido_extremo": {
+      "label": "Húmedo tropical extremo",
+      "family_weights": {
+        "humectantes": 0.95,
+        "emolientes": 0.75,
+        "tensioactivos": 1.1,
+        "calmantes": 1.2,
+        "prebioticos": 1.3,
+        "astringentes": 1.25
+      },
+      "guidance": [
+        "Maximizar ingredientes anti-humedad",
+        "Evitar pesadez: coco-caprylate bajo, más hamamelis",
+        "Mantener IA alerta para dermatitis por sudor"
+      ]
+    },
+    "templado_humedo": {
+      "label": "Templado húmedo",
+      "family_weights": {
+        "humectantes": 1.05,
+        "emolientes": 1.0,
+        "tensioactivos": 1.0,
+        "calmantes": 1.1,
+        "prebioticos": 1.15,
+        "astringentes": 1.05
+      },
+      "guidance": [
+        "Mantener equilibrio base",
+        "Subir prebióticos para microbioma estable",
+        "Agregar calmantes extra en olas de calor"
+      ]
+    },
+    "variable_estaciones": {
+      "label": "Clima altamente estacional",
+      "family_weights": {
+        "humectantes": 1.1,
+        "emolientes": 1.05,
+        "tensioactivos": 0.95,
+        "calmantes": 1.1,
+        "prebioticos": 1.1,
+        "astringentes": 1.05
+      },
+      "guidance": [
+        "Aplicar perfil seco-frío en invierno y húmedo-cálido en verano",
+        "Mantener Equilibrio de Caléndula como base neutra"
+      ]
+    }
+  },
+  "blend_modulations": {
+    "nube_avena": {
+      "madrid": {
+        "winter": {
+          "humectantes": 1.2,
+          "emolientes": 1.3,
+          "calmantes": 1.2,
+          "tensioactivos": 0.85
+        },
+        "spring": {
+          "humectantes": 1.1,
+          "emolientes": 1.15,
+          "calmantes": 1.1,
+          "tensioactivos": 0.9
+        },
+        "autumn": {
+          "humectantes": 1.1,
+          "emolientes": 1.15,
+          "calmantes": 1.1,
+          "tensioactivos": 0.9
+        },
+        "summer": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "calmantes": 1.1,
+          "tensioactivos": 0.95
+        }
+      },
+      "bogota": {
+        "all_year": {
+          "humectantes": 1.3,
+          "emolientes": 1.35,
+          "calmantes": 1.35,
+          "tensioactivos": 0.8
+        }
+      },
+      "new york": {
+        "winter": {
+          "humectantes": 1.25,
+          "emolientes": 1.3,
+          "calmantes": 1.25,
+          "tensioactivos": 0.85
+        },
+        "spring": {
+          "humectantes": 1.1,
+          "emolientes": 1.15,
+          "calmantes": 1.15,
+          "tensioactivos": 0.9
+        },
+        "autumn": {
+          "humectantes": 1.1,
+          "emolientes": 1.15,
+          "calmantes": 1.15,
+          "tensioactivos": 0.9
+        },
+        "summer": {
+          "humectantes": 1.1,
+          "emolientes": 1.0,
+          "calmantes": 1.15,
+          "tensioactivos": 0.95
+        }
+      },
+      "miami": {
+        "all_year": {
+          "humectantes": 0.9,
+          "emolientes": 0.75,
+          "calmantes": 1.1,
+          "tensioactivos": 1.0
+        }
+      },
+      "buenos aires": {
+        "winter": {
+          "humectantes": 1.1,
+          "emolientes": 1.1,
+          "calmantes": 1.15,
+          "tensioactivos": 0.95
+        },
+        "spring": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "calmantes": 1.1,
+          "tensioactivos": 1.0
+        },
+        "autumn": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "calmantes": 1.1,
+          "tensioactivos": 1.0
+        },
+        "summer": {
+          "humectantes": 0.95,
+          "emolientes": 0.95,
+          "calmantes": 1.1,
+          "tensioactivos": 1.0
+        }
+      },
+      "bucaramanga": {
+        "all_year": {
+          "humectantes": 0.85,
+          "emolientes": 0.75,
+          "calmantes": 1.15,
+          "tensioactivos": 1.05
+        }
+      },
+      "cali": {
+        "all_year": {
+          "humectantes": 0.85,
+          "emolientes": 0.75,
+          "calmantes": 1.1,
+          "tensioactivos": 1.05
+        }
+      },
+      "cartagena": {
+        "all_year": {
+          "humectantes": 0.8,
+          "emolientes": 0.7,
+          "calmantes": 1.15,
+          "tensioactivos": 1.1
+        }
+      },
+      "barranquilla": {
+        "all_year": {
+          "humectantes": 0.85,
+          "emolientes": 0.7,
+          "calmantes": 1.15,
+          "tensioactivos": 1.05
+        }
+      }
+    },
+    "brisa_te": {
+      "madrid": {
+        "winter": {
+          "astringentes": 0.9,
+          "emolientes_ligeros": 0.85,
+          "tensioactivos": 1.0,
+          "calmantes": 1.0,
+          "prebioticos": 1.0
+        },
+        "spring": {
+          "astringentes": 1.0,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.0,
+          "calmantes": 1.05,
+          "prebioticos": 1.05
+        },
+        "autumn": {
+          "astringentes": 1.0,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.0,
+          "calmantes": 1.05,
+          "prebioticos": 1.05
+        },
+        "summer": {
+          "astringentes": 1.1,
+          "emolientes_ligeros": 0.85,
+          "tensioactivos": 1.05,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        }
+      },
+      "bogota": {
+        "all_year": {
+          "astringentes": 0.8,
+          "emolientes_ligeros": 0.85,
+          "tensioactivos": 1.0,
+          "calmantes": 1.2,
+          "prebioticos": 1.1
+        }
+      },
+      "new york": {
+        "winter": {
+          "astringentes": 0.75,
+          "emolientes_ligeros": 0.85,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "spring": {
+          "astringentes": 1.05,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "autumn": {
+          "astringentes": 1.05,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "summer": {
+          "astringentes": 1.2,
+          "emolientes_ligeros": 0.85,
+          "tensioactivos": 1.1,
+          "calmantes": 1.1,
+          "prebioticos": 1.2
+        }
+      },
+      "miami": {
+        "all_year": {
+          "astringentes": 1.3,
+          "emolientes_ligeros": 0.8,
+          "tensioactivos": 1.15,
+          "calmantes": 1.2,
+          "prebioticos": 1.3
+        }
+      },
+      "buenos aires": {
+        "winter": {
+          "astringentes": 0.95,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.0,
+          "calmantes": 1.05,
+          "prebioticos": 1.0
+        },
+        "spring": {
+          "astringentes": 1.1,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.05,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "autumn": {
+          "astringentes": 1.1,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.05,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "summer": {
+          "astringentes": 1.2,
+          "emolientes_ligeros": 0.9,
+          "tensioactivos": 1.1,
+          "calmantes": 1.1,
+          "prebioticos": 1.2
+        }
+      },
+      "bucaramanga": {
+        "all_year": {
+          "astringentes": 1.3,
+          "emolientes_ligeros": 0.8,
+          "tensioactivos": 1.1,
+          "calmantes": 1.2,
+          "prebioticos": 1.3
+        }
+      },
+      "cali": {
+        "all_year": {
+          "astringentes": 1.25,
+          "emolientes_ligeros": 0.8,
+          "tensioactivos": 1.1,
+          "calmantes": 1.2,
+          "prebioticos": 1.25
+        }
+      },
+      "cartagena": {
+        "all_year": {
+          "astringentes": 1.35,
+          "emolientes_ligeros": 0.75,
+          "tensioactivos": 1.15,
+          "calmantes": 1.25,
+          "prebioticos": 1.35
+        }
+      },
+      "barranquilla": {
+        "all_year": {
+          "astringentes": 1.3,
+          "emolientes_ligeros": 0.75,
+          "tensioactivos": 1.12,
+          "calmantes": 1.25,
+          "prebioticos": 1.3
+        }
+      }
+    },
+    "equilibrio_calendula": {
+      "madrid": {
+        "winter": {
+          "humectantes": 1.15,
+          "emolientes": 1.15,
+          "tensioactivos": 0.9,
+          "calmantes": 1.2,
+          "prebioticos": 1.1
+        },
+        "spring": {
+          "humectantes": 1.05,
+          "emolientes": 1.05,
+          "tensioactivos": 0.95,
+          "calmantes": 1.15,
+          "prebioticos": 1.05
+        },
+        "autumn": {
+          "humectantes": 1.05,
+          "emolientes": 1.05,
+          "tensioactivos": 0.95,
+          "calmantes": 1.15,
+          "prebioticos": 1.05
+        },
+        "summer": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.05
+        }
+      },
+      "bogota": {
+        "all_year": {
+          "humectantes": 1.2,
+          "emolientes": 1.2,
+          "tensioactivos": 0.9,
+          "calmantes": 1.3,
+          "prebioticos": 1.15
+        }
+      },
+      "new york": {
+        "winter": {
+          "humectantes": 1.15,
+          "emolientes": 1.1,
+          "tensioactivos": 0.9,
+          "calmantes": 1.25,
+          "prebioticos": 1.1
+        },
+        "spring": {
+          "humectantes": 1.05,
+          "emolientes": 1.05,
+          "tensioactivos": 0.95,
+          "calmantes": 1.15,
+          "prebioticos": 1.1
+        },
+        "autumn": {
+          "humectantes": 1.05,
+          "emolientes": 1.05,
+          "tensioactivos": 0.95,
+          "calmantes": 1.15,
+          "prebioticos": 1.1
+        },
+        "summer": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        }
+      },
+      "miami": {
+        "all_year": {
+          "humectantes": 0.9,
+          "emolientes": 0.85,
+          "tensioactivos": 1.05,
+          "calmantes": 1.15,
+          "prebioticos": 1.2
+        }
+      },
+      "buenos aires": {
+        "winter": {
+          "humectantes": 1.05,
+          "emolientes": 1.05,
+          "tensioactivos": 0.95,
+          "calmantes": 1.15,
+          "prebioticos": 1.05
+        },
+        "spring": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "autumn": {
+          "humectantes": 1.0,
+          "emolientes": 1.0,
+          "tensioactivos": 1.0,
+          "calmantes": 1.1,
+          "prebioticos": 1.1
+        },
+        "summer": {
+          "humectantes": 0.95,
+          "emolientes": 0.95,
+          "tensioactivos": 1.05,
+          "calmantes": 1.1,
+          "prebioticos": 1.15
+        }
+      },
+      "bucaramanga": {
+        "all_year": {
+          "humectantes": 0.9,
+          "emolientes": 0.85,
+          "tensioactivos": 1.05,
+          "calmantes": 1.15,
+          "prebioticos": 1.2
+        }
+      },
+      "cali": {
+        "all_year": {
+          "humectantes": 0.9,
+          "emolientes": 0.85,
+          "tensioactivos": 1.05,
+          "calmantes": 1.15,
+          "prebioticos": 1.2
+        }
+      },
+      "cartagena": {
+        "all_year": {
+          "humectantes": 0.85,
+          "emolientes": 0.8,
+          "tensioactivos": 1.1,
+          "calmantes": 1.2,
+          "prebioticos": 1.25
+        }
+      },
+      "barranquilla": {
+        "all_year": {
+          "humectantes": 0.9,
+          "emolientes": 0.8,
+          "tensioactivos": 1.1,
+          "calmantes": 1.2,
+          "prebioticos": 1.25
+        }
+      }
+    }
+  }
+}
+

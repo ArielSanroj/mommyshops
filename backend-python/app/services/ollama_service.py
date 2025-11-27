@@ -23,26 +23,81 @@ class OllamaService:
     def __init__(self):
         settings = get_settings()
         self.base_url = getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434")
-        self.model = getattr(settings, "OLLAMA_MODEL", "llama3:latest")
+        self.model = getattr(settings, "OLLAMA_MODEL", "llama3.2:1b")
         self.vision_model = getattr(settings, "OLLAMA_VISION_MODEL", "llava")
-        self.timeout = getattr(settings, "OLLAMA_TIMEOUT", 120)
+        # Aggressive timeout: max 15 seconds for all Ollama requests
+        configured_timeout = getattr(settings, "OLLAMA_TIMEOUT", 15)
+        self.timeout = min(15, max(5, configured_timeout))
         self.available = False
+        self.available_models: List[str] = []
         self._check_availability()
 
     def _check_availability(self) -> None:
+        """
+        Detect Ollama availability and transparently fall back to any
+        installed model if the configured one is missing.
+        """
         try:
             import httpx
             with httpx.Client(timeout=2.0) as client:
                 response = client.get(f"{self.base_url}/api/tags")
-                if response.status_code == 200:
-                    self.available = True
-                    logger.info(f"Ollama service available at {self.base_url}")
-                else:
-                    self.available = False
-                    logger.warning(f"Ollama service returned status {response.status_code}")
         except Exception as exc:
             logger.warning(f"Ollama not available at {self.base_url}: {exc}")
             self.available = False
+            self.available_models = []
+            return
+
+        if response.status_code != 200:
+            self.available = False
+            self.available_models = []
+            logger.warning(f"Ollama service returned status {response.status_code}")
+            return
+
+        data = response.json()
+        models = [
+            (model or {}).get("name", "").strip()
+            for model in data.get("models", [])
+        ]
+        self.available_models = [m for m in models if m]
+
+        if not self.available_models:
+            self.available = False
+            logger.warning("Ollama responded without any models – check installation.")
+            return
+
+        selected_model = self._pick_available_model(self.available_models)
+        if selected_model != self.model:
+            logger.warning(
+                "Configured Ollama model '%s' is unavailable. Using '%s' instead.",
+                self.model,
+                selected_model,
+            )
+            self.model = selected_model
+
+        self.available = True
+        logger.info(
+            "Ollama service available at %s (models: %s)",
+            self.base_url,
+            ", ".join(self.available_models),
+        )
+
+    def _pick_available_model(self, candidates: List[str]) -> str:
+        """
+        Return the first installed model that matches the preferred order.
+        """
+        preferred_order = [
+            self.model,
+            "llama3.2:1b",
+            "tinyllama:1.1b",
+            "llama3.2:latest",
+            "llama3:latest",
+            "llama3.1",
+            "llama3",
+        ]
+        for name in preferred_order:
+            if name and name in candidates:
+                return name
+        return candidates[0]
 
     async def analyze_ingredients_structured(
         self,

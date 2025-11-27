@@ -54,5 +54,130 @@
         "reason": "Conservante aceptado en fórmulas de pH ácido."
       }
     ]
+  },
+  "baby_care": {
+    "FRAGRANCE (PARFUM)": [
+      {
+        "name": "Hydrolato de manzanilla",
+        "reason": "Aporta aroma natural hipoalergénico.",
+        "flags": [
+          "fragancia_natural",
+          "aroma_suave"
+        ]
+      },
+      {
+        "name": "Modo sin fragancia",
+        "reason": "Elimina alérgenos EU26 para bebés ultra-sensitive.",
+        "flags": [
+          "fragrance_free"
+        ]
+      }
+    ],
+    "PEG-80 SORBITAN LAURATE": [
+      {
+        "name": "Decyl Glucoside",
+        "reason": "Tensioactivo vegetal libre de PEG.",
+        "flags": [
+          "clima_seco",
+          "piel_atopica"
+        ]
+      },
+      {
+        "name": "Coco-glucoside",
+        "reason": "Limpiador suave compatible con modo tear-free.",
+        "flags": [
+          "tear_free"
+        ]
+      }
+    ],
+    "PEG-150 DISTEARATE": [
+      {
+        "name": "Inulina + alfa-glucano",
+        "reason": "Espesa y aporta prebióticos sin PEG.",
+        "flags": [
+          "microbiome",
+          "clima_seco"
+        ]
+      }
+    ],
+    "COCAMIDOPROPYL BETAINE": [
+      {
+        "name": "Decyl Glucoside",
+        "reason": "Surfactante no iónico que no sensibiliza.",
+        "flags": [
+          "piel_atopica",
+          "dermatitis_panal"
+        ]
+      },
+      {
+        "name": "Lauryl Glucoside",
+        "reason": "Espuma suave adecuada para climas cálidos.",
+        "flags": [
+          "clima_humedo"
+        ]
+      }
+    ],
+    "SODIUM LAURETH SULFATE": [
+      {
+        "name": "Coco-glucoside",
+        "reason": "Base limpiadora sin sulfatos ni 1,4-dioxano.",
+        "flags": [
+          "tear_free",
+          "clima_caliente"
+        ]
+      },
+      {
+        "name": "Sodium Lauroyl Lactylate",
+        "reason": "Tensioactivo suave compatible con bebés 0-3m.",
+        "flags": [
+          "recien_nacido"
+        ]
+      }
+    ],
+    "PHENOXYETHANOL": [
+      {
+        "name": "Potassium Sorbate + Sodium Benzoate grado alimentario",
+        "reason": "Sistema conservante aceptado en fórmulas baby, ajustado por pH.",
+        "flags": [
+          "tear_free",
+          "ph55"
+        ]
+      },
+      {
+        "name": "Leuconostoc/Radish Root Ferment",
+        "reason": "Conservante natural compatible con microbioma.",
+        "flags": [
+          "microbiome"
+        ]
+      }
+    ],
+    "PEG-120 METHYL GLUCOSE DIOLEATE": [
+      {
+        "name": "Goma xantana + inulina",
+        "reason": "Aporta viscosidad y prebióticos sin PEG.",
+        "flags": [
+          "microbiome",
+          "clima_seco"
+        ]
+      }
+    ],
+    "POTASSIUM SORBATE": [
+      {
+        "name": "Fermento de lactobacillus",
+        "reason": "Sistema conservante biomimético.",
+        "flags": [
+          "piel_atopica"
+        ]
+      }
+    ],
+    "SODIUM BENZOATE": [
+      {
+        "name": "Ácido levulínico + anisato",
+        "reason": "Conservantes naturales aptos para bebés con dermatitis.",
+        "flags": [
+          "dermatitis_panal"
+        ]
+      }
+    ]
   }
 }

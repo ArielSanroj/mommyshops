@@ -1,13 +1,27 @@
 {
   "Aqua": {
-    "score": 95,
+    "score": 99,
     "ewg": 1,
     "risk": "none",
     "eco": true,
-    "description": "Water - esencial y completamente seguro",
+    "description": "Agua purificada. Base segura, biodegradable y sin riesgo toxicológico.",
     "categories": [
       "all"
-    ]
+    ],
+    "aliases": [
+      "Water",
+      "Water (Aqua)",
+      "Aqua / Water / Eau",
+      "Aqua/Water/Eau"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Base segura para cualquier fórmula tear-free.",
+      "avoid_in": [],
+      "flags": [
+        "hidratante"
+      ]
+    }
   },
   "Cetearyl Alcohol": {
     "score": 85,
@@ -43,6 +57,29 @@
       "hair_conditioner",
       "skincare"
     ]
+  },
+  "Decyl Glucoside": {
+    "score": 92,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Surfactante no iónico derivado de glucosa y coco. Limpia sin resecar y es biodegradable.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "aliases": [
+      "Decil Glucosido",
+      "Decil glucósido"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Aporta espuma suave compatible con piel sensible y modo tear-free.",
+      "avoid_in": [],
+      "flags": [
+        "tensioactivo_suave"
+      ]
+    }
   },
   "Cetrimonium Chloride": {
     "score": 70,
@@ -252,7 +289,18 @@
       "Benzoato de sodio",
       "Leucidal",
       "Radish Root Ferment"
-    ]
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Conservante sintético; Francia no lo recomienda en menores de 3 años.",
+      "avoid_in": [
+        "bebes_menores_3m",
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "conservante_sintetico"
+      ]
+    }
   },
   "Parabens": {
     "score": 35,
@@ -903,7 +951,18 @@
     "risk": "low",
     "eco": true,
     "description": "El Butylene Glycol es un humectante naturalmente derivado del azúcar que ayuda a mantener la hidratación de la piel. Es considerado seguro para uso cutáneo y no tiene efectos adversos notificados.",
-    "categories": []
+    "categories": [],
+    "baby": {
+      "risk": "caution",
+      "summary": "Humectante petroquímico; puede picar en piel inflamada.",
+      "avoid_in": [
+        "piel_muy_reactiva",
+        "dermatitis_panal"
+      ],
+      "flags": [
+        "solvente_petroquimico"
+      ]
+    }
   },
   "Carbomer": {
     "score": 90,
@@ -935,7 +994,19 @@
     "risk": "high",
     "eco": false,
     "description": "El aroma o fragrance es un término que puede englobar una amplia variedad de sustancias químicas. Aunque no se sabe exactamente qué sustancias se encuentran en algunos productos de cuidado personal, el término 'fragrance' ha sido asociado con reacciones alérgicas y posibles efectos negativos en la salud humana.",
-    "categories": []
+    "categories": [],
+    "baby": {
+      "risk": "bad",
+      "summary": "Combinación sintética impredecible; puede irritar piel y vías respiratorias.",
+      "avoid_in": [
+        "bebes_menores_6m",
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "fragancia_sintetica",
+        "alto_riesgo_alergias"
+      ]
+    }
   },
   "DMDM Hydantoin": {
     "score": 50,
@@ -951,7 +1022,20 @@
     "risk": "high",
     "eco": false,
     "description": "El fragrance puede contener sustancias químicas no declaradas que pueden ser tóxicas o alérgicas. La exposición crónica a estos químicos puede aumentar el riesgo de problemas respiratorios y dermatológicos.",
-    "categories": []
+    "categories": [],
+    "baby": {
+      "risk": "bad",
+      "summary": "Mezcla química no revelada; principal causa de alergias y brotes en bebés.",
+      "avoid_in": [
+        "bebes_menores_6m",
+        "piel_atopica",
+        "dermatitis_panal"
+      ],
+      "flags": [
+        "fragancia_sintetica",
+        "potencial_alergeno"
+      ]
+    }
   },
   "PVP": {
     "score": 50,
@@ -1103,7 +1187,17 @@
       "hair_care",
       "skincare",
       "baby_care"
-    ]
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Surfactante/lactilato suave; monitorizar en climas muy húmedos por posible película.",
+      "avoid_in": [
+        "clima_extremadamente_humedo"
+      ],
+      "flags": [
+        "tensioactivo_suave"
+      ]
+    }
   },
   "Sodium Hyaluronate": {
     "score": 95,
@@ -1156,5 +1250,570 @@
     "categories": [
       "all"
     ]
+  },
+  "Avena Coloidal": {
+    "score": 96,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Harina micronizada de avena orgánica que calma inflamación, refuerza la barrera cutánea y retiene humedad en pieles muy sensibles.",
+    "categories": [
+      "baby_care",
+      "skin_protectant"
+    ],
+    "aliases": [
+      "Colloidal Oatmeal",
+      "Avena Sativa Kernel Flour"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Calma eccema y resequedad desde el primer uso; forma un escudo prebiótico natural.",
+      "avoid_in": [],
+      "flags": [
+        "calmante",
+        "barrera",
+        "microbiome_friendly"
+      ]
+    }
+  },
+  "Caléndula CO2": {
+    "score": 94,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Extracto supercrítico de caléndula con alta concentración de faradiol y fitonutrientes reparadores.",
+    "categories": [
+      "baby_care",
+      "soothing"
+    ],
+    "aliases": [
+      "Calendula Officinalis Flower Extract",
+      "Calendula Supercritical"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Desinflama brotes y apoya la cicatrización suave en pieles de bebé.",
+      "avoid_in": [],
+      "flags": [
+        "antiinflamatorio",
+        "calmante"
+      ]
+    }
+  },
+  "Karité Fair-Trade": {
+    "score": 92,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Manteca de karité ética, rica en ácidos grasos y vitaminas A/E para sellar hidratación.",
+    "categories": [
+      "baby_care",
+      "emollient"
+    ],
+    "aliases": [
+      "Butyrospermum Parkii Butter",
+      "Shea Butter"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Sella humedad sin bloquear poros; ideal para climas secos o aire acondicionado.",
+      "avoid_in": [
+        "piel_muy_grasa"
+      ],
+      "flags": [
+        "emoliente_profundo",
+        "sello_barrera"
+      ]
+    }
+  },
+  "Aloe 99%": {
+    "score": 95,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Gel de aloe vera estabilizado al 99% con polisacáridos calmantes.",
+    "categories": [
+      "baby_care",
+      "hydration"
+    ],
+    "aliases": [
+      "Aloe Barbadensis Leaf Juice",
+      "Aloe Vera 99%"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Hidrata sin sensación grasosa y enfría brotes por calor.",
+      "avoid_in": [],
+      "flags": [
+        "hidratante_ligero",
+        "calma_post_sol"
+      ]
+    }
+  },
+  "Hamamelis sin alcohol": {
+    "score": 88,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Destilado de hamamelis libre de alcohol, con taninos calmantes.",
+    "categories": [
+      "baby_care",
+      "soothing"
+    ],
+    "aliases": [
+      "Hamamelis Virginiana Water (Alcohol-Free)",
+      "Witch Hazel Distillate"
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Reduce humedad excesiva y calma dermatitis del pañal sin resecar.",
+      "avoid_in": [
+        "piel_muy_seca"
+      ],
+      "flags": [
+        "antiinflamatorio",
+        "control_humedad"
+      ]
+    }
+  },
+  "Inulina": {
+    "score": 93,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Fibra prebiótica vegetal que nutre el microbioma cutáneo.",
+    "categories": [
+      "baby_care",
+      "prebiotic"
+    ],
+    "aliases": [
+      "Inulin"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Alimenta bacterias buenas y fortalece la barrera en bebés ultra sensibles.",
+      "avoid_in": [],
+      "flags": [
+        "prebiotico",
+        "microbiome_friendly"
+      ]
+    }
+  },
+  "Alfa-Glucano Oligosacárido": {
+    "score": 93,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Prebiótico derivado del azúcar que equilibra flora y mejora hidratación.",
+    "categories": [
+      "baby_care",
+      "prebiotic"
+    ],
+    "aliases": [
+      "Alpha-Glucan Oligosaccharide"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Protege microbioma en climas extremos y reduce brotes de pañal.",
+      "avoid_in": [],
+      "flags": [
+        "prebiotico",
+        "barrera"
+      ]
+    }
+  },
+  "Jojoba Golden": {
+    "score": 91,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Aceite de jojoba prensado en frío, rico en ceras líquidas biomiméticas.",
+    "categories": [
+      "baby_care",
+      "emollient"
+    ],
+    "aliases": [
+      "Simmondsia Chinensis Seed Oil",
+      "Golden Jojoba Oil"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Equilibra sebo y suaviza sin obstruir poros en piel mixta del bebé.",
+      "avoid_in": [],
+      "flags": [
+        "sebo_balance",
+        "emoliente_ligero"
+      ]
+    }
+  },
+  "Manzanilla Romana": {
+    "score": 94,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Extracto de Anthemis nobilis rico en bisabolol natural para calmar.",
+    "categories": [
+      "baby_care",
+      "soothing"
+    ],
+    "aliases": [
+      "Anthemis Nobilis Flower Extract",
+      "Roman Chamomile"
+    ],
+    "baby": {
+      "risk": "good",
+      "summary": "Calma irritación ocular y ayuda a conciliar el sueño por su aroma suave.",
+      "avoid_in": [
+        "alergia_compuestas"
+      ],
+      "flags": [
+        "calmante",
+        "aroma_suave"
+      ]
+    }
+  },
+  "PEG-80 Sorbitan Laurate": {
+    "score": 55,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Surfactante derivado de PEG utilizado para solubilizar fragancias.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "bad",
+      "summary": "Puede contener 1,4-dioxano y dejar residuos petroquímicos en piel inmadura.",
+      "avoid_in": [
+        "bebes_menores_6m",
+        "piel_atopica",
+        "uso_diario"
+      ],
+      "flags": [
+        "derivado_PEG",
+        "potencial_1_4_dioxano"
+      ]
+    }
+  },
+  "PEG-150 Distearate": {
+    "score": 50,
+    "ewg": 5,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Espesante PEG con alto peso molecular para fórmulas cremosas.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "bad",
+      "summary": "Puede contener óxido de etileno y 1,4-dioxano; no apto para piel inmadura.",
+      "avoid_in": [
+        "bebes_menores_3m",
+        "piel_muy_reactiva",
+        "dermatitis_panal"
+      ],
+      "flags": [
+        "derivado_PEG",
+        "potencial_1_4_dioxano"
+      ]
+    }
+  },
+  "Sodium Benzoate": {
+    "score": 80,
+    "ewg": 3,
+    "risk": "low",
+    "eco": true,
+    "description": "Conservante grado alimentario compatible con fórmulas ácidas. Amplio uso en productos baby-safe.",
+    "categories": [
+      "baby_care",
+      "skincare"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede causar leve escozor en piel muy atópica si supera el 0.5%.",
+      "avoid_in": [
+        "piel_atopica",
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "conservante_sintetico"
+      ]
+    }
+  },
+  "Citric Acid": {
+    "score": 90,
+    "ewg": 2,
+    "risk": "low",
+    "eco": true,
+    "description": "Regulador de pH derivado de cítricos. Ayuda a mantener el pH 5.5 en fórmulas tear-free.",
+    "categories": [
+      "baby_care",
+      "skincare"
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Seguro como buffer, pero puede picar si la piel está lesionada.",
+      "avoid_in": [
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "posible_irritante"
+      ]
+    }
+  },
+  "Cocamidopropyl Betaine": {
+    "score": 70,
+    "ewg": 4,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Surfactante anfótero derivado del coco, muy usado en shampoos suaves.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Sensibilizante frecuente en bebés; puede detonar dermatitis del pañal.",
+      "avoid_in": [
+        "piel_atopica",
+        "dermatitis_panal",
+        "bebes_menores_6m"
+      ],
+      "flags": [
+        "tensioactivo_sensibilizante"
+      ]
+    }
+  },
+  "Sodium Laureth Sulfate": {
+    "score": 45,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Tensioactivo aniónico de alta espuma derivado del SLS.",
+    "categories": [
+      "shampoo"
+    ],
+    "aliases": [
+      "SLES",
+      "Sodium Myreth Sulfate"
+    ],
+    "baby": {
+      "risk": "bad",
+      "summary": "Reseca y puede contener 1,4-dioxano; no apto para bebés ni uso diario.",
+      "avoid_in": [
+        "todos_los_bebes"
+      ],
+      "flags": [
+        "tensioactivo_fuerte",
+        "potencial_1_4_dioxano"
+      ]
+    }
+  },
+  "Disodium Laureth Sulfosuccinate": {
+    "score": 60,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Surfactante sulfosuccinato suave comparado con SLS, pero puede resecar.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede irritar piel con dermatitis o eccema cuando se usa diario.",
+      "avoid_in": [
+        "piel_atopica",
+        "dermatitis_panal"
+      ],
+      "flags": [
+        "tensioactivo_anionico"
+      ]
+    }
+  },
+  "Sodium Lauroyl Sarcosinate": {
+    "score": 65,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Surfactante derivado de sarcosina con espuma cremosa.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede alterar barrera lipídica en bebés con piel hiperreactiva.",
+      "avoid_in": [
+        "piel_muy_reactiva",
+        "bebes_menores_3m"
+      ],
+      "flags": [
+        "tensioactivo_anionico"
+      ]
+    }
+  },
+  "Sodium Lauroyl Glycinate": {
+    "score": 65,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": true,
+    "description": "Tensioactivo derivado de aminoácidos, usado por su espuma sedosa.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede picar ojos y causar enrojecimiento si hay dermatitis.",
+      "avoid_in": [
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "tensioactivo_anionico"
+      ]
+    }
+  },
+  "Sodium Methyl Cocoyl Taurate": {
+    "score": 70,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Taurato suave derivado de coco con buena espuma.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Más suave que sulfatos, pero puede resecar si hay agua muy dura.",
+      "avoid_in": [
+        "agua_muy_dura"
+      ],
+      "flags": [
+        "tensioactivo_suave"
+      ]
+    }
+  },
+  "Sodium Cocoyl Isethionate": {
+    "score": 80,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Surfactante sólido muy suave derivado del coco.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Seguro para bebés, pero puede ser demasiado oclusivo si no se aclara bien.",
+      "avoid_in": [
+        "piel_muy_grasa"
+      ],
+      "flags": [
+        "tensioactivo_suave"
+      ]
+    }
+  },
+  "Potassium Sorbate": {
+    "baby": {
+      "risk": "caution",
+      "summary": "Conservante aceptado pero puede causar enrojecimiento en piel atópica.",
+      "avoid_in": [
+        "piel_atopica",
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "conservante_sintetico"
+      ]
+    }
+  },
+  "Polysorbate 20": {
+    "score": 60,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Solubilizante derivado del sorbitol para mezclar aceites esenciales.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "No aporta beneficios a la piel del bebé y puede arrastrar lípidos protectores.",
+      "avoid_in": [
+        "piel_muy_seca",
+        "piel_atopica"
+      ],
+      "flags": [
+        "solubilizante"
+      ]
+    }
+  },
+  "Benzoic Acid": {
+    "score": 65,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Ácido orgánico utilizado como conservante y regulador de pH.",
+    "categories": [
+      "baby_care"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede causar enrojecimiento y picor en pieles hipersensibles.",
+      "avoid_in": [
+        "piel_muy_reactiva"
+      ],
+      "flags": [
+        "conservante"
+      ]
+    }
+  },
+  "PEG-120 Methyl Glucose Dioleate": {
+    "score": 55,
+    "ewg": 3,
+    "risk": "moderate",
+    "eco": false,
+    "description": "Emulsionante y espesante derivado de glucosa + PEG.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "caution",
+      "summary": "Puede abrir demasiado la barrera y aumentar penetración de irritantes.",
+      "avoid_in": [
+        "piel_atopica",
+        "bebes_menores_6m"
+      ],
+      "flags": [
+        "derivado_PEG"
+      ]
+    }
+  },
+  "Sodium Lauroamphoacetate": {
+    "score": 75,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "Anfótero suave que aporta espuma cremosa.",
+    "categories": [
+      "baby_care",
+      "shampoo"
+    ],
+    "baby": {
+      "risk": "ok",
+      "summary": "Generalmente suave, pero puede resecar si se combina con sulfatos.",
+      "avoid_in": [
+        "formulas_con_sulfatos"
+      ],
+      "flags": [
+        "tensioactivo_suave"
+      ]
+    }
   }
 }
