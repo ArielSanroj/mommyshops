@@ -9,7 +9,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://malaysia-organoleptic-nonhistrionically.ngrok-free.dev/$1"
+      "destination": "https://mommyshops.ngrok.app/$1"
     },
     {
       "source": "/",
