@@ -6,10 +6,7 @@
     "eco": true,
     "description": "Agua purificada. Base segura, biodegradable y sin riesgo toxicológico.",
     "categories": [
-      "all",
-      "baby_care",
-      "skincare",
-      "solvent"
+      "all"
     ],
     "aliases": [
       "Water",
@@ -31,41 +28,24 @@
     "ewg": 2,
     "risk": "low",
     "eco": true,
-    "description": "Alcohol graso emoliente y acondicionador. A pesar del nombre, NO reseca; ayuda a suavizar y estabilizar fórmulas.",
+    "description": "Alcohol graso emulsionante y acondicionador",
     "categories": [
-      "baby_care",
-      "emollient",
-      "emulsifier",
       "hair_conditioner",
       "skincare"
     ],
     "aliases": [
       "Cetearyl Alcohol (and) Ceteareth-20"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Ceteareth-20": {
     "score": 85,
     "ewg": 2,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 85/100, EWG 2/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Emulsionante no iónico común en acondicionadores",
     "categories": [
-      "baby_care",
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "PEG-100 Stearate": {
     "score": 85,
@@ -76,13 +56,7 @@
     "categories": [
       "hair_conditioner",
       "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Decyl Glucoside": {
     "score": 92,
@@ -92,9 +66,7 @@
     "description": "Surfactante no iónico derivado de glucosa y coco. Limpia sin resecar y es biodegradable.",
     "categories": [
       "baby_care",
-      "cleanser",
-      "shampoo",
-      "surfactant"
+      "shampoo"
     ],
     "aliases": [
       "Decil Glucosido",
@@ -116,32 +88,18 @@
     "eco": false,
     "description": "Acondicionador catiónico eficaz, posible irritación",
     "categories": [
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Behentrimonium Chloride": {
     "score": 75,
     "ewg": 3,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 75/100, EWG 3/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Acondicionador catiónico derivado de colza",
     "categories": [
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Behentrimonium Methosulfate": {
     "score": 90,
@@ -150,22 +108,12 @@
     "eco": true,
     "description": "BTMS: acondicionador catiónico suave y altamente compatible",
     "categories": [
-      "baby_care",
-      "cleanser",
-      "hair_conditioner",
-      "skincare",
-      "surfactant"
+      "hair_conditioner"
     ],
     "aliases": [
       "BTMS",
       "Behentrimonium Methosulfate (and) Cetearyl Alcohol"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Polyquaternium-10": {
     "score": 85,
@@ -174,15 +122,8 @@
     "eco": false,
     "description": "Polímero catiónico derivado de celulosa, acondicionador muy suave. Usado en fórmulas para bebés y piel sensible.",
     "categories": [
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Guar Hydroxypropyltrimonium Chloride": {
     "score": 90,
@@ -191,16 +132,8 @@
     "eco": true,
     "description": "Derivado de guar catiónico, alternativa vegetal suave",
     "categories": [
-      "baby_care",
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Dimethicone": {
     "score": 60,
@@ -210,15 +143,8 @@
     "description": "Silicona no volátil, aporta desliz pero puede acumularse",
     "categories": [
       "hair_conditioner",
-      "skincare",
       "styling"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Amodimethicone": {
     "score": 65,
@@ -228,15 +154,8 @@
     "description": "Silicona funcional con depósito selectivo, menos residuo",
     "categories": [
       "hair_conditioner",
-      "skincare",
       "styling"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Cyclomethicone": {
     "score": 60,
@@ -246,69 +165,40 @@
     "description": "Siliconas cíclicas volátiles, liberan residuo rápidamente",
     "categories": [
       "hair_conditioner",
-      "skincare",
       "styling"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Cyclopentasiloxane": {
     "score": 55,
     "ewg": 6,
     "risk": "moderate",
     "eco": false,
-    "description": "Ingrediente cosmético generalmente seguro pero puede causar reacciones. Score 55/100, EWG 6/10. Consultar lista INCI para detalles.",
+    "description": "Silicona volátil de alto desliz",
     "categories": [
       "hair_conditioner",
-      "skincare",
       "styling"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Trideceth-12": {
     "score": 80,
     "ewg": 3,
     "risk": "low",
     "eco": false,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 80/100, EWG 3/10. Consultar lista INCI para detalles.",
+    "description": "Surfactante/dispersante usado con siliconas",
     "categories": [
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Hydroxyethylcellulose": {
     "score": 90,
     "ewg": 1,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 90/100, EWG 1/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Polímero celulósico espesante y estabilizante",
     "categories": [
-      "baby_care",
       "hair_conditioner",
-      "skincare",
       "styling"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Panthenol": {
     "score": 90,
@@ -317,19 +207,9 @@
     "eco": true,
     "description": "Provitamina B5, retiene hidratación y mejora elasticidad",
     "categories": [
-      "baby_care",
       "hair_conditioner",
-      "humectant",
       "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Provitamina B5 que calma y repara la barrera cutánea del bebé.",
-      "avoid_in": [],
-      "flags": [
-        "hidratante"
-      ]
-    }
+    ]
   },
   "Hydrolyzed Wheat Protein": {
     "score": 85,
@@ -338,34 +218,18 @@
     "eco": true,
     "description": "Proteína hidrolizada que fortalece la fibra capilar",
     "categories": [
-      "baby_care",
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Hydrolyzed Soy Protein": {
     "score": 85,
     "ewg": 2,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 85/100, EWG 2/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Proteína vegetal reparadora y acondicionadora",
     "categories": [
-      "baby_care",
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Hydrolyzed Corn Protein": {
     "score": 80,
@@ -374,35 +238,19 @@
     "eco": true,
     "description": "Proteína hidrolizada de maíz, aporta acondicionamiento",
     "categories": [
-      "baby_care",
-      "hair_conditioner",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "hair_conditioner"
+    ]
   },
   "Hydrolyzed Keratin": {
     "score": 80,
     "ewg": 3,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 80/100, EWG 3/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Proteína de queratina para fortalecer el cabello",
     "categories": [
-      "baby_care",
       "hair_conditioner",
-      "skincare",
       "treatment"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Sodium Lauryl Sulfate": {
     "score": 40,
@@ -411,11 +259,9 @@
     "eco": false,
     "description": "Surfactante aniónico económico con alto potencial irritante; se asocia con sequedad, sensibilización cutánea y daño a la barrera de la piel. Puede causar irritación ocular y dermatitis de contacto.",
     "categories": [
-      "cleanser",
       "hair_conditioner",
       "shampoo",
-      "skincare",
-      "surfactant"
+      "skincare"
     ],
     "aliases": [
       "SLS",
@@ -426,19 +272,7 @@
       "Coco-glucósido",
       "Decyl glucósido",
       "Lauryl glucósido"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [
-        "bebes_menores_6m",
-        "piel_atopica",
-        "dermatitis_panal"
-      ],
-      "flags": [
-        "tensioactivo_fuerte"
-      ]
-    }
+    ]
   },
   "Phenoxyethanol": {
     "score": 45,
@@ -448,7 +282,6 @@
     "description": "Conservante sintético de amplio espectro controvertido. Puede causar sensibilización y dermatitis en personas sensibles. En la UE está restringido al 1% en productos cosméticos.",
     "categories": [
       "hair_conditioner",
-      "preservative",
       "skincare"
     ],
     "substitutes": [
@@ -477,7 +310,6 @@
     "description": "Grupo de conservantes sintéticos (methylparaben, propylparaben, butylparaben, etc.) controvertidos por su potencial como disruptores endocrinos. Aunque la evidencia no es concluyente, muchos consumidores prefieren evitarlos.",
     "categories": [
       "hair_conditioner",
-      "preservative",
       "skincare"
     ],
     "aliases": [
@@ -493,17 +325,7 @@
       "Leucidal",
       "Radish Root Ferment",
       "Ácido sórbico"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "No recomendado para piel de bebés; buscar alternativas más seguras.",
-      "avoid_in": [
-        "bebes_menores_3m"
-      ],
-      "flags": [
-        "conservante_controvertido"
-      ]
-    }
+    ]
   },
   "Ethylhexylglycerin": {
     "score": 80,
@@ -512,81 +334,45 @@
     "eco": true,
     "description": "Potenciador conservante con bajo perfil de irritación",
     "categories": [
-      "baby_care",
       "hair_conditioner",
-      "humectant",
       "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": [
-        "hidratante"
-      ]
-    }
+    ]
   },
   "Disodium EDTA": {
     "score": 75,
     "ewg": 3,
     "risk": "low",
     "eco": false,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 75/100, EWG 3/10. Consultar lista INCI para detalles.",
+    "description": "Agente quelante que estabiliza la fórmula",
     "categories": [
       "hair_conditioner",
       "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Sodium Citrate": {
     "score": 85,
     "ewg": 2,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 85/100, EWG 2/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Regulador de pH y quelante suave",
     "categories": [
-      "baby_care",
       "hair_conditioner",
       "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Parfum": {
     "score": 50,
     "ewg": 8,
     "risk": "high",
     "eco": false,
-    "description": "Ingrediente cosmético usar con precaución o evitar. Score 50/100, EWG 8/10. Consultar lista INCI para detalles.",
+    "description": "Fragancia genérica que puede contener alérgenos",
     "categories": [
-      "fragrance",
       "hair_conditioner",
       "skincare"
     ],
     "aliases": [
       "Fragrance"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [
-        "bebes_menores_6m",
-        "piel_atopica",
-        "fragrance_free"
-      ],
-      "flags": [
-        "fragancia_sintetica"
-      ]
-    }
+    ]
   },
   "Fragrance-Free": {
     "score": 95,
@@ -595,23 +381,9 @@
     "eco": true,
     "description": "Versión sin fragancia para minimizar sensibilidades",
     "categories": [
-      "baby_care",
-      "fragrance",
       "hair_conditioner",
       "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [
-        "bebes_menores_6m",
-        "piel_atopica",
-        "fragrance_free"
-      ],
-      "flags": [
-        "fragancia_sintetica"
-      ]
-    }
+    ]
   },
   "Glycerin": {
     "score": 90,
@@ -619,19 +391,7 @@
     "risk": "low",
     "eco": true,
     "description": "El glycerin es un humectante natural que ayuda a mantener la piel hidratada y suave. Es seguro para la piel grasa, rizada y sensibles. Sin embargo, es importante utilizarlo en concentraciones moderadas ya que puede causar acné en niveles elevados.",
-    "categories": [
-      "baby_care",
-      "humectant",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Humectante natural que mantiene la piel hidratada y suave.",
-      "avoid_in": [],
-      "flags": [
-        "hidratante"
-      ]
-    }
+    "categories": []
   },
   "Aqua/Water/Eau": {
     "score": 100,
@@ -639,17 +399,7 @@
     "risk": "none",
     "eco": true,
     "description": "El agua es un ingrediente natural y seguro, no tiene efectos adversos en la salud humana.",
-    "categories": [
-      "baby_care",
-      "skincare",
-      "solvent"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Base segura para cualquier fórmula tear-free.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Helianthus Annuus Seed Oil": {
     "score": 95,
@@ -657,52 +407,23 @@
     "risk": "low",
     "eco": true,
     "description": "El aceite de semilla de girasol es un extracto natural que puede ayudar a hidratar y proteger la piel. No tiene efectos adversos conocidos.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Cetyl Ricinoleate": {
     "score": 80,
     "ewg": 4,
-    "risk": "low",
-    "eco": false,
-    "description": "El cetyl ricinoleato es un emoliente que puede causar alergias y reacciones cutáneas en algunas personas. Se recomienda usar con moderación.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
-  },
-  "2-Hexanediol": {
-    "score": 55,
-    "ewg": 6,
     "risk": "moderate",
     "eco": false,
+    "description": "El cetyl ricinoleato es un emoliente que puede causar alergias y reacciones cutáneas en algunas personas. Se recomienda usar con moderación.",
+    "categories": []
+  },
+  "2-Hexanediol": {
+    "score": 70,
+    "ewg": 6,
+    "risk": "high",
+    "eco": false,
     "description": "El 2-hexanediol es un químico sintético que puede causar problemas respiratorios y dermatológicos. Se recomienda evitar su uso.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Avena sativa root extract": {
     "score": 95,
@@ -710,20 +431,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de raíz de avena es conocido por sus propiedades antiinflamatorias y antioxidantes. Puede ser beneficioso para la piel grasa, ya que ayuda a reducir la hinchazón y el estrés oxidativo.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Camellia sinensis leaf extract": {
     "score": 90,
@@ -731,20 +439,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de hoja de té verde es riquísimo en antioxidantes y puede ser beneficioso para la piel grasa, ya que ayuda a reducir el estrés oxidativo y proteger la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Ginkgo biloba leaf extract": {
     "score": 85,
@@ -752,39 +447,15 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de hoja de ginkgo biloba puede ser beneficioso para la piel equilibrada, ya que ayuda a mejorar la circulación sanguínea y reducir el estrés oxidativo.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Guazuma ulmifolia leaf extract": {
     "score": 70,
     "ewg": 4,
-    "risk": "low",
+    "risk": "high",
     "eco": false,
     "description": "El extracto de hoja de Guazuma ulmifolia no tiene suficiente evidencia científica para apoyar sus beneficios en la piel. Puede ser problemático para personas con sensibilidad.",
-    "categories": [
-      "emollient",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Linum usitatissimum seed extract": {
     "score": 95,
@@ -792,20 +463,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de semilla de lino es conocido por sus propiedades antiinflamatorias y antioxidantes. Puede ser beneficioso para la piel grasa, ya que ayuda a reducir el estrés oxidativo y proteger la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Rosmarinus officinalis flower/leaf/stem extract": {
     "score": 90,
@@ -813,20 +471,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de flor, hoja y tallo de romero puede ser beneficioso para la piel equilibrada, ya que ayuda a reducir el estrés oxidativo y proteger la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Serenoa repens fruit extract": {
     "score": 80,
@@ -834,20 +479,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de fruto de Serenoa repens puede ser beneficioso para la piel grasa, ya que ayuda a reducir el estrés oxidativo y proteger la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Sucuribuba bark extract": {
     "score": 60,
@@ -855,16 +487,7 @@
     "risk": "high",
     "eco": false,
     "description": "El extracto de corteza de Sucuribuba no tiene suficiente evidencia científica para apoyar sus beneficios en la piel. Puede ser problemático para personas con sensibilidad.",
-    "categories": [
-      "emollient",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "No recomendado para piel de bebés; buscar alternativas más seguras.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Tropaeolum majus flower/leaf/stem extract": {
     "score": 85,
@@ -872,20 +495,7 @@
     "risk": "low",
     "eco": true,
     "description": "El extracto de flor, hoja y tallo de Tropaeolum majus puede ser beneficioso para la piel equilibrada, ya que ayuda a reducir el estrés oxidativo y proteger la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Cetyl alcohol": {
     "score": 80,
@@ -893,21 +503,7 @@
     "risk": "low",
     "eco": true,
     "description": "El cetyl alcohol es un emoliente natural que ayuda a hidratar y suavizar la piel. Aunque puede causar alergias en personas sensibles, su enfoque en la hidratación lo convierte en una buena opción para pieles grasa.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "emulsifier",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    },
-    "aliases": [
-      "Cetyl Alcohol"
-    ]
+    "categories": []
   },
   "Propylene glycol": {
     "score": 70,
@@ -915,15 +511,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "El propilenglicol es un humectante común que puede causar problemas de alergia y contacto en piel grasa. Sin embargo, su capacidad para absorber humedad lo hace adecuado para pieles con frizz.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Stearyl alcohol": {
     "score": 85,
@@ -931,93 +519,40 @@
     "risk": "low",
     "eco": true,
     "description": "El stearil alcohol es un emoliente natural que ayuda a hidratar y proteger la piel. Es una excelente opción para pieles grasa y rizadas.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "emulsifier",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    },
-    "aliases": [
-      "Stearyl Alcohol"
-    ]
+    "categories": []
   },
   "Methylparaben": {
-    "score": 60,
-    "ewg": 4,
-    "risk": "moderate",
+    "score": 40,
+    "ewg": 8,
+    "risk": "high",
     "eco": false,
     "description": "El metilparabeno es un conservador común que puede causar problemas de alergia y sensibilidad en la piel. Es importante evitar su uso en rutinas limpia.",
-    "categories": [
-      "preservative",
-      "skincare"
-    ],
+    "categories": [],
     "aliases": [
       "Methyl paraben"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [
-        "bebes_menores_3m"
-      ],
-      "flags": [
-        "conservante_controvertido"
-      ]
-    }
+    ]
   },
   "Propylparaben": {
-    "score": 60,
-    "ewg": 4,
-    "risk": "moderate",
+    "score": 40,
+    "ewg": 8,
+    "risk": "high",
     "eco": false,
     "description": "El propilparabeno es un conservador común que puede causar problemas de alergia y sensibilidad en la piel. Es importante evitar su uso en rutinas limpia.",
-    "categories": [
-      "preservative",
-      "skincare"
-    ],
+    "categories": [],
     "aliases": [
       "Propyl paraben"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [
-        "bebes_menores_3m"
-      ],
-      "flags": [
-        "conservante_controvertido"
-      ]
-    }
+    ]
   },
   "Butylparaben": {
-    "score": 60,
-    "ewg": 6,
-    "risk": "moderate",
+    "score": 40,
+    "ewg": 8,
+    "risk": "high",
     "eco": false,
     "description": "El butilparabeno es un conservador común que puede causar problemas de alergia y sensibilidad en la piel. Es importante evitar su uso en rutinas limpia.",
-    "categories": [
-      "preservative",
-      "skincare"
-    ],
+    "categories": [],
     "aliases": [
       "Butyl paraben"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [
-        "bebes_menores_3m"
-      ],
-      "flags": [
-        "conservante_controvertido"
-      ]
-    }
+    ]
   },
   "Ethylparaben": {
     "score": 50,
@@ -1025,20 +560,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "El etilparabeno es similar al metilparabeno, puede causar reacciones alérgicas, irritación cutánea y problemas respiratorios. El EWG clasifica como cancerígeno.",
-    "categories": [
-      "preservative",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "No recomendado para piel de bebés; buscar alternativas más seguras.",
-      "avoid_in": [
-        "bebes_menores_3m"
-      ],
-      "flags": [
-        "conservante_controvertido"
-      ]
-    }
+    "categories": []
   },
   "Ácido hialurónico": {
     "score": 90,
@@ -1046,33 +568,15 @@
     "risk": "low",
     "eco": true,
     "description": "El ácido hialurónico es un polímero natural que se encuentra en las membranas mucosas y epitélios de los seres vivos. Es conocido por sus propiedades hidratantes y emolientes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Revinage": {
     "score": 80,
     "ewg": 2,
-    "risk": "low",
+    "risk": "moderate",
     "eco": true,
     "description": "El revinage es un aceite vegetal derivado del coco que se utiliza como emoliente y hidratante. Sin embargo, puede contener pequeñas cantidades de químicos residuales.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Manteca de Karité": {
     "score": 95,
@@ -1080,16 +584,7 @@
     "risk": "low",
     "eco": true,
     "description": "La manteca de karité (shea butter) es un tipo de aceite vegetal que se extrae del fruto del árbol de karité. Es rica en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Mantequilla de Mango": {
     "score": 85,
@@ -1097,16 +592,7 @@
     "risk": "low",
     "eco": true,
     "description": "La mantequilla de mango es un tipo de aceite vegetal que se extrae del fruto del mango. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Manteca de Cacao": {
     "score": 90,
@@ -1114,16 +600,7 @@
     "risk": "low",
     "eco": true,
     "description": "La manteca de cacao es un tipo de aceite vegetal que se extrae del fruto del cacao. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Aceite de jojoba": {
     "score": 95,
@@ -1131,16 +608,7 @@
     "risk": "low",
     "eco": true,
     "description": "El aceite de jojoba es un tipo de aceite vegetal que se extrae del fruto del árbol de jojoba. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Aceite de Oliva": {
     "score": 90,
@@ -1148,33 +616,15 @@
     "risk": "low",
     "eco": true,
     "description": "El aceite de oliva (olive oil) es rico en ácidos grasos insaturados y vitamina E. Es un ingrediente comúnmente utilizado en productos cosméticos.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Hemp": {
     "score": 85,
     "ewg": 2,
-    "risk": "low",
+    "risk": "moderate",
     "eco": true,
     "description": "La fibra de hemp es un ingrediente natural que se utiliza en productos cosméticos. Sin embargo, puede contener pequeñas cantidades de químicos residuales.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Agua de rosas": {
     "score": 95,
@@ -1182,16 +632,7 @@
     "risk": "low",
     "eco": true,
     "description": "La agua de rosas es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Caléndula": {
     "score": 90,
@@ -1199,19 +640,7 @@
     "risk": "low",
     "eco": true,
     "description": "La caléndula es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    },
-    "aliases": [
-      "Calendula"
-    ]
+    "categories": []
   },
   "Aloe Vera": {
     "score": 95,
@@ -1219,19 +648,7 @@
     "risk": "low",
     "eco": true,
     "description": "La aloe vera es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "humectant",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "calmante"
-      ]
-    }
+    "categories": []
   },
   "Árnica": {
     "score": 90,
@@ -1239,33 +656,15 @@
     "risk": "low",
     "eco": true,
     "description": "La árnica es un ingrediente natural que se utiliza en productos cosméticos. Es rico en nutrientes y tiene propiedades hidratantes.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Titanium Dioxide": {
-    "score": 70,
+    "score": 80,
     "ewg": 6,
     "risk": "moderate",
     "eco": false,
     "description": "Es un pigmento blanco que proporciona iluminación en productos cosméticos. Aunque no es tóxico, puede generar preocupaciones sobre la seguridad a largo plazo.",
-    "categories": [
-      "skincare",
-      "sunscreen"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Hyaluronic Acid": {
     "score": 95,
@@ -1273,18 +672,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un polímero natural que retiene humedad en la piel. Es biocompatible y no presenta riesgos significativos.",
-    "categories": [
-      "active",
-      "baby_care",
-      "humectant",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Silica": {
     "score": 85,
@@ -1292,16 +680,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "Es un mineral natural que proporciona textura y maticidad. Puede generar preocupaciones sobre la exposición a partículas finas.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Olive Oil": {
     "score": 98,
@@ -1309,20 +688,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Shea Butter": {
     "score": 95,
@@ -1330,18 +696,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Mango Butter": {
     "score": 90,
@@ -1349,18 +704,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Cocoa Butter": {
     "score": 95,
@@ -1368,18 +712,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en flavonoides y ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Antioxidants and Anti-Aging Ingredients": {
     "score": 92,
@@ -1387,16 +720,7 @@
     "risk": "low",
     "eco": true,
     "description": "Incluyen extractos de plantas como resveratrol, quercetin y catequinas que presentan beneficios anti-envejecimiento.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Jojoba Oil": {
     "score": 98,
@@ -1404,20 +728,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Hemp Seed Oil": {
     "score": 98,
@@ -1425,20 +736,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un aceite natural rico en ácidos grasos insaturados. Es biocompatible y presenta beneficios para la piel.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Calendula Extract": {
     "score": 95,
@@ -1446,21 +744,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un extracto natural que presenta beneficios para la piel y puede ser utilizado como agente anti-inflamatorio.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural",
-        "calmante"
-      ]
-    }
+    "categories": []
   },
   "Arnica Extract": {
     "score": 95,
@@ -1468,20 +752,7 @@
     "risk": "low",
     "eco": true,
     "description": "Es un extracto natural que presenta beneficios para la piel y puede ser utilizado como agente anti-inflamatorio.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Extracto natural suave y seguro para piel sensible de bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Olive Squalane": {
     "score": 100,
@@ -1489,16 +760,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "Es un emoliente natural que hidrata y protege la piel. No presenta riesgos para la salud o el medio ambiente.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Vitamin E": {
     "score": 100,
@@ -1506,17 +768,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "Es un antioxidant natural que protege la piel de daños oxidativos. No presenta riesgos para la salud o el medio ambiente.",
-    "categories": [
-      "antioxidant",
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Rose Water": {
     "score": 100,
@@ -1524,17 +776,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "Es un líquido natural que hidrata y calma la piel. No presenta riesgos para la salud o el medio ambiente.",
-    "categories": [
-      "baby_care",
-      "skincare",
-      "solvent"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Aloe Vera Gel": {
     "score": 100,
@@ -1542,19 +784,7 @@
     "risk": "moderate",
     "eco": true,
     "description": "Es un gel natural que hidrata y protege la piel. No presenta riesgos para la salud o el medio ambiente.",
-    "categories": [
-      "baby_care",
-      "humectant",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": [
-        "calmante"
-      ]
-    }
+    "categories": []
   },
   "Acidic Hyaluronic": {
     "score": 95,
@@ -1562,18 +792,7 @@
     "risk": "low",
     "eco": true,
     "description": "El ácido hialurónico es un polímero natural que retiene el agua y ayuda a hidratar la piel. Es seguro y no tiene efectos secundarios significativos. Ayuda a regular el pH de la piel y puede ser beneficiosa para las personas con acné.",
-    "categories": [
-      "active",
-      "baby_care",
-      "humectant",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Olus Oil": {
     "score": 90,
@@ -1581,20 +800,7 @@
     "risk": "low",
     "eco": true,
     "description": "El aceite de oliva (Olus Oil) es rico en antioxidantes y ácidos grasos insaturados, lo que lo hace beneficioso para la piel y el cabello. Es seguro y no tiene efectos secundarios significativos.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": [
-        "origen_natural"
-      ]
-    }
+    "categories": []
   },
   "Karité Butter": {
     "score": 85,
@@ -1602,18 +808,7 @@
     "risk": "low",
     "eco": true,
     "description": "La mantequilla de karité es rica en ácidos grasos insaturados y vitamina E, lo que la hace beneficia para la piel. Sin embargo, puede causar alergia en algunas personas.",
-    "categories": [
-      "baby_care",
-      "emollient",
-      "natural",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Hemp Seed": {
     "score": 95,
@@ -1621,16 +816,15 @@
     "risk": "low",
     "eco": true,
     "description": "La semilla de cannabis (hemp seed) es rica en ácidos grasos insaturados y proteínas, lo que la hace beneficia para la piel y el cabello. Es seguro y no tiene efectos secundarios significativos.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
+  },
+  "Calendula": {
+    "score": 90,
+    "ewg": 1,
+    "risk": "low",
+    "eco": true,
+    "description": "La calendula es un extracto natural que puede ser beneficiosa para la piel. Sin embargo, su composición variable puede llevar a problemas de alergia y reacciones adversas en algunas personas.",
+    "categories": []
   },
   "Arnica": {
     "score": 80,
@@ -1638,15 +832,7 @@
     "risk": "low",
     "eco": false,
     "description": "El arnica es un extracto natural que puede ser beneficiosa para la piel. Sin embargo, su composición variable puede llevar a problemas de alergia y reacciones adversas en algunas personas.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Sodium Lauryl Sulfate (SLS)": {
     "score": 40,
@@ -1654,39 +840,15 @@
     "risk": "high",
     "eco": false,
     "description": "La SLS puede causar irritación cutánea y alergias. También puede ser tóxico para peces.",
-    "categories": [
-      "cleanser",
-      "skincare",
-      "surfactant"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "No recomendado para piel de bebés; buscar alternativas más seguras.",
-      "avoid_in": [
-        "bebes_menores_6m",
-        "piel_atopica",
-        "dermatitis_panal"
-      ],
-      "flags": [
-        "tensioactivo_fuerte"
-      ]
-    }
+    "categories": []
   },
   "Tetrasodium EDTA": {
-    "score": 75,
-    "ewg": 3,
-    "risk": "low",
+    "score": 20,
+    "ewg": 8,
+    "risk": "high",
     "eco": false,
     "description": "El Tetrasodium EDTA es un potente agente anti-inflamatorio, pero puede ser tóxico para los peces y causar problemas renales en humanos.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Alto riesgo (EWG True/10); evitar en productos para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Synthetic Fragrance": {
     "score": 30,
@@ -1694,22 +856,7 @@
     "risk": "high",
     "eco": false,
     "description": "Los fragancias sintéticas pueden causar alergias y irritación cutánea. También pueden ser tóxicos para los animales.",
-    "categories": [
-      "fragrance",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "Mezcla química no revelada; principal causa de alergias y brotes en bebés.",
-      "avoid_in": [
-        "bebes_menores_6m",
-        "piel_atopica",
-        "fragrance_free"
-      ],
-      "flags": [
-        "fragancia_sintetica"
-      ]
-    }
+    "categories": []
   },
   "Butyl Methoxydibenzoylmethane": {
     "score": 80,
@@ -1717,15 +864,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "El Butyl Methoxydibenzoylmethane es un compuesto químico que se utiliza como protectante solar. Tiene beneficios en cuanto a la protección contra el daño UV, pero puede tener efectos adversos en la piel y los ojos. Debe ser utilizado con precaución.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Triethanolamine": {
     "score": 70,
@@ -1733,15 +872,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "La Triethanolamine es un humectante químico que se utiliza en productos cosméticos. Puede causar irritación cutánea y alergias, especialmente en individuos con piel sensibilizada.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Tocopherol": {
     "score": 90,
@@ -1749,17 +880,7 @@
     "risk": "low",
     "eco": true,
     "description": "La vitamina E es un potente antioxidante natural que ayuda a proteger la piel de los daños oxidativos. Es segura y bien tolerada.",
-    "categories": [
-      "antioxidant",
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Butylene Glycol": {
     "score": 85,
@@ -1767,10 +888,7 @@
     "risk": "low",
     "eco": true,
     "description": "El Butylene Glycol es un humectante naturalmente derivado del azúcar que ayuda a mantener la hidratación de la piel. Es considerado seguro para uso cutáneo y no tiene efectos adversos notificados.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
+    "categories": [],
     "baby": {
       "risk": "caution",
       "summary": "Humectante petroquímico; puede picar en piel inflamada.",
@@ -1789,16 +907,7 @@
     "risk": "low",
     "eco": true,
     "description": "El Carbomer es un polímero que se utiliza como espesante y emulsificante en productos cosméticos. Es considerado seguro para uso cutáneo y no tiene efectos adversos notificados.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Triethanolamine (TEA)": {
     "score": 60,
@@ -1806,15 +915,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "La TEA es una amina utilizada como emoliente y humectante en productos cosméticos. Sin embargo, se ha relacionado con la sensibilización cutánea y alergia.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "bad",
-      "summary": "No recomendado para piel de bebés; buscar alternativas más seguras.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Diazolidinyl Urea": {
     "score": 70,
@@ -1822,15 +923,7 @@
     "risk": "low",
     "eco": false,
     "description": "El Diazolidinyl Urea es un conservante comúnmente utilizado en productos cosméticos. Aunque no hay evidencia de efectos adversos a corto plazo, algunos estudios sugieren que su uso crónico puede causar problemas de salud reproductiva.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Fragrance": {
     "score": 20,
@@ -1838,10 +931,7 @@
     "risk": "high",
     "eco": false,
     "description": "El aroma o fragrance es un término que puede englobar una amplia variedad de sustancias químicas. Aunque no se sabe exactamente qué sustancias se encuentran en algunos productos de cuidado personal, el término 'fragrance' ha sido asociado con reacciones alérgicas y posibles efectos negativos en la salud humana.",
-    "categories": [
-      "fragrance",
-      "skincare"
-    ],
+    "categories": [],
     "baby": {
       "risk": "bad",
       "summary": "Combinación sintética impredecible; puede irritar piel y vías respiratorias.",
@@ -1861,15 +951,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "El DMDM hidantoína es un conservante común en productos de cuidado personal. Aunque no se ha demostrado que sea tóxico para los humanos, puede ser irritante para la piel y los ojos.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Fragrance (Parfum)": {
     "score": 25,
@@ -1877,10 +959,7 @@
     "risk": "high",
     "eco": false,
     "description": "El fragrance puede contener sustancias químicas no declaradas que pueden ser tóxicas o alérgicas. La exposición crónica a estos químicos puede aumentar el riesgo de problemas respiratorios y dermatológicos.",
-    "categories": [
-      "fragrance",
-      "skincare"
-    ],
+    "categories": [],
     "baby": {
       "risk": "bad",
       "summary": "Mezcla química no revelada; principal causa de alergias y brotes en bebés.",
@@ -1901,15 +980,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "El PVP es un polímero que puede ser irritante y causar reacciones alérgicas. También puede contener residuos de petróleo.",
-    "categories": [
-      "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Ceramides": {
     "score": 90,
@@ -1917,16 +988,7 @@
     "risk": "low",
     "eco": true,
     "description": "Los ceramidas son una clase de lipídicos naturales que ayudan a reparar y renovar la barrera natural del estrato córneo. Mejoran la hidratación, reducen las arrugas y suavizan la piel.",
-    "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Water": {
     "score": 100,
@@ -1934,16 +996,7 @@
     "risk": "moderate",
     "eco": false,
     "description": "Es un líquido inorgánico natural y generalmente seguro para la piel humana, pero puede causar irritación en ciertos individuos.",
-    "categories": [
-      "skincare",
-      "solvent"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+    "categories": []
   },
   "Nube de Avena": {
     "score": 98,
@@ -1952,18 +1005,10 @@
     "eco": true,
     "description": "Blend Mommyshops Bebé Piel Seca. Avena coloidal 5 %, karité fair-trade, leche de almendra, glicerina, decil glucósido, caléndula CO2 y prebióticos que calman eccema, sellan hidratación y fortalecen la barrera en climas secos.",
     "categories": [
-      "baby_care",
-      "microbiome_friendly",
       "mommyshops_bebe",
-      "sin_lagrimas",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
   },
   "Brisa de Té Verde": {
     "score": 97,
@@ -1972,18 +1017,10 @@
     "eco": true,
     "description": "Blend Mommyshops Bebé Piel Húmeda/Grasosa. Té verde orgánico, hamamelis sin alcohol, aloe 99 %, coco-caprylate, coco + lauril glucósido y prebióticos que balancean sebo, evitan dermatitis del pañal y mantienen la piel fresca en climas húmedos.",
     "categories": [
-      "baby_care",
-      "microbiome_friendly",
       "mommyshops_bebe",
-      "sin_lagrimas",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
   },
   "Equilibrio de Caléndula": {
     "score": 96,
@@ -1992,18 +1029,10 @@
     "eco": true,
     "description": "Blend Mommyshops Bebé Piel Normal/Mixta. Caléndula orgánica 3 %, jojoba golden, manzanilla romana, glicerina, decil + coco glucósido y prebióticos que nutren sin exceso, adaptan el balance según edad/estación y mantienen la piel resiliente.",
     "categories": [
-      "baby_care",
-      "microbiome_friendly",
       "mommyshops_bebe",
-      "sin_lagrimas",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "microbiome_friendly",
+      "sin_lagrimas"
+    ]
   },
   "Aqua / Water / Eau": {
     "score": 100,
@@ -2012,23 +1041,14 @@
     "eco": true,
     "description": "Agua purificada, ingrediente base esencial y completamente seguro para productos cosméticos. No tiene efectos adversos conocidos.",
     "categories": [
-      "all",
-      "baby_care",
-      "skincare",
-      "solvent"
+      "all"
     ],
     "aliases": [
       "Aqua",
       "Water",
       "Eau",
       "Aqua/Water/Eau"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Base segura para cualquier fórmula tear-free.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Caprylic/Capric Triglyceride": {
     "score": 85,
@@ -2037,15 +1057,9 @@
     "eco": true,
     "description": "Emoliente ligero derivado del aceite de coco. Proporciona hidratación sin sensación grasa, ideal para pieles sensibles y productos para bebés. Se absorbe rápidamente y no obstruye poros.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Petrolatum": {
     "score": 60,
@@ -2055,13 +1069,7 @@
     "description": "Oclusivo derivado del petróleo que forma una barrera sobre la piel. Puede sentirse pesado y obstruir poros en climas húmedos. Para bebés con dermatitis del pañal, recomendamos alternativas más ligeras como aceites vegetales o ceramidas.",
     "categories": [
       "skincare"
-    ],
-    "baby": {
-      "risk": "caution",
-      "summary": "Revisar tolerancia individual; puede causar reacciones en piel sensible.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Potassium Phosphate": {
     "score": 80,
@@ -2070,16 +1078,8 @@
     "eco": true,
     "description": "Regulador de pH suave que ayuda a mantener el equilibrio ácido-base de la piel. Seguro para uso en productos para bebés cuando se usa en concentraciones apropiadas.",
     "categories": [
-      "all",
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "all"
+    ]
   },
   "Ceramide NP": {
     "score": 90,
@@ -2088,15 +1088,9 @@
     "eco": true,
     "description": "Ceramida tipo NP que refuerza la barrera cutánea natural. Ayuda a retener la humedad y protege la piel de irritantes. Ideal para piel seca o atópica en bebés.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Ceramide AP": {
     "score": 90,
@@ -2105,15 +1099,9 @@
     "eco": true,
     "description": "Ceramida tipo AP que fortalece la barrera cutánea y mejora la hidratación. Contribuye a la reparación de la piel dañada y es beneficiosa para eccema leve.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Ceramide EOP": {
     "score": 90,
@@ -2122,15 +1110,9 @@
     "eco": true,
     "description": "Ceramida tipo EOP que restaura la función de barrera de la piel. Ayuda a prevenir la pérdida de agua transepidérmica y calma la irritación. Recomendada para piel seca/atópica.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Sodium Lauroyl Lactylate": {
     "score": 75,
@@ -2139,9 +1121,9 @@
     "eco": true,
     "description": "Surfactante suave derivado del ácido láctico y ácido láurico. Proporciona limpieza suave sin resecar la piel. Apropiado para productos tear-free para bebés.",
     "categories": [
-      "baby_care",
       "hair_care",
-      "skincare"
+      "skincare",
+      "baby_care"
     ],
     "baby": {
       "risk": "ok",
@@ -2161,15 +1143,9 @@
     "eco": true,
     "description": "Sal sódica del ácido hialurónico, humectante potente que puede retener hasta 1000 veces su peso en agua. Hidrata profundamente sin sensación grasa, ideal para piel seca y deshidratada. Seguro para bebés.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Cholesterol": {
     "score": 85,
@@ -2178,15 +1154,8 @@
     "eco": true,
     "description": "Lípido natural que forma parte de la barrera cutánea. Ayuda a mantener la integridad de la piel y mejora la penetración de otros ingredientes activos. Seguro y beneficioso para la reparación de la barrera.",
     "categories": [
-      "baby_care",
       "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+    ]
   },
   "Dipotassium Phosphate": {
     "score": 80,
@@ -2195,16 +1164,8 @@
     "eco": true,
     "description": "Regulador de pH y agente tampón que ayuda a mantener la estabilidad de la fórmula. Seguro para uso cosmético cuando se utiliza en concentraciones apropiadas.",
     "categories": [
-      "all",
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "ok",
-      "summary": "Seguro en concentraciones normales; monitorear si hay sensibilidad.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "all"
+    ]
   },
   "Phytosphingosine": {
     "score": 90,
@@ -2213,15 +1174,9 @@
     "eco": true,
     "description": "Lípido natural que refuerza la barrera cutánea y tiene propiedades antimicrobianas suaves. Ayuda a mantener el equilibrio del microbioma de la piel. Beneficioso para piel sensible y atópica.",
     "categories": [
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "skincare",
+      "baby_care"
+    ]
   },
   "Xanthan Gum": {
     "score": 90,
@@ -2230,16 +1185,8 @@
     "eco": true,
     "description": "Espesante natural derivado de la fermentación de azúcares. Proporciona textura suave y estabilidad a las fórmulas. Completamente seguro y biodegradable. Ideal para productos clean beauty y para bebés.",
     "categories": [
-      "all",
-      "baby_care",
-      "skincare"
-    ],
-    "baby": {
-      "risk": "good",
-      "summary": "Ingrediente seguro y bien tolerado en fórmulas para bebés.",
-      "avoid_in": [],
-      "flags": []
-    }
+      "all"
+    ]
   },
   "Avena Coloidal": {
     "score": 96,
@@ -2249,8 +1196,7 @@
     "description": "Harina micronizada de avena orgánica que calma inflamación, refuerza la barrera cutánea y retiene humedad en pieles muy sensibles.",
     "categories": [
       "baby_care",
-      "skin_protectant",
-      "skincare"
+      "skin_protectant"
     ],
     "aliases": [
       "Colloidal Oatmeal",
@@ -2275,7 +1221,6 @@
     "description": "Extracto supercrítico de caléndula con alta concentración de faradiol y fitonutrientes reparadores.",
     "categories": [
       "baby_care",
-      "skincare",
       "soothing"
     ],
     "aliases": [
@@ -2300,8 +1245,7 @@
     "description": "Manteca de karité ética, rica en ácidos grasos y vitaminas A/E para sellar hidratación.",
     "categories": [
       "baby_care",
-      "emollient",
-      "skincare"
+      "emollient"
     ],
     "aliases": [
       "Butyrospermum Parkii Butter",
@@ -2327,9 +1271,7 @@
     "description": "Gel de aloe vera estabilizado al 99% con polisacáridos calmantes.",
     "categories": [
       "baby_care",
-      "humectant",
-      "hydration",
-      "skincare"
+      "hydration"
     ],
     "aliases": [
       "Aloe Barbadensis Leaf Juice",
@@ -2353,7 +1295,6 @@
     "description": "Destilado de hamamelis libre de alcohol, con taninos calmantes.",
     "categories": [
       "baby_care",
-      "skincare",
       "soothing"
     ],
     "aliases": [
@@ -2380,8 +1321,7 @@
     "description": "Fibra prebiótica vegetal que nutre el microbioma cutáneo.",
     "categories": [
       "baby_care",
-      "prebiotic",
-      "skincare"
+      "prebiotic"
     ],
     "aliases": [
       "Inulin"
@@ -2404,8 +1344,7 @@
     "description": "Prebiótico derivado del azúcar que equilibra flora y mejora hidratación.",
     "categories": [
       "baby_care",
-      "prebiotic",
-      "skincare"
+      "prebiotic"
     ],
     "aliases": [
       "Alpha-Glucan Oligosaccharide"
@@ -2428,8 +1367,7 @@
     "description": "Aceite de jojoba prensado en frío, rico en ceras líquidas biomiméticas.",
     "categories": [
       "baby_care",
-      "emollient",
-      "skincare"
+      "emollient"
     ],
     "aliases": [
       "Simmondsia Chinensis Seed Oil",
@@ -2453,7 +1391,6 @@
     "description": "Extracto de Anthemis nobilis rico en bisabolol natural para calmar.",
     "categories": [
       "baby_care",
-      "skincare",
       "soothing"
     ],
     "aliases": [
@@ -2528,7 +1465,6 @@
     "description": "Conservante grado alimentario compatible con fórmulas ácidas. Amplio uso en productos baby-safe.",
     "categories": [
       "baby_care",
-      "preservative",
       "skincare"
     ],
     "baby": {
@@ -2550,7 +1486,6 @@
     "eco": true,
     "description": "Regulador de pH derivado de cítricos. Ayuda a mantener el pH 5.5 en fórmulas tear-free.",
     "categories": [
-      "active",
       "baby_care",
       "skincare"
     ],
@@ -2573,9 +1508,7 @@
     "description": "Surfactante anfótero derivado del coco, muy usado en shampoos suaves.",
     "categories": [
       "baby_care",
-      "cleanser",
-      "shampoo",
-      "surfactant"
+      "shampoo"
     ],
     "baby": {
       "risk": "caution",
@@ -2597,9 +1530,7 @@
     "eco": false,
     "description": "Tensioactivo aniónico de alta espuma derivado del SLS. Puede contener trazas de 1,4-dioxano (contaminante cancerígeno).",
     "categories": [
-      "cleanser",
-      "shampoo",
-      "surfactant"
+      "shampoo"
     ],
     "aliases": [
       "SLES",
@@ -2687,7 +1618,7 @@
     "ewg": 1,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 70/100, EWG 1/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Taurato suave derivado de coco con buena espuma.",
     "categories": [
       "baby_care",
       "shampoo"
@@ -2708,7 +1639,7 @@
     "ewg": 1,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 80/100, EWG 1/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Surfactante sólido muy suave derivado del coco.",
     "categories": [
       "baby_care",
       "shampoo"
@@ -2742,9 +1673,8 @@
     "eco": true,
     "description": "Conservante suave derivado del ácido sórbico. Ampliamente usado en alimentos y cosméticos. Seguro en concentraciones normales.",
     "categories": [
-      "baby_care",
       "preservative",
-      "skincare"
+      "baby_care"
     ]
   },
   "Polysorbate 20": {
@@ -2755,7 +1685,6 @@
     "description": "Solubilizante derivado del sorbitol para mezclar aceites esenciales.",
     "categories": [
       "baby_care",
-      "preservative",
       "shampoo"
     ],
     "baby": {
@@ -2777,9 +1706,7 @@
     "eco": true,
     "description": "Ácido orgánico utilizado como conservante y regulador de pH.",
     "categories": [
-      "active",
-      "baby_care",
-      "skincare"
+      "baby_care"
     ],
     "baby": {
       "risk": "caution",
@@ -2819,7 +1746,7 @@
     "ewg": 1,
     "risk": "low",
     "eco": true,
-    "description": "Ingrediente cosmético seguro para uso normal. Score 75/100, EWG 1/10. Eco-friendly y biodegradable. Consultar lista INCI para detalles.",
+    "description": "Anfótero suave que aporta espuma cremosa.",
     "categories": [
       "baby_care",
       "shampoo"
@@ -2843,10 +1770,8 @@
     "description": "Tensioactivo no iónico suave derivado de aceite de coco y glucosa. Biodegradable, genera espuma cremosa y no reseca. Ideal para pieles sensibles.",
     "categories": [
       "baby_care",
-      "body_wash",
-      "cleanser",
       "shampoo",
-      "surfactant"
+      "body_wash"
     ],
     "aliases": [
       "Coco Glucoside",
@@ -2870,8 +1795,8 @@
     "description": "Emulsionante y conservante natural derivado de glicerina y ácido caprílico. Propiedades antimicrobianas suaves. Seguro para piel sensible.",
     "categories": [
       "baby_care",
-      "preservative",
-      "skincare"
+      "skincare",
+      "preservative"
     ],
     "aliases": [
       "Glyceryl Caprylate/Caprate"
@@ -2894,8 +1819,7 @@
     "description": "Colorante natural obtenido por caramelización de azúcares. Usado para dar color marrón/ámbar a productos. Generalmente seguro, aunque puede contener trazas de sulfitos en algunas preparaciones.",
     "categories": [
       "colorant",
-      "natural",
-      "skincare"
+      "natural"
     ],
     "aliases": [
       "Caramel Color",
