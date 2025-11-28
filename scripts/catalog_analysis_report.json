@@ -1,0 +1,132 @@
+{
+  "stats": {
+    "basic": {
+      "total_ingredients": 143,
+      "avg_score": 80.04195804195804,
+      "avg_ewg": 2.3846153846153846,
+      "min_score": 20,
+      "max_score": 100,
+      "min_ewg": 0,
+      "max_ewg": 10,
+      "eco_friendly_count": 101,
+      "eco_friendly_pct": 70.62937062937063,
+      "with_baby_data": 143,
+      "with_baby_data_pct": 100.0
+    }
+  },
+  "issues": [
+    {
+      "ingredient": "Cetyl Ricinoleate",
+      "issue": "high_score_high_ewg",
+      "score": 80,
+      "ewg": 4,
+      "risk": "low",
+      "severity": "medium"
+    },
+    {
+      "ingredient": "Silica",
+      "issue": "high_score_high_ewg",
+      "score": 85,
+      "ewg": 4,
+      "risk": "moderate",
+      "severity": "medium"
+    },
+    {
+      "ingredient": "Silica",
+      "issue": "high_score_high_risk",
+      "score": 85,
+      "ewg": 4,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Olive Squalane",
+      "issue": "high_score_high_risk",
+      "score": 100,
+      "ewg": 0,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Vitamin E",
+      "issue": "high_score_high_risk",
+      "score": 100,
+      "ewg": 0,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Rose Water",
+      "issue": "high_score_high_risk",
+      "score": 100,
+      "ewg": 3,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Aloe Vera Gel",
+      "issue": "high_score_high_risk",
+      "score": 100,
+      "ewg": 0,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Butyl Methoxydibenzoylmethane",
+      "issue": "high_score_high_ewg",
+      "score": 80,
+      "ewg": 6,
+      "risk": "moderate",
+      "severity": "medium"
+    },
+    {
+      "ingredient": "Butyl Methoxydibenzoylmethane",
+      "issue": "high_score_high_risk",
+      "score": 80,
+      "ewg": 6,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Water",
+      "issue": "high_score_high_risk",
+      "score": 100,
+      "ewg": 0,
+      "risk": "moderate",
+      "severity": "high"
+    },
+    {
+      "ingredient": "Parabens",
+      "type": "score_outlier",
+      "value": 35,
+      "z_score": 2.606263647398067,
+      "mean": 80.04195804195804
+    },
+    {
+      "ingredient": "Synthetic Fragrance",
+      "type": "score_outlier",
+      "value": 30,
+      "z_score": 2.895578739447379,
+      "mean": 80.04195804195804
+    },
+    {
+      "ingredient": "Fragrance",
+      "type": "score_outlier",
+      "value": 20,
+      "z_score": 3.4742089235460027,
+      "mean": 80.04195804195804
+    },
+    {
+      "ingredient": "Fragrance (Parfum)",
+      "type": "score_outlier",
+      "value": 25,
+      "z_score": 3.184893831496691,
+      "mean": 80.04195804195804
+    }
+  ],
+  "summary": {
+    "total_ingredients": 143,
+    "total_issues": 14,
+    "high_priority_issues": 7
+  }
+}

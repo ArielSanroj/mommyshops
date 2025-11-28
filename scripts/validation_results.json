@@ -1,0 +1,602 @@
+[
+  {
+    "ingredient": "Cocamidopropyl Betaine",
+    "catalog_data": {
+      "score": 70,
+      "ewg": 4,
+      "risk": "moderate",
+      "eco": true,
+      "description": "Surfactante anfótero derivado del coco, muy usado en shampoos suaves.",
+      "categories": [
+        "baby_care",
+        "shampoo"
+      ],
+      "baby": {
+        "risk": "caution",
+        "summary": "Sensibilizante frecuente en bebés; puede detonar dermatitis del pañal.",
+        "avoid_in": [
+          "piel_atopica",
+          "dermatitis_panal",
+          "bebes_menores_6m"
+        ],
+        "flags": [
+          "tensioactivo_sensibilizante"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 5,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Cocamidopropyl+Betaine"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 20280,
+        "formula": "C19H38N2O3",
+        "molecular_weight": "342.5",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": true,
+        "is_preservative": false,
+        "estimated_risk": "moderate",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:26.110299"
+  },
+  {
+    "ingredient": "Sodium Myreth Sulfate",
+    "catalog_data": {
+      "score": 45,
+      "ewg": 3,
+      "risk": "moderate",
+      "eco": false,
+      "description": "Tensioactivo aniónico de alta espuma derivado del SLS.",
+      "categories": [
+        "shampoo"
+      ],
+      "aliases": [
+        "SLES",
+        "Sodium Myreth Sulfate"
+      ],
+      "baby": {
+        "risk": "bad",
+        "summary": "Reseca y puede contener 1,4-dioxano; no apto para bebés ni uso diario.",
+        "avoid_in": [
+          "todos_los_bebes"
+        ],
+        "flags": [
+          "tensioactivo_fuerte",
+          "potencial_1_4_dioxano"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 3,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Sodium+Myreth+Sulfate"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 23682189,
+        "formula": "C20H41NaO7S",
+        "molecular_weight": "448.6",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": true,
+        "is_preservative": false,
+        "estimated_risk": "high",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "needs_review",
+      "discrepancies": [
+        {
+          "field": "risk_level",
+          "catalog": "moderate",
+          "external": "high"
+        }
+      ],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:29.178276"
+  },
+  {
+    "ingredient": "Coco-Glucoside",
+    "catalog_data": {
+      "score": 88,
+      "ewg": 2,
+      "risk": "low",
+      "eco": true,
+      "description": "Tensioactivo no iónico suave derivado de aceite de coco y glucosa. Biodegradable, genera espuma cremosa y no reseca. Ideal para pieles sensibles.",
+      "categories": [
+        "baby_care",
+        "shampoo",
+        "body_wash"
+      ],
+      "aliases": [
+        "Coco Glucoside",
+        "Cocoglucoside"
+      ],
+      "baby": {
+        "risk": "good",
+        "summary": "Surfactante ultra-suave derivado de coco, compatible con piel sensible y fórmulas tear-free.",
+        "avoid_in": [],
+        "flags": [
+          "tensioactivo_suave",
+          "biodegradable"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 2,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Coco-Glucoside"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 369373,
+        "formula": "C18H36O6",
+        "molecular_weight": "348.5",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:32.303733"
+  },
+  {
+    "ingredient": "Glyceryl Caprylate",
+    "catalog_data": {
+      "score": 82,
+      "ewg": 2,
+      "risk": "low",
+      "eco": true,
+      "description": "Emulsionante y conservante natural derivado de glicerina y ácido caprílico. Propiedades antimicrobianas suaves. Seguro para piel sensible.",
+      "categories": [
+        "baby_care",
+        "skincare",
+        "preservative"
+      ],
+      "aliases": [
+        "Glyceryl Caprylate/Caprate"
+      ],
+      "baby": {
+        "risk": "good",
+        "summary": "Conservante suave de origen natural que protege fórmulas sin irritar.",
+        "avoid_in": [],
+        "flags": [
+          "conservante_suave",
+          "antimicrobiano_natural"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 1,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Glyceryl+Caprylate"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 3033877,
+        "formula": "C11H22O4",
+        "molecular_weight": "218.29",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:35.060240"
+  },
+  {
+    "ingredient": "PEG-150 Distearate",
+    "catalog_data": {
+      "score": 50,
+      "ewg": 5,
+      "risk": "moderate",
+      "eco": false,
+      "description": "Espesante PEG con alto peso molecular para fórmulas cremosas.",
+      "categories": [
+        "baby_care",
+        "shampoo"
+      ],
+      "baby": {
+        "risk": "bad",
+        "summary": "Puede contener óxido de etileno y 1,4-dioxano; no apto para piel inmadura.",
+        "avoid_in": [
+          "bebes_menores_3m",
+          "piel_muy_reactiva",
+          "dermatitis_panal"
+        ],
+        "flags": [
+          "derivado_PEG",
+          "potencial_1_4_dioxano"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 2,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=PEG-150+Distearate"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 67337,
+        "formula": "C44H86O7",
+        "molecular_weight": "727.1",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": true,
+        "is_preservative": false,
+        "estimated_risk": "moderate",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "needs_review",
+      "discrepancies": [
+        {
+          "field": "ewg_score",
+          "catalog": 5,
+          "external": 2,
+          "difference": 3
+        }
+      ],
+      "confidence": "medium"
+    },
+    "timestamp": "2025-11-28T04:48:38.041882"
+  },
+  {
+    "ingredient": "Fragrance (Parfum)",
+    "catalog_data": {
+      "score": 25,
+      "ewg": 10,
+      "risk": "high",
+      "eco": false,
+      "description": "El fragrance puede contener sustancias químicas no declaradas que pueden ser tóxicas o alérgicas. La exposición crónica a estos químicos puede aumentar el riesgo de problemas respiratorios y dermatológicos.",
+      "categories": [],
+      "baby": {
+        "risk": "bad",
+        "summary": "Mezcla química no revelada; principal causa de alergias y brotes en bebés.",
+        "avoid_in": [
+          "bebes_menores_6m",
+          "piel_atopica",
+          "dermatitis_panal"
+        ],
+        "flags": [
+          "fragancia_sintetica",
+          "potencial_alergeno"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": false,
+        "hazard_score": null,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Fragrance+(Parfum)"
+      },
+      "pubchem": {
+        "available": false,
+        "note": "Not found in PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": true,
+        "is_preservative": false,
+        "estimated_risk": "high",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:41.462702"
+  },
+  {
+    "ingredient": "Polyquaternium-10",
+    "catalog_data": {
+      "score": 70,
+      "ewg": 4,
+      "risk": "moderate",
+      "eco": false,
+      "description": "Polímero catiónico, puede generar acumulación",
+      "categories": [
+        "hair_conditioner"
+      ]
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 1,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Polyquaternium-10"
+      },
+      "pubchem": {
+        "available": false,
+        "note": "Not found in PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "needs_review",
+      "discrepancies": [
+        {
+          "field": "ewg_score",
+          "catalog": 4,
+          "external": 1,
+          "difference": 3
+        },
+        {
+          "field": "risk_level",
+          "catalog": "moderate",
+          "external": "low"
+        }
+      ],
+      "confidence": "medium"
+    },
+    "timestamp": "2025-11-28T04:48:44.211297"
+  },
+  {
+    "ingredient": "Caramel",
+    "catalog_data": {
+      "score": 75,
+      "ewg": 3,
+      "risk": "low",
+      "eco": true,
+      "description": "Colorante natural obtenido por caramelización de azúcares. Usado para dar color marrón/ámbar a productos. Generalmente seguro, aunque puede contener trazas de sulfitos en algunas preparaciones.",
+      "categories": [
+        "colorant",
+        "natural"
+      ],
+      "aliases": [
+        "Caramel Color",
+        "E150",
+        "Natural Brown"
+      ],
+      "baby": {
+        "risk": "ok",
+        "summary": "Colorante natural seguro, pero evitar si hay sensibilidad a sulfitos.",
+        "avoid_in": [
+          "alergias_sulfitos"
+        ],
+        "flags": [
+          "colorante_natural"
+        ]
+      }
+    },
+    "external_data": {
+      "ewg": {
+        "available": false,
+        "hazard_score": null,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Caramel"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 61634,
+        "formula": "C7H10O2",
+        "molecular_weight": "126.15",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:47.142844"
+  },
+  {
+    "ingredient": "Panthenol",
+    "catalog_data": {
+      "score": 90,
+      "ewg": 1,
+      "risk": "none",
+      "eco": true,
+      "description": "Provitamina B5, retiene hidratación y mejora elasticidad",
+      "categories": [
+        "hair_conditioner",
+        "skincare"
+      ]
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 1,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Panthenol"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 4678,
+        "formula": "C9H19NO4",
+        "molecular_weight": "205.25",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "needs_review",
+      "discrepancies": [
+        {
+          "field": "risk_level",
+          "catalog": "none",
+          "external": "low"
+        }
+      ],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:50.366738"
+  },
+  {
+    "ingredient": "Glycerin",
+    "catalog_data": {
+      "score": 90,
+      "ewg": 1,
+      "risk": "low",
+      "eco": true,
+      "description": "El glycerin es un humectante natural que ayuda a mantener la piel hidratada y suave. Es seguro para la piel grasa, rizada y sensibles. Sin embargo, es importante utilizarlo en concentraciones moderadas ya que puede causar acné en niveles elevados.",
+      "categories": []
+    },
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 2,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Glycerin"
+      },
+      "pubchem": {
+        "available": true,
+        "cid": 753,
+        "formula": "C3H8O3",
+        "molecular_weight": "92.09",
+        "source": "PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "validated",
+      "discrepancies": [],
+      "confidence": "high"
+    },
+    "timestamp": "2025-11-28T04:48:53.007436"
+  },
+  {
+    "ingredient": "Chamomilla Recutita",
+    "catalog_data": null,
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 2,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Chamomilla+Recutita"
+      },
+      "pubchem": {
+        "available": false,
+        "note": "Not found in PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "not_in_catalog",
+      "recommendation": "Add to catalog with external data"
+    },
+    "timestamp": "2025-11-28T04:48:56.002760"
+  },
+  {
+    "ingredient": "Persea Gratissima",
+    "catalog_data": null,
+    "external_data": {
+      "ewg": {
+        "available": true,
+        "hazard_score": 1,
+        "note": "Scraped from EWG Skin Deep (educational use)",
+        "url": "https://www.ewg.org/skindeep/search/?query=Persea+Gratissima"
+      },
+      "pubchem": {
+        "available": false,
+        "note": "Not found in PubChem"
+      },
+      "cosing": {
+        "available": true,
+        "is_natural": false,
+        "is_chemical": false,
+        "is_preservative": false,
+        "estimated_risk": "low",
+        "note": "Estimated classification (no direct COSING API)"
+      }
+    },
+    "validation": {
+      "status": "not_in_catalog",
+      "recommendation": "Add to catalog with external data"
+    },
+    "timestamp": "2025-11-28T04:48:59.047259"
+  }
+]
